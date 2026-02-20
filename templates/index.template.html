@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <!-- SEO Meta Tags (由 build.js 从 config.js 注入) -->
+        <meta name="description" content="{{DESCRIPTION}}" />
+        <meta name="keywords" content="{{KEYWORDS}}" />
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="{{OG_TITLE}}" />
+        <meta property="og:description" content="{{OG_DESCRIPTION}}" />
+        <meta property="og:image" content="{{OG_IMAGE}}" />
+
+        <!-- Twitter -->
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:title" content="{{OG_TITLE}}" />
+        <meta property="twitter:description" content="{{OG_DESCRIPTION}}" />
+        <meta property="twitter:image" content="{{OG_IMAGE}}" />
+
+        <!-- Page Title -->
+        <title>{{TITLE}}</title>
+
+        <!-- Fonts: Noto Serif SC for Chinese, IBM Plex Mono for code -->
+        <link rel="preconnect" href="https://fonts.googleapis.cn" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.cn/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Font Awesome Icons -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        />
+
+        <!-- Stylesheet -->
+        <link rel="stylesheet" href="style.css" />
+
+        <!-- Configuration -->
+        <script src="config.js"></script>
+    </head>
+    <body>
+        <!-- Custom cursor -->
+        <div class="cursor"></div>
+
+        <!-- Background effects -->
+        <div class="grid-bg"></div>
+        <div class="particles" id="particles"></div>
+
+        <!-- Main content -->
+        <div class="container">
+            <div class="profile">
+                <!-- Avatar -->
+                <div class="avatar-wrapper">
+                    <div class="avatar">
+                        <img id="avatar-img" src="{{AVATAR}}" alt="{{NAME}} Avatar" />
+                    </div>
+                    <div class="status"></div>
+                </div>
+
+                <!-- Name -->
+                <h1 class="name" id="profile-name">{{NAME}}</h1>
+
+                <!-- Tagline -->
+                <p class="tagline" id="profile-tagline">
+                    <span class="paw-icon">{{TAGLINE_PREFIX}}</span>
+                    <span class="meow">{{TAGLINE_TEXT}}</span>
+                    <span class="highlight">{{TAGLINE_HIGHLIGHT}}</span>
+                </p>
+
+                <!-- Divider -->
+                <div class="divider"></div>
+
+                <!-- Terminal -->
+                <div class="terminal">
+                    <div class="terminal-header">
+                        <div class="traffic-lights">
+                            <span class="close"></span>
+                            <span class="minimize"></span>
+                            <span class="maximize"></span>
+                        </div>
+                        <div class="title" id="terminal-title">{{TERMINAL_TITLE}}</div>
+                    </div>
+                    <div class="terminal-content" id="terminal-content">
+                        <div class="prompt-line">
+                            <span class="prompt">$ </span>
+                            <span class="command">whoami</span>
+                        </div>
+                        <div class="output">{{IDENTITY}}</div>
+                        <div class="prompt-line" style="margin-top: 8px;">
+                            <span class="prompt">$ </span>
+                            <span class="command">cat interests.txt</span>
+                        </div>
+                        <div class="output">{{INTERESTS}}</div>
+                        <div class="prompt-line" style="margin-top: 8px;">
+                            <span class="prompt">$ </span>
+                            <span class="command">./wisdom.sh</span>
+                        </div>
+                        <div class="output" id="quote-output"><span class="cursor-blink"></span></div>
+                    </div>
+                </div>
+
+                <!-- Divider -->
+                <div class="divider divider-compact"></div>
+
+                <!-- Links -->
+                <div class="links" id="links-container">
+                    {{LINKS}}
+                </div>
+
+                <!-- Divider -->
+                <div class="divider divider-subtle"></div>
+
+                <!-- Footer -->
+                <div class="footer" id="footer-content">
+                    <p>{{FOOTER_TEXT}} <a href="{{FOOTER_URL}}" target="_blank" rel="noopener">{{FOOTER_LINK}}</a></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Application Script -->
+        <script src="app.js"></script>
+    </body>
+</html>

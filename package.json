@@ -1,0 +1,13 @@
+{
+  "name": "moehome",
+  "version": "1.0.0",
+  "description": "MoeWah Personal Homepage",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev": "echo '开发模式：直接打开 dist/index.html'",
+    "serve": "npx http-server dist -p 8080"
+  },
+  "keywords": ["homepage", "personal-site"],
+  "author": "MoeWah",
+  "license": "MIT"
+}

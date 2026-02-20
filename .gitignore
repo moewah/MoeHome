@@ -1,0 +1,15 @@
+# 依赖
+node_modules/
+
+# 构建输出
+dist/
+
+# 系统文件
+.DS_Store
+*.log
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
