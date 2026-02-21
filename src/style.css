@@ -818,6 +818,7 @@ body {
 .notice-content {
     flex: 1;
     color: var(--text-secondary);
+    text-align: left;
 }
 
 .notice-warning {
