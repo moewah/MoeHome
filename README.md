@@ -121,6 +121,38 @@ footer: {
 }
 ```
 
+### 统计代码
+
+支持多种统计工具配置，构建时注入到 HTML `<head>` 中：
+
+```javascript
+analytics: {
+    // Google Analytics - enabled 启用开关，id 填写 Measurement ID
+    googleAnalytics: {
+        enabled: true,
+        id: 'G-XXXXXXXXXX'
+    },
+    // Microsoft Clarity - enabled 启用开关，id 填写 Project ID
+    microsoftClarity: {
+        enabled: true,
+        id: 'xxxxxxxxxxxx'
+    },
+    // Umami - 完整脚本标签，留空则不启用
+    umami: '<script defer src="https://umami.example.com/script.js" data-website-id="xxx"></script>',
+    // 自定义脚本 - 数组形式，留空则不启用
+    customScripts: [
+        '<script>console.log("custom analytics")</script>'
+    ]
+}
+```
+
+| 配置项 | 禁用方式 |
+|--------|---------|
+| Google Analytics | `enabled: false` |
+| Microsoft Clarity | `enabled: false` |
+| Umami | `umami: ''` 留空 |
+| customScripts | `customScripts: []` 空数组 |
+
 ## 项目结构
 
 ```

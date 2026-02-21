@@ -217,6 +217,28 @@ window.HOMEPAGE_CONFIG = {
     textSecondary: "#888888",
     border: "#222222",
   },
+
+  // ========== 统计代码配置 ==========
+  analytics: {
+    // Google Analytics - 填写 Measurement ID 启用
+    // enabled: true 启用，false 禁用
+    googleAnalytics: {
+      enabled: false,
+      id: "G-XXXXXXXXXX",
+    },
+    // Microsoft Clarity - 填写 Project ID 启用
+    // enabled: true 启用，false 禁用
+    microsoftClarity: {
+      enabled: false,
+      id: "xxxxxxxxxxxx",
+    },
+    // Umami - 完整脚本标签，留空则不启用
+    // 示例: '<script defer src="https://umami.example.com/script.js" data-website-id="xxx"></script>'
+    umami: "",
+    // 自定义脚本 - 支持任意第三方统计代码
+    // 留空数组则不启用
+    customScripts: [],
+  },
 };
 
 // 格式化输出函数

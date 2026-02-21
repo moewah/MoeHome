@@ -103,6 +103,102 @@ function extractLinks() {
     return links;
 }
 
+// 提取 analytics 子配置值
+function extractAnalyticsValue(key, subKey) {
+    const pattern = new RegExp(key + ':\\s*\\{([^}]+)\\}', 's');
+    const match = configContent.match(pattern);
+    if (match && match[1]) {
+        const subPattern = new RegExp(subKey + ':\\s*[\'"`]([^\'"`]+)[\'"`]');
+        const subMatch = match[1].match(subPattern);
+        if (subMatch && subMatch[1]) {
+            return subMatch[1].trim();
+        }
+        const boolPattern = new RegExp(subKey + ':\\s*(true|false)');
+        const boolMatch = match[1].match(boolPattern);
+        if (boolMatch) {
+            return boolMatch[1].trim();
+        }
+    }
+    return '';
+}
+
+// 提取 Umami 脚本标签
+function extractUmamiScript() {
+    const singleQuoteMatch = configContent.match(/umami:\s*'([^']+)'/);
+    if (singleQuoteMatch && singleQuoteMatch[1]) {
+        return singleQuoteMatch[1].trim();
+    }
+    const backtickMatch = configContent.match(/umami:\s*`([^`]+)`/);
+    if (backtickMatch && backtickMatch[1]) {
+        return backtickMatch[1].trim();
+    }
+    const doubleQuoteMatch = configContent.match(/umami:\s*"([^"]+)"/);
+    if (doubleQuoteMatch && doubleQuoteMatch[1]) {
+        return doubleQuoteMatch[1].trim();
+    }
+    return '';
+}
+
+// 提取自定义脚本数组
+function extractCustomScripts() {
+    const match = configContent.match(/customScripts:\s*\[([\s\S]*?)\n\s*\]/);
+    if (!match) return [];
+    
+    const scriptsContent = match[1];
+    const scriptPattern = /['"`](<script[\s\S]*?<\/script>)['"`]/g;
+    const scripts = [];
+    
+    let scriptMatch;
+    while ((scriptMatch = scriptPattern.exec(scriptsContent)) !== null) {
+        scripts.push(scriptMatch[1].trim());
+    }
+    
+    return scripts;
+}
+
+// 生成统计脚本 HTML
+function generateAnalyticsHTML(config) {
+    let scripts = '';
+    
+    if (config.gaEnabled && config.gaId) {
+        scripts += `
+        <!-- Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=${config.gaId}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${config.gaId}');
+        </script>`;
+    }
+    
+    if (config.clarityEnabled && config.clarityId) {
+        scripts += `
+        <!-- Microsoft Clarity -->
+        <script>
+            (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            })(window, document, "clarity", "script", "${config.clarityId}");
+        </script>`;
+    }
+    
+    if (config.umami) {
+        scripts += `
+        <!-- Umami Analytics -->
+        ${config.umami}`;
+    }
+    
+    if (config.customScripts && config.customScripts.length > 0) {
+        scripts += `
+        <!-- Custom Analytics Scripts -->
+        ${config.customScripts.join('\n        ')}`;
+    }
+    
+    return scripts;
+}
+
 // 生成链接 HTML
 function generateLinksHTML(links) {
     // 过滤掉未启用的链接
@@ -181,7 +277,15 @@ const config = {
     noticeEnabled: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'enabled', 'true') === 'true',
     noticeType: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'type', 'warning'),
     noticeIcon: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'icon', 'fa-solid fa-shield-halved'),
-    noticeText: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'text', '声明：本人不会主动邀请或联系任何人，任何冒用本人名义的一切事物，请务必谨防受骗！')
+    noticeText: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'text', '声明：本人不会主动邀请或联系任何人，任何冒用本人名义的一切事物，请务必谨防受骗！'),
+
+    // Analytics
+    gaEnabled: extractAnalyticsValue('googleAnalytics', 'enabled') === 'true',
+    gaId: extractAnalyticsValue('googleAnalytics', 'id'),
+    clarityEnabled: extractAnalyticsValue('microsoftClarity', 'enabled') === 'true',
+    clarityId: extractAnalyticsValue('microsoftClarity', 'id'),
+    umami: extractUmamiScript(),
+    customScripts: extractCustomScripts()
 };
 
 // 读取模板
@@ -229,7 +333,10 @@ let html = template
     // Footer
     .replace(/{{FOOTER_TEXT}}/g, config.footerText)
     .replace(/{{FOOTER_LINK}}/g, config.footerLinkText)
-    .replace(/{{FOOTER_URL}}/g, config.footerLinkUrl);
+    .replace(/{{FOOTER_URL}}/g, config.footerLinkUrl)
+
+    // Analytics
+    .replace(/{{ANALYTICS}}/g, generateAnalyticsHTML(config));
 
 // 清理并创建 dist 目录
 cleanDist();
