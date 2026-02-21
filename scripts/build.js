@@ -107,12 +107,12 @@ function extractLinks() {
 function generateLinksHTML(links) {
     // 过滤掉未启用的链接
     const enabledLinks = links.filter(link => link.enabled !== false);
-    
+
     return enabledLinks.map(link => {
-        const externalAttrs = link.external 
-            ? 'target="_blank" rel="noopener"' 
+        const externalAttrs = link.external
+            ? 'target="_blank" rel="noopener"'
             : '';
-        
+
         return `                    <a href="${link.url}" class="link" data-brand="${link.brand}" style="--brand-color: ${link.color}" ${externalAttrs}>
                         <div class="link-left">
                             <div class="link-icon-wrapper">
@@ -126,6 +126,23 @@ function generateLinksHTML(links) {
                         <span class="link-indicator"></span>
                     </a>`;
     }).join('\n');
+}
+
+// 生成 Notice HTML
+function generateNoticeHTML(notice) {
+    if (!notice.enabled) {
+        return '';
+    }
+
+    return `                <!-- Notice -->
+                <div class="notice notice-${notice.type}">
+                    <div class="notice-icon">
+                        <i class="${notice.icon}"></i>
+                    </div>
+                    <div class="notice-content">
+                        ${notice.text}
+                    </div>
+                </div>`;
 }
 
 // 从 config.js 提取所有配置
@@ -158,7 +175,13 @@ const config = {
     // Footer
     footerText: extractNestedString(/footer:\s*\{([\s\S]*?)\}/, 'text', 'Powered by'),
     footerLinkText: extractNestedString(/link:\s*\{([\s\S]*?)\}/, 'text', 'MoeWah'),
-    footerLinkUrl: extractNestedString(/link:\s*\{([\s\S]*?)\}/, 'url', 'https://www.moewah.com/')
+    footerLinkUrl: extractNestedString(/link:\s*\{([\s\S]*?)\}/, 'url', 'https://www.moewah.com/'),
+
+    // Notice
+    noticeEnabled: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'enabled', 'true') === 'true',
+    noticeType: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'type', 'warning'),
+    noticeIcon: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'icon', 'fa-solid fa-shield-halved'),
+    noticeText: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'text', '声明：本人不会主动邀请或联系任何人，任何冒用本人名义的一切事物，请务必谨防受骗！')
 };
 
 // 读取模板
@@ -194,7 +217,15 @@ let html = template
     
     // Links
     .replace(/{{LINKS}}/g, generateLinksHTML(config.links))
-    
+
+    // Notice
+    .replace(/{{NOTICE}}/g, generateNoticeHTML({
+        enabled: config.noticeEnabled,
+        type: config.noticeType,
+        icon: config.noticeIcon,
+        text: config.noticeText
+    }))
+
     // Footer
     .replace(/{{FOOTER_TEXT}}/g, config.footerText)
     .replace(/{{FOOTER_LINK}}/g, config.footerLinkText)

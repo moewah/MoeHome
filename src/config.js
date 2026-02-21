@@ -191,6 +191,14 @@ window.HOMEPAGE_CONFIG = {
     },
   },
 
+  // ========== 安全提示配置 ==========
+  notice: {
+    enabled: true,
+    type: "warning", // warning | info | success
+    icon: "fa-solid fa-shield-halved",
+    text: "声明：本人不会主动邀请或联系任何人，任何冒用本人名义的一切事物，请务必谨防受骗！",
+  },
+
   // ========== 动画配置 ==========
   animation: {
     fadeInDelay: 1000, // ms
