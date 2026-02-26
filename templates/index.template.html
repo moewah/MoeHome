@@ -43,6 +43,9 @@
         <!-- Configuration -->
         <script src="config.js"></script>
 
+        <!-- Theme Utils -->
+        <script src="theme-utils.js"></script>
+
         <!-- Analytics Scripts (由 build.js 从 config.js 注入) -->
         {{ANALYTICS}}
     </head>
@@ -53,6 +56,30 @@
         <!-- Background effects -->
         <div class="grid-bg"></div>
         <div class="particles" id="particles"></div>
+
+        <!-- Theme Switcher -->
+        <div class="theme-switcher">
+            <div class="theme-toggle">
+                <i class="fa-solid fa-circle-half-stroke"></i>
+            </div>
+            <div class="theme-menu">
+                <div class="theme-menu-item" data-theme="auto">
+                    <i class="fa-solid fa-desktop"></i>
+                    <span class="theme-menu-label">Auto</span>
+                    <div class="theme-menu-check"><i class="fa-solid fa-check"></i></div>
+                </div>
+                <div class="theme-menu-item" data-theme="light">
+                    <i class="fa-regular fa-sun"></i>
+                    <span class="theme-menu-label">Light</span>
+                    <div class="theme-menu-check"><i class="fa-solid fa-check"></i></div>
+                </div>
+                <div class="theme-menu-item" data-theme="dark">
+                    <i class="fa-regular fa-moon"></i>
+                    <span class="theme-menu-label">Dark</span>
+                    <div class="theme-menu-check"><i class="fa-solid fa-check"></i></div>
+                </div>
+            </div>
+        </div>
 
         <!-- Main content -->
         <div class="container">

@@ -370,6 +370,7 @@ const copyFile = (srcFile, destFile) => {
 copyFile('src/app.js', 'app.js');
 copyFile('src/style.css', 'style.css');
 copyFile('src/config.js', 'config.js');
+copyFile('src/theme-utils.js', 'theme-utils.js');
 copyFile('src/images/avatar.webp', 'images/avatar.webp');
 
 console.log('✅ 构建成功！');

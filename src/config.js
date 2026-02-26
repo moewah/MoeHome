@@ -218,6 +218,13 @@ window.HOMEPAGE_CONFIG = {
     border: "#222222",
   },
 
+  // ========== 主题切换配置 ==========
+  themeSwitcher: {
+    enabled: true,
+    defaultMode: "auto",
+    showToggle: true,
+  },
+
   // ========== 统计代码配置 ==========
   analytics: {
     // Google Analytics - 填写 Measurement ID 启用
