@@ -56,30 +56,44 @@
 
         <!-- Main content -->
         <div class="container">
-            <div class="profile">
+            <!-- Skeleton Screen -->
+            <div class="profile skeleton-container" id="skeleton-screen">
+                <div class="skeleton-avatar skeleton"></div>
+                <div class="skeleton-name skeleton"></div>
+                <div class="skeleton-tagline skeleton"></div>
+                <div class="skeleton-terminal skeleton"></div>
+                <div class="skeleton-links">
+                    <div class="skeleton-link skeleton"></div>
+                    <div class="skeleton-link skeleton"></div>
+                    <div class="skeleton-link skeleton"></div>
+                </div>
+            </div>
+
+            <!-- Actual Content (hidden initially) -->
+            <div class="profile content-hidden" id="actual-content">
                 <!-- Avatar -->
-                <div class="avatar-wrapper">
-                    <div class="avatar">
-                        <img id="avatar-img" src="{{AVATAR}}" alt="{{NAME}} Avatar" />
+                <div class="avatar-wrapper lazy-load">
+                    <div class="avatar image-placeholder" id="avatar-placeholder">
+                        <img id="avatar-img" src="{{AVATAR}}" alt="{{NAME}} Avatar" data-blur />
                     </div>
                     <div class="status"></div>
                 </div>
 
                 <!-- Name -->
-                <h1 class="name" id="profile-name">{{NAME}}</h1>
+                <h1 class="name lazy-load" id="profile-name" data-delay="1">{{NAME}}</h1>
 
                 <!-- Tagline -->
-                <p class="tagline" id="profile-tagline">
+                <p class="tagline lazy-load" id="profile-tagline" data-delay="2">
                     <span class="paw-icon">{{TAGLINE_PREFIX}}</span>
                     <span class="meow">{{TAGLINE_TEXT}}</span>
                     <span class="highlight">{{TAGLINE_HIGHLIGHT}}</span>
                 </p>
 
                 <!-- Divider -->
-                <div class="divider"></div>
+                <div class="divider lazy-load" data-delay="3"></div>
 
                 <!-- Terminal -->
-                <div class="terminal">
+                <div class="terminal lazy-load" id="terminal" data-delay="3">
                     <div class="terminal-header">
                         <div class="traffic-lights">
                             <span class="close"></span>
@@ -108,20 +122,20 @@
                 </div>
 
                 <!-- Divider -->
-                <div class="divider divider-compact"></div>
+                <div class="divider divider-compact lazy-load" data-delay="4"></div>
 
                 <!-- Links -->
-                <div class="links" id="links-container">
+                <div class="links lazy-load" id="links-container" data-delay="4">
                     {{LINKS}}
                 </div>
 
                 {{NOTICE}}
 
                 <!-- Divider -->
-                <div class="divider divider-subtle"></div>
+                <div class="divider divider-subtle lazy-load" data-delay="5"></div>
 
                 <!-- Footer -->
-                <div class="footer" id="footer-content">
+                <div class="footer lazy-load" id="footer-content" data-delay="5">
                     <p>{{FOOTER_TEXT}} <a href="{{FOOTER_URL}}" target="_blank" rel="noopener">{{FOOTER_LINK}}</a></p>
                 </div>
             </div>

@@ -7,11 +7,104 @@
 function initPage() {
     const config = window.HOMEPAGE_CONFIG;
 
+    // 初始化骨架屏和懒加载
+    initSkeletonAndLazyLoad();
+
     // 初始化动画（语录循环）
     initAnimations();
 
     // 初始化交互效果
     initInteractions();
+}
+
+// ========== 骨架屏和懒加载初始化 ==========
+function initSkeletonAndLazyLoad() {
+    // 等待页面资源加载
+    window.addEventListener('load', () => {
+        // 隐藏骨架屏，显示实际内容
+        hideSkeleton();
+        
+        // 初始化懒加载动画
+        initLazyLoad();
+        
+        // 初始化渐进式图片加载
+        initProgressiveImage();
+    });
+}
+
+// ========== 隐藏骨架屏 ==========
+function hideSkeleton() {
+    const skeleton = document.getElementById('skeleton-screen');
+    const actualContent = document.getElementById('actual-content');
+    
+    if (skeleton) {
+        skeleton.style.display = 'none';
+    }
+    
+    if (actualContent) {
+        actualContent.classList.remove('content-hidden');
+        actualContent.classList.add('content-visible');
+    }
+}
+
+// ========== 懒加载动画（Intersection Observer） ==========
+function initLazyLoad() {
+    if (!('IntersectionObserver' in window)) {
+        // 不支持 Intersection Observer 则直接显示所有内容
+        document.querySelectorAll('.lazy-load').forEach(el => {
+            el.classList.add('visible');
+        });
+        return;
+    }
+
+    const lazyElements = document.querySelectorAll('.lazy-load');
+    
+    const lazyObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const element = entry.target;
+                element.classList.add('visible');
+                lazyObserver.unobserve(element);
+            }
+        });
+    }, {
+        threshold: 0.1,
+        rootMargin: '50px'
+    });
+
+    lazyElements.forEach(el => lazyObserver.observe(el));
+}
+
+// ========== 渐进式图片加载 ==========
+function initProgressiveImage() {
+    const avatarImg = document.getElementById('avatar-img');
+    const avatarPlaceholder = document.getElementById('avatar-placeholder');
+    
+    if (!avatarImg || !avatarPlaceholder) return;
+
+    // 如果图片已缓存完成，直接移除占位
+    if (avatarImg.complete && avatarImg.naturalHeight !== 0) {
+        avatarImg.classList.add('loaded');
+        avatarPlaceholder.classList.add('loaded');
+        avatarImg.removeAttribute('data-blur');
+        return;
+    }
+
+    // 监听图片加载完成
+    avatarImg.addEventListener('load', () => {
+        avatarImg.classList.add('loaded');
+        avatarPlaceholder.classList.add('loaded');
+        // 移除模糊效果
+        setTimeout(() => {
+            avatarImg.removeAttribute('data-blur');
+        }, 300);
+    });
+
+    // 监听图片加载失败
+    avatarImg.addEventListener('error', () => {
+        avatarPlaceholder.classList.add('loaded');
+        avatarImg.removeAttribute('data-blur');
+    });
 }
 
 // ========== 名人语录状态管理 ==========

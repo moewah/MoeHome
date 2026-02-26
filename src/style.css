@@ -958,3 +958,173 @@ body {
     background: var(--accent);
     color: var(--bg-primary);
 }
+
+/* ========== Skeleton Screen ========== */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--bg-secondary) 25%,
+        var(--border) 50%,
+        var(--bg-secondary) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeleton-avatar {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    margin: 0 auto 40px;
+}
+
+.skeleton-name {
+    width: 200px;
+    height: 40px;
+    border-radius: 8px;
+    margin: 0 auto 20px;
+}
+
+.skeleton-tagline {
+    width: 240px;
+    height: 20px;
+    border-radius: 6px;
+    margin: 0 auto 40px;
+}
+
+.skeleton-terminal {
+    width: 100%;
+    max-width: 600px;
+    height: 140px;
+    border-radius: 12px;
+    margin: 0 auto 40px;
+}
+
+.skeleton-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    width: 100%;
+    max-width: 600px;
+    margin-top: 40px;
+}
+
+.skeleton-link {
+    height: 76px;
+    border-radius: 12px;
+}
+
+.skeleton-divider {
+    width: 100%;
+    height: 1px;
+    margin: 48px 0;
+}
+
+.skeleton-notice {
+    height: 50px;
+    border-radius: 10px;
+    margin: 32px 0;
+}
+
+.skeleton-footer {
+    width: 200px;
+    height: 16px;
+    border-radius: 6px;
+    margin: 20px auto;
+}
+
+/* Content hidden state during skeleton */
+.content-hidden {
+    opacity: 0;
+}
+
+.content-visible {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+/* ========== Lazy Load Animation ========== */
+.lazy-load {
+    opacity: 0;
+    transform: translateY(30px);
+    transition:
+        opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.lazy-load.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Stagger delays for sequential animation */
+.lazy-load[data-delay="1"] {
+    transition-delay: 0.1s;
+}
+
+.lazy-load[data-delay="2"] {
+    transition-delay: 0.2s;
+}
+
+.lazy-load[data-delay="3"] {
+    transition-delay: 0.3s;
+}
+
+.lazy-load[data-delay="4"] {
+    transition-delay: 0.4s;
+}
+
+.lazy-load[data-delay="5"] {
+    transition-delay: 0.5s;
+}
+
+/* ========== Progressive Image Loading ========== */
+.image-placeholder {
+    position: relative;
+    overflow: hidden;
+}
+
+.image-placeholder::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        var(--bg-secondary) 25%,
+        var(--border) 50%,
+        var(--bg-secondary) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+    z-index: 1;
+    transition: opacity 0.3s ease;
+}
+
+.image-placeholder.loaded::after {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.image-placeholder img {
+    transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.image-placeholder img[data-blur] {
+    filter: blur(10px);
+}
+
+.image-placeholder img.loaded {
+    filter: blur(0);
+}
