@@ -224,6 +224,14 @@ function generateLinksHTML(links) {
     }).join('\n');
 }
 
+// 生成骨架屏链接占位 HTML
+function generateSkeletonLinksHTML(links) {
+    const enabledLinks = links.filter(link => link.enabled !== false);
+    const count = enabledLinks.length;
+
+    return Array(count).fill(`<div class="skeleton-link skeleton"></div>`).join('\n                    ');
+}
+
 // 生成 Notice HTML
 function generateNoticeHTML(notice) {
     if (!notice.enabled) {
@@ -321,6 +329,7 @@ let html = template
     
     // Links
     .replace(/{{LINKS}}/g, generateLinksHTML(config.links))
+    .replace(/{{SKELETON_LINKS}}/g, generateSkeletonLinksHTML(config.links))
 
     // Notice
     .replace(/{{NOTICE}}/g, generateNoticeHTML({
