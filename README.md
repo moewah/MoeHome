@@ -121,6 +121,30 @@ footer: {
 }
 ```
 
+### 博客文章 RSS
+
+从自定义 RSS 源获取最新文章，构建时预获取，零运行时延迟：
+
+```javascript
+rss: {
+    enabled: true,                              // 启用/禁用
+    url: 'https://blog.moewah.com/rss.xml',    // RSS 源地址
+    count: 4,                                   // 显示文章数量
+    openInNewTab: true,                         // 新标签页打开
+    title: {
+        text: '近期更新',                        // 区块标题
+        icon: 'fa-solid fa-newspaper'          // 标题图标
+    },
+    display: {
+        showDate: true,                         // 显示日期
+        showDescription: true,                  // 显示摘要
+        maxDescriptionLength: 100               // 摘要最大长度
+    }
+}
+```
+
+设置 `enabled: false` 可完全隐藏文章列表模块。
+
 ### 统计代码
 
 支持多种统计工具配置，构建时注入到 HTML `<head>` 中：
@@ -138,6 +162,7 @@ analytics: {
         id: 'xxxxxxxxxxxx'
     },
     // Umami - 完整脚本标签，留空则不启用
+    // 支持自定义参数如 data-host, data-domains 等
     umami: '<script defer src="https://umami.example.com/script.js" data-website-id="xxx"></script>',
     // 自定义脚本 - 数组形式，留空则不启用
     customScripts: [

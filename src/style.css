@@ -853,6 +853,194 @@ body {
     border-color: rgba(39, 201, 63, 0.3);
 }
 
+/* ========== RSS Section ========== */
+.rss-section {
+    width: 100%;
+    margin: 0;
+    opacity: 0;
+    animation: fadeIn 1s ease 1s forwards;
+}
+
+.rss-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 0 4px;
+}
+
+.rss-header i {
+    color: var(--accent);
+    font-size: 1rem;
+}
+
+.rss-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+}
+
+.rss-articles {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.rss-article {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    min-height: 120px;
+}
+
+.rss-article::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+        circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(0, 255, 159, 0.06),
+        transparent 60%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.rss-article:hover::before {
+    opacity: 1;
+}
+
+.rss-article:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow:
+        0 8px 24px -8px rgba(0, 255, 159, 0.15),
+        0 0 0 1px rgba(0, 255, 159, 0.05);
+}
+
+.rss-article-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    z-index: 1;
+}
+
+.rss-article-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.3s ease;
+    text-align: left;
+}
+
+.rss-article:hover .rss-article-title {
+    color: var(--accent);
+}
+
+.rss-article-desc {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.7;
+    margin: 0;
+    text-align: left;
+}
+
+.rss-article-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 8px;
+    z-index: 1;
+}
+
+.rss-article-date {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    font-family: var(--font-mono);
+}
+
+.rss-article-arrow {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: all 0.25s ease;
+}
+
+.rss-article:hover .rss-article-arrow {
+    color: var(--accent);
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* RSS Empty State */
+.rss-articles.rss-empty {
+    display: block;
+    padding: 24px 16px;
+    text-align: center;
+    grid-template-columns: none;
+}
+
+.rss-empty-text {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    opacity: 0.6;
+}
+
+/* RSS Skeleton */
+.skeleton-rss-section {
+    width: 100%;
+    margin: 20px 0;
+}
+
+.skeleton-rss-header {
+    width: 100px;
+    height: 20px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+}
+
+.skeleton-rss-articles {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.skeleton-rss-article {
+    height: 120px;
+    border-radius: 10px;
+}
+
 /* ========== Footer ========== */
 .footer {
     margin-top: 40px;
@@ -880,7 +1068,7 @@ body {
     }
 
     .links {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
         gap: 12px;
         max-width: 100%;
     }
@@ -905,6 +1093,34 @@ body {
     .link-indicator::before {
         content: "打开";
     }
+
+    /* RSS responsive */
+    .rss-articles {
+        grid-template-columns: 1fr;
+    }
+
+    .rss-article {
+        padding: 14px 16px;
+        min-height: auto;
+    }
+
+    .rss-article-title {
+        font-size: 0.85rem;
+        -webkit-line-clamp: 1;
+    }
+
+    .rss-article-desc {
+        -webkit-line-clamp: 2;
+        text-align: left;
+    }
+
+    .skeleton-rss-articles {
+        grid-template-columns: 1fr;
+    }
+
+    .skeleton-rss-article {
+        height: 80px;
+    }
 }
 
 /* 平板 - 保持单列，与终端一致 */
@@ -917,6 +1133,10 @@ body {
     .links:has(.link:nth-child(4)) {
         grid-template-columns: repeat(2, 1fr);
         max-width: 100%;
+    }
+
+    .rss-articles {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
@@ -935,6 +1155,24 @@ body {
     .links:has(.link:nth-child(6)) {
         grid-template-columns: repeat(3, 1fr);
         max-width: 800px;
+    }
+
+    /* RSS 桌面端 2列布局 */
+    .rss-articles {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .rss-section {
+        width: 100%;
+    }
+
+    /* RSS 桌面端 2列布局 */
+    .rss-articles {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .rss-section {
+        width: 100%;
     }
 
     /* 桌面端隐藏"打开"文本 */

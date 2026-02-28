@@ -225,6 +225,23 @@ window.HOMEPAGE_CONFIG = {
     showToggle: true,
   },
 
+  // ========== RSS 文章配置 ==========
+  rss: {
+    enabled: false,  // 设置为 true 启用
+    url: "https://yourblog.com/rss.xml",  // 你的博客 RSS 地址
+    count: 4,
+    openInNewTab: true,
+    title: {
+      text: "近期更新",
+      icon: "fa-solid fa-newspaper",
+    },
+    display: {
+      showDate: true,
+      showDescription: true,
+      maxDescriptionLength: 100,
+    },
+  },
+
   // ========== 统计代码配置 ==========
   analytics: {
     // Google Analytics - 填写 Measurement ID 启用

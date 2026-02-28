@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { getRSSArticles } = require('./rss-parser');
 
 // 定义路径
 const rootDir = path.join(__dirname, '..');
@@ -124,14 +125,17 @@ function extractAnalyticsValue(key, subKey) {
 
 // 提取 Umami 脚本标签
 function extractUmamiScript() {
+    // 匹配单引号包裹的内容（允许内部有双引号）
     const singleQuoteMatch = configContent.match(/umami:\s*'([^']+)'/);
     if (singleQuoteMatch && singleQuoteMatch[1]) {
         return singleQuoteMatch[1].trim();
     }
+    // 匹配反引号包裹的内容
     const backtickMatch = configContent.match(/umami:\s*`([^`]+)`/);
     if (backtickMatch && backtickMatch[1]) {
         return backtickMatch[1].trim();
     }
+    // 匹配双引号包裹的内容
     const doubleQuoteMatch = configContent.match(/umami:\s*"([^"]+)"/);
     if (doubleQuoteMatch && doubleQuoteMatch[1]) {
         return doubleQuoteMatch[1].trim();
@@ -143,23 +147,88 @@ function extractUmamiScript() {
 function extractCustomScripts() {
     const match = configContent.match(/customScripts:\s*\[([\s\S]*?)\n\s*\]/);
     if (!match) return [];
-    
+
     const scriptsContent = match[1];
     const scriptPattern = /['"`](<script[\s\S]*?<\/script>)['"`]/g;
     const scripts = [];
-    
+
     let scriptMatch;
     while ((scriptMatch = scriptPattern.exec(scriptsContent)) !== null) {
         scripts.push(scriptMatch[1].trim());
     }
-    
+
     return scripts;
+}
+
+// 提取 RSS 配置
+function extractRSSConfig() {
+    const rssMatch = configContent.match(/rss:\s*\{([\s\S]*?)\n\s*\},\s*\n\s*\/\/ =/);
+    if (!rssMatch) {
+        return {
+            enabled: false,
+            url: '',
+            count: 6,
+            openInNewTab: true,
+            titleText: '近期更新',
+            titleIcon: 'fa-solid fa-newspaper',
+            showDate: true,
+            showDescription: true,
+            maxDescriptionLength: 100,
+        };
+    }
+
+    const rssContent = rssMatch[1];
+
+    const enabledMatch = rssContent.match(/enabled:\s*(true|false)/);
+    const urlMatch = rssContent.match(/url:\s*['"`]([^'"`]+)['"`]/);
+    const countMatch = rssContent.match(/count:\s*(\d+)/);
+    const openInNewTabMatch = rssContent.match(/openInNewTab:\s*(true|false)/);
+
+    // 提取 title 配置
+    const titleMatch = rssContent.match(/title:\s*\{([^}]+)\}/);
+    let titleText = '最新文章';
+    let titleIcon = 'fa-solid fa-rss';
+    if (titleMatch) {
+        const titleContent = titleMatch[1];
+        const textMatch = titleContent.match(/text:\s*['"`]([^'"`]+)['"`]/);
+        const iconMatch = titleContent.match(/icon:\s*['"`]([^'"`]+)['"`]/);
+        if (textMatch) titleText = textMatch[1].trim();
+        if (iconMatch) titleIcon = iconMatch[1].trim();
+    }
+
+    // 提取 display 配置
+    const displayMatch = rssContent.match(/display:\s*\{([^}]+)\}/);
+    let showDate = true;
+    let showDescription = true;
+    let maxDescriptionLength = 80;
+    if (displayMatch) {
+        const displayContent = displayMatch[1];
+        const showDateMatch = displayContent.match(/showDate:\s*(true|false)/);
+        const showDescMatch = displayContent.match(/showDescription:\s*(true|false)/);
+        const maxLenMatch = displayContent.match(/maxDescriptionLength:\s*(\d+)/);
+        if (showDateMatch) showDate = showDateMatch[1] === 'true';
+        if (showDescMatch) showDescription = showDescMatch[1] === 'true';
+        if (maxLenMatch) maxDescriptionLength = parseInt(maxLenMatch[1], 10);
+    }
+
+    return {
+        enabled: enabledMatch ? enabledMatch[1] === 'true' : false,
+        url: urlMatch ? urlMatch[1].trim() : '',
+        count: countMatch ? parseInt(countMatch[1], 10) : 5,
+        openInNewTab: openInNewTabMatch ? openInNewTabMatch[1] === 'true' : true,
+        titleText: titleText,
+        titleIcon: titleIcon,
+        showDate: showDate,
+        showDescription: showDescription,
+        maxDescriptionLength: maxDescriptionLength,
+    };
 }
 
 // 生成统计脚本 HTML
 function generateAnalyticsHTML(config) {
     let scripts = '';
     
+    // Google Analytics
     if (config.gaEnabled && config.gaId) {
         scripts += `
         <!-- Google Analytics -->
@@ -172,6 +241,7 @@ function generateAnalyticsHTML(config) {
         </script>`;
     }
     
+    // Microsoft Clarity
     if (config.clarityEnabled && config.clarityId) {
         scripts += `
         <!-- Microsoft Clarity -->
@@ -184,12 +254,14 @@ function generateAnalyticsHTML(config) {
         </script>`;
     }
     
+    // Umami
     if (config.umami) {
         scripts += `
         <!-- Umami Analytics -->
         ${config.umami}`;
     }
     
+    // Custom Scripts
     if (config.customScripts && config.customScripts.length > 0) {
         scripts += `
         <!-- Custom Analytics Scripts -->
@@ -255,7 +327,102 @@ function generateSkeletonNoticeHTML(notice) {
         return '';
     }
 
-    return `<div class="skeleton-notice skeleton"></div>`;
+    return '<div class="skeleton-notice skeleton"></div>';
+}
+
+// 生成 RSS 文章列表 HTML
+function generateRSSHTML(articles, rssConfig) {
+    if (!rssConfig.enabled) {
+        return '';
+    }
+
+    // 空文章列表时显示友好提示
+    if (articles.length === 0) {
+        return '<div class="rss-section lazy-load" data-delay="4">\n' +
+            '                    <div class="rss-header">\n' +
+            '                        <i class="' + rssConfig.titleIcon + '"></i>\n' +
+            '                        <span class="rss-title">' + rssConfig.titleText + '</span>\n' +
+            '                    </div>\n' +
+            '                    <div class="rss-articles rss-empty">\n' +
+            '                        <span class="rss-empty-text">暂无最新文章</span>\n' +
+            '                    </div>\n' +
+            '                </div>';
+    }
+
+    const targetAttr = rssConfig.openInNewTab ? ' target="_blank" rel="noopener"' : '';
+
+    const articlesHTML = articles.map(function(article) {
+        // 截断描述并进行 HTML 转义
+        let desc = escapeHTML(article.description || '');
+        if (desc.length > rssConfig.maxDescriptionLength) {
+            desc = desc.substring(0, rssConfig.maxDescriptionLength) + '...';
+        }
+
+        // 生成日期
+        const dateHTML = rssConfig.showDate && article.pubDate
+            ? '<span class="rss-article-date">' + escapeHTML(article.pubDate) + '</span>'
+            : '';
+
+        // 生成描述
+        const descHTML = rssConfig.showDescription && desc
+            ? '<p class="rss-article-desc">' + desc + '</p>'
+            : '';
+
+        // 对链接进行安全校验和转义
+        const safeLink = escapeHTML(article.link);
+
+        return '                    <a href="' + safeLink + '" class="rss-article"' + targetAttr + '>\n' +
+            '                        <div class="rss-article-content">\n' +
+            '                            <span class="rss-article-title">' + escapeHTML(article.title) + '</span>\n' +
+            '                            ' + descHTML + '\n' +
+            '                        </div>\n' +
+            '                        <div class="rss-article-meta">\n' +
+            '                            ' + dateHTML + '\n' +
+            '                            <i class="fa-solid fa-arrow-right rss-article-arrow"></i>\n' +
+            '                        </div>\n' +
+            '                    </a>';
+    }).join('\n');
+
+    return '<div class="rss-section lazy-load" data-delay="4">\n' +
+        '                    <div class="rss-header">\n' +
+        '                        <i class="' + escapeHTML(rssConfig.titleIcon) + '"></i>\n' +
+        '                        <span class="rss-title">' + escapeHTML(rssConfig.titleText) + '</span>\n' +
+        '                    </div>\n' +
+        '                    <div class="rss-articles">\n' +
+        articlesHTML + '\n' +
+        '                    </div>\n' +
+        '                </div>';
+}
+
+// 生成骨架屏 RSS 占位 HTML
+function generateSkeletonRSSHTML(rssConfig) {
+    if (!rssConfig.enabled) {
+        return '';
+    }
+
+    const count = rssConfig.count;
+    const skeletonArticles = [];
+    for (let i = 0; i < count; i++) {
+        skeletonArticles.push('                    <div class="skeleton-rss-article skeleton"></div>');
+    }
+
+    return '                <!-- RSS Articles Skeleton -->\n' +
+        '                <div class="skeleton-rss-section">\n' +
+            '                    <div class="skeleton-rss-header skeleton"></div>\n' +
+            '                    <div class="skeleton-rss-articles">\n' +
+                skeletonArticles.join('\n') + '\n' +
+            '                    </div>\n' +
+        '                </div>';
+}
+
+// HTML 转义函数
+function escapeHTML(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 // 从 config.js 提取所有配置
@@ -267,24 +434,24 @@ const config = {
     ogTitle: extractNestedString(/og:\s*\{([\s\S]*?)\}/, 'title', 'MoeWah - 个人主页'),
     ogDescription: extractNestedString(/og:\s*\{([\s\S]*?)\}/, 'description', '开源爱好者 / Astro爱好者 / AI探索者'),
     ogImage: extractNestedString(/og:\s*\{([\s\S]*?)\}/, 'image', 'https://www.moewah.com/images/avatar.webp'),
-    
+
     // Profile
     name: extractNestedString(/profile:\s*\{([\s\S]*?)\}/, 'name', 'MoeWah'),
     avatar: extractNestedString(/profile:\s*\{([\s\S]*?)\}/, 'avatar', 'images/avatar.webp'),
     taglinePrefix: extractNestedString(/tagline:\s*\{([\s\S]*?)\}/, 'prefix', '🐾'),
     taglineText: extractNestedString(/tagline:\s*\{([\s\S]*?)\}/, 'text', 'Meow~'),
     taglineHighlight: extractNestedString(/tagline:\s*\{([\s\S]*?)\}/, 'highlight', '万物皆可萌！'),
-    
+
     // Identity & Interests
     identity: extractArray(/identity:\s*\[([\s\S]*?)\]/, ['开源爱好者', 'Astro爱好者', 'AI探索者']),
     interests: extractArray(/interests:\s*\[([\s\S]*?)\]/, ['Astro & 前端开发', 'Docker & 容器技术']),
-    
+
     // Terminal
     terminalTitle: extractNestedString(/terminal:\s*\{([\s\S]*?)\}/, 'title', '🐾 meow@tribe:~|'),
-    
+
     // Links
     links: extractLinks(),
-    
+
     // Footer
     footerText: extractNestedString(/footer:\s*\{([\s\S]*?)\}/, 'text', 'Powered by'),
     footerLinkText: extractNestedString(/link:\s*\{([\s\S]*?)\}/, 'text', 'MoeWah'),
@@ -295,6 +462,9 @@ const config = {
     noticeType: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'type', 'warning'),
     noticeIcon: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'icon', 'fa-solid fa-shield-halved'),
     noticeText: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'text', '声明：本人不会主动邀请或联系任何人，任何冒用本人名义的一切事物，请务必谨防受骗！'),
+
+    // RSS
+    rss: extractRSSConfig(),
 
     // Analytics
     gaEnabled: extractAnalyticsValue('googleAnalytics', 'enabled') === 'true',
@@ -314,78 +484,100 @@ if (!fs.existsSync(templatePath)) {
 
 const template = fs.readFileSync(templatePath, 'utf8');
 
-// 替换所有占位符
-let html = template
-    // SEO
-    .replace(/{{TITLE}}/g, config.title)
-    .replace(/{{DESCRIPTION}}/g, config.description)
-    .replace(/{{KEYWORDS}}/g, config.keywords.join(', '))
-    .replace(/{{OG_TITLE}}/g, config.ogTitle)
-    .replace(/{{OG_DESCRIPTION}}/g, config.ogDescription)
-    .replace(/{{OG_IMAGE}}/g, config.ogImage)
-    
-    // Profile
-    .replace(/{{NAME}}/g, config.name)
-    .replace(/{{AVATAR}}/g, config.avatar)
-    .replace(/{{TAGLINE_PREFIX}}/g, config.taglinePrefix)
-    .replace(/{{TAGLINE_TEXT}}/g, config.taglineText)
-    .replace(/{{TAGLINE_HIGHLIGHT}}/g, config.taglineHighlight)
-    
-    // Terminal
-    .replace(/{{TERMINAL_TITLE}}/g, config.terminalTitle)
-    .replace(/{{IDENTITY}}/g, config.identity.join(' / '))
-    .replace(/{{INTERESTS}}/g, config.interests.join(' / '))
-    
-    // Links
-    .replace(/{{LINKS}}/g, generateLinksHTML(config.links))
-    .replace(/{{SKELETON_LINKS}}/g, generateSkeletonLinksHTML(config.links))
-
-    // Notice
-    .replace(/{{NOTICE}}/g, generateNoticeHTML({
-        enabled: config.noticeEnabled,
-        type: config.noticeType,
-        icon: config.noticeIcon,
-        text: config.noticeText
-    }))
-    .replace(/{{SKELETON_NOTICE}}/g, generateSkeletonNoticeHTML({
-        enabled: config.noticeEnabled
-    }))
-
-    // Footer
-    .replace(/{{FOOTER_TEXT}}/g, config.footerText)
-    .replace(/{{FOOTER_LINK}}/g, config.footerLinkText)
-    .replace(/{{FOOTER_URL}}/g, config.footerLinkUrl)
-
-    // Analytics
-    .replace(/{{ANALYTICS}}/g, generateAnalyticsHTML(config));
-
-// 清理并创建 dist 目录
-cleanDist();
-
-// 写入 HTML
-fs.writeFileSync(path.join(distDir, 'index.html'), html, 'utf8');
-
-// 复制静态资源
-const copyFile = (srcFile, destFile) => {
-    const srcPath = path.join(rootDir, srcFile);
-    const destPath = path.join(distDir, destFile);
-    if (fs.existsSync(srcPath)) {
-        const destDir = path.dirname(destPath);
-        if (!fs.existsSync(destDir)) {
-            fs.mkdirSync(destDir, { recursive: true });
-        }
-        fs.copyFileSync(srcPath, destPath);
-        console.log(`📋 复制: ${destFile}`);
+// 主构建函数（异步）
+async function build() {
+    // 获取 RSS 文章
+    let rssArticles = [];
+    if (config.rss.enabled && config.rss.url) {
+        rssArticles = await getRSSArticles(config.rss.url, config.rss.count);
     }
-};
 
-copyFile('src/app.js', 'app.js');
-copyFile('src/style.css', 'style.css');
-copyFile('src/config.js', 'config.js');
-copyFile('src/theme-utils.js', 'theme-utils.js');
-copyFile('src/images/avatar.webp', 'images/avatar.webp');
+    // 替换所有占位符
+    let html = template
+        // SEO
+        .replace(/{{TITLE}}/g, config.title)
+        .replace(/{{DESCRIPTION}}/g, config.description)
+        .replace(/{{KEYWORDS}}/g, config.keywords.join(', '))
+        .replace(/{{OG_TITLE}}/g, config.ogTitle)
+        .replace(/{{OG_DESCRIPTION}}/g, config.ogDescription)
+        .replace(/{{OG_IMAGE}}/g, config.ogImage)
 
-console.log('✅ 构建成功！');
-console.log(`📄 生成了: ${path.join(distDir, 'index.html')}`);
-console.log(`📋 标题: ${config.title}`);
-console.log(`🔑 关键词: ${config.keywords.join(', ')}`);
+        // Profile
+        .replace(/{{NAME}}/g, config.name)
+        .replace(/{{AVATAR}}/g, config.avatar)
+        .replace(/{{TAGLINE_PREFIX}}/g, config.taglinePrefix)
+        .replace(/{{TAGLINE_TEXT}}/g, config.taglineText)
+        .replace(/{{TAGLINE_HIGHLIGHT}}/g, config.taglineHighlight)
+
+        // Terminal
+        .replace(/{{TERMINAL_TITLE}}/g, config.terminalTitle)
+        .replace(/{{IDENTITY}}/g, config.identity.join(' / '))
+        .replace(/{{INTERESTS}}/g, config.interests.join(' / '))
+
+        // Links
+        .replace(/{{LINKS}}/g, generateLinksHTML(config.links))
+        .replace(/{{SKELETON_LINKS}}/g, generateSkeletonLinksHTML(config.links))
+
+        // Notice
+        .replace(/{{NOTICE}}/g, generateNoticeHTML({
+            enabled: config.noticeEnabled,
+            type: config.noticeType,
+            icon: config.noticeIcon,
+            text: config.noticeText
+        }))
+        .replace(/{{SKELETON_NOTICE}}/g, generateSkeletonNoticeHTML({
+            enabled: config.noticeEnabled
+        }))
+
+        // RSS
+        .replace(/{{RSS}}/g, generateRSSHTML(rssArticles, config.rss))
+        .replace(/{{SKELETON_RSS}}/g, generateSkeletonRSSHTML(config.rss))
+
+        // Footer
+        .replace(/{{FOOTER_TEXT}}/g, config.footerText)
+        .replace(/{{FOOTER_LINK}}/g, config.footerLinkText)
+        .replace(/{{FOOTER_URL}}/g, config.footerLinkUrl)
+
+        // Analytics
+        .replace(/{{ANALYTICS}}/g, generateAnalyticsHTML(config));
+
+    // 清理并创建 dist 目录
+    cleanDist();
+
+    // 写入 HTML
+    fs.writeFileSync(path.join(distDir, 'index.html'), html, 'utf8');
+
+    // 复制静态资源
+    const copyFile = (srcFile, destFile) => {
+        const srcPath = path.join(rootDir, srcFile);
+        const destPath = path.join(distDir, destFile);
+        if (fs.existsSync(srcPath)) {
+            const destDir = path.dirname(destPath);
+            if (!fs.existsSync(destDir)) {
+                fs.mkdirSync(destDir, { recursive: true });
+            }
+            fs.copyFileSync(srcPath, destPath);
+            console.log('📋 复制: ' + destFile);
+        }
+    };
+
+    copyFile('src/app.js', 'app.js');
+    copyFile('src/style.css', 'style.css');
+    copyFile('src/config.js', 'config.js');
+    copyFile('src/theme-utils.js', 'theme-utils.js');
+    copyFile('src/images/avatar.webp', 'images/avatar.webp');
+
+    console.log('✅ 构建成功！');
+    console.log('📄 生成了: ' + path.join(distDir, 'index.html'));
+    console.log('📋 标题: ' + config.title);
+    console.log('🔑 关键词: ' + config.keywords.join(', '));
+    if (config.rss.enabled) {
+        console.log('📰 RSS 文章: ' + rssArticles.length + ' 篇');
+    }
+}
+
+// 执行构建
+build().catch(function(err) {
+    console.error('❌ 构建失败:', err);
+    process.exit(1);
+});
