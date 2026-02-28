@@ -249,6 +249,15 @@ function generateNoticeHTML(notice) {
                 </div>`;
 }
 
+// 生成骨架屏 Notice 占位 HTML
+function generateSkeletonNoticeHTML(notice) {
+    if (!notice.enabled) {
+        return '';
+    }
+
+    return `<div class="skeleton-notice skeleton"></div>`;
+}
+
 // 从 config.js 提取所有配置
 const config = {
     // SEO
@@ -337,6 +346,9 @@ let html = template
         type: config.noticeType,
         icon: config.noticeIcon,
         text: config.noticeText
+    }))
+    .replace(/{{SKELETON_NOTICE}}/g, generateSkeletonNoticeHTML({
+        enabled: config.noticeEnabled
     }))
 
     // Footer
