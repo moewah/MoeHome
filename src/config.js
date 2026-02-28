@@ -242,6 +242,21 @@ window.HOMEPAGE_CONFIG = {
     },
   },
 
+  // ========== GitHub 项目展示配置 ==========
+  projects: {
+    enabled: true, // 设置为 false 可禁用此模块
+    title: {
+      text: "我的项目",
+      icon: "fa-solid fa-folder-open",
+    },
+    // GitHub 用户主页地址，构建时自动获取公开仓库
+    githubUser: "https://github.com/yourusername", // 替换为你的 GitHub 主页
+    // 显示数量限制（按 star 数排序后取前 N 个）
+    count: 5,
+    // 排除的仓库名（可选，支持正则）
+    exclude: [".github"], // 排除 .github 仓库
+  },
+
   // ========== 统计代码配置 ==========
   analytics: {
     // Google Analytics - 填写 Measurement ID 启用

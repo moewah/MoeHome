@@ -541,6 +541,28 @@ function initInteractions() {
             linkElement.style.setProperty("--mouse-y", `${y}%`);
         });
     });
+
+    // 项目卡片鼠标位置跟踪（用于光晕效果）
+    document.querySelectorAll('.project-card').forEach(cardElement => {
+        cardElement.addEventListener("mousemove", (e) => {
+            const rect = cardElement.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            cardElement.style.setProperty("--mouse-x", `${x}%`);
+            cardElement.style.setProperty("--mouse-y", `${y}%`);
+        });
+    });
+
+    // RSS 文章卡片鼠标位置跟踪（用于光晕效果）
+    document.querySelectorAll('.rss-article').forEach(articleElement => {
+        articleElement.addEventListener("mousemove", (e) => {
+            const rect = articleElement.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            articleElement.style.setProperty("--mouse-x", `${x}%`);
+            articleElement.style.setProperty("--mouse-y", `${y}%`);
+        });
+    });
 }
 
 // ========== 页面加载完成后初始化 ==========

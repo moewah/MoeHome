@@ -100,11 +100,10 @@
                 <div class="skeleton-name skeleton"></div>
                 <div class="skeleton-tagline skeleton"></div>
                 <div class="skeleton-terminal skeleton"></div>
-                <div class="skeleton-links">
-                    {{SKELETON_LINKS}}
-                </div>
-                {{SKELETON_NOTICE}}
                 {{SKELETON_RSS}}
+                {{SKELETON_PROJECTS}}
+                {{SKELETON_LINKS_SECTION}}
+                {{SKELETON_NOTICE}}
                 <div class="skeleton-divider skeleton"></div>
                 <div class="skeleton-footer skeleton"></div>
             </div>
@@ -161,19 +160,13 @@
                     </div>
                 </div>
 
-                <!-- Divider -->
-                <div class="divider divider-compact lazy-load" data-delay="4"></div>
-
                 <!-- RSS Articles -->
                 {{RSS}}
 
-                <!-- Divider -->
-                <div class="divider divider-compact lazy-load" data-delay="4"></div>
+                <!-- Projects -->
+                {{PROJECTS}}
 
-                <!-- Links -->
-                <div class="links lazy-load" id="links-container" data-delay="4">
-                    {{LINKS}}
-                </div>
+                {{LINKS_SECTION}}
 
                 {{NOTICE}}
 

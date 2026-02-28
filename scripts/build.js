@@ -6,6 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const { getRSSArticles } = require('./rss-parser');
+const { fetchUserRepos, parseGitHubUser, formatNumber } = require('./github-fetcher');
 
 // 定义路径
 const rootDir = path.join(__dirname, '..');
@@ -296,12 +297,66 @@ function generateLinksHTML(links) {
     }).join('\n');
 }
 
+// 生成链接模块（含顶部分割线）
+function generateLinksSectionHTML(links) {
+    // 过滤掉未启用的链接
+    const enabledLinks = links.filter(link => link.enabled !== false);
+
+    // 如果没有启用的链接，返回空字符串（分割线也不显示）
+    if (enabledLinks.length === 0) {
+        return '';
+    }
+
+    const linksHTML = enabledLinks.map(link => {
+        const externalAttrs = link.external
+            ? 'target="_blank" rel="noopener"'
+            : '';
+
+        return `                    <a href="${link.url}" class="link" data-brand="${link.brand}" style="--brand-color: ${link.color}" ${externalAttrs}>
+                        <div class="link-left">
+                            <div class="link-icon-wrapper">
+                                <i class="${link.icon}"></i>
+                            </div>
+                            <div class="link-content">
+                                <span class="link-text">${link.name}</span>
+                                <span class="link-description">${link.description}</span>
+                            </div>
+                        </div>
+                        <span class="link-indicator"></span>
+                    </a>`;
+    }).join('\n');
+
+    return `<div class="divider divider-compact lazy-load" data-delay="4"></div>
+
+                <!-- Links -->
+                <div class="links lazy-load" id="links-container" data-delay="4">
+${linksHTML}
+                </div>`;
+}
+
 // 生成骨架屏链接占位 HTML
 function generateSkeletonLinksHTML(links) {
     const enabledLinks = links.filter(link => link.enabled !== false);
     const count = enabledLinks.length;
 
     return Array(count).fill(`<div class="skeleton-link skeleton"></div>`).join('\n                    ');
+}
+
+// 生成骨架屏链接模块（含顶部分割线）
+function generateSkeletonLinksSectionHTML(links) {
+    const enabledLinks = links.filter(link => link.enabled !== false);
+
+    // 如果没有启用的链接，返回空字符串
+    if (enabledLinks.length === 0) {
+        return '';
+    }
+
+    const skeletonLinks = Array(enabledLinks.length).fill(`<div class="skeleton-link skeleton"></div>`).join('\n                    ');
+
+    return `                <div class="skeleton-divider skeleton"></div>
+                <div class="skeleton-links">
+                    ${skeletonLinks}
+                </div>`;
 }
 
 // 生成 Notice HTML
@@ -336,9 +391,12 @@ function generateRSSHTML(articles, rssConfig) {
         return '';
     }
 
+    // RSS 模块前面带分割线
+    let result = '<div class="divider divider-compact lazy-load" data-delay="4"></div>\n';
+
     // 空文章列表时显示友好提示
     if (articles.length === 0) {
-        return '<div class="rss-section lazy-load" data-delay="4">\n' +
+        result += '<div class="rss-section lazy-load" data-delay="4">\n' +
             '                    <div class="rss-header">\n' +
             '                        <i class="' + rssConfig.titleIcon + '"></i>\n' +
             '                        <span class="rss-title">' + rssConfig.titleText + '</span>\n' +
@@ -347,6 +405,7 @@ function generateRSSHTML(articles, rssConfig) {
             '                        <span class="rss-empty-text">暂无最新文章</span>\n' +
             '                    </div>\n' +
             '                </div>';
+        return result;
     }
 
     const targetAttr = rssConfig.openInNewTab ? ' target="_blank" rel="noopener"' : '';
@@ -383,7 +442,8 @@ function generateRSSHTML(articles, rssConfig) {
             '                    </a>';
     }).join('\n');
 
-    return '<div class="rss-section lazy-load" data-delay="4">\n' +
+    return '<div class="divider divider-compact lazy-load" data-delay="4"></div>\n' +
+        '<div class="rss-section lazy-load" data-delay="4">\n' +
         '                    <div class="rss-header">\n' +
         '                        <i class="' + escapeHTML(rssConfig.titleIcon) + '"></i>\n' +
         '                        <span class="rss-title">' + escapeHTML(rssConfig.titleText) + '</span>\n' +
@@ -406,13 +466,152 @@ function generateSkeletonRSSHTML(rssConfig) {
         skeletonArticles.push('                    <div class="skeleton-rss-article skeleton"></div>');
     }
 
-    return '                <!-- RSS Articles Skeleton -->\n' +
+    return '<div class="skeleton-divider skeleton"></div>\n' +
+        '                <!-- RSS Articles Skeleton -->\n' +
         '                <div class="skeleton-rss-section">\n' +
             '                    <div class="skeleton-rss-header skeleton"></div>\n' +
             '                    <div class="skeleton-rss-articles">\n' +
                 skeletonArticles.join('\n') + '\n' +
             '                    </div>\n' +
         '                </div>';
+}
+
+// 提取 Projects 配置
+function extractProjectsConfig() {
+    const projectsMatch = configContent.match(/projects:\s*\{([\s\S]*?)\n\s*\},\s*\n\s*\/\/ =/);
+    if (!projectsMatch) {
+        return {
+            enabled: false,
+            titleText: '我的项目',
+            titleIcon: 'fa-solid fa-folder-open',
+            githubUser: '',
+            count: 4,
+            exclude: [],
+        };
+    }
+
+    const projectsContent = projectsMatch[1];
+
+    const enabledMatch = projectsContent.match(/enabled:\s*(true|false)/);
+
+    // 提取 title 配置
+    const titleMatch = projectsContent.match(/title:\s*\{([^}]+)\}/);
+    let titleText = '我的项目';
+    let titleIcon = 'fa-solid fa-folder-open';
+    if (titleMatch) {
+        const titleContent = titleMatch[1];
+        const textMatch = titleContent.match(/text:\s*['"`]([^'"`]+)['"`]/);
+        const iconMatch = titleContent.match(/icon:\s*['"`]([^'"`]+)['"`]/);
+        if (textMatch) titleText = textMatch[1].trim();
+        if (iconMatch) titleIcon = iconMatch[1].trim();
+    }
+
+    // 提取 GitHub 用户地址
+    const githubUserMatch = projectsContent.match(/githubUser:\s*['"`]([^'"`]+)['"`]/);
+    const githubUser = githubUserMatch ? githubUserMatch[1].trim() : '';
+
+    // 提取数量限制
+    const countMatch = projectsContent.match(/count:\s*(\d+)/);
+    const count = countMatch ? parseInt(countMatch[1], 10) : 4;
+
+    // 提取排除列表
+    const excludeMatch = projectsContent.match(/exclude:\s*\[([\s\S]*?)\]/);
+    let exclude = [];
+    if (excludeMatch) {
+        const excludeContent = excludeMatch[1];
+        const itemMatches = excludeContent.match(/['"`]([^'"`]+)['"`]/g);
+        if (itemMatches) {
+            exclude = itemMatches.map(m => m.replace(/['"`]/g, '').trim());
+        }
+    }
+
+    return {
+        enabled: enabledMatch ? enabledMatch[1] === 'true' : false,
+        titleText: titleText,
+        titleIcon: titleIcon,
+        githubUser: githubUser,
+        count: count,
+        exclude: exclude,
+    };
+}
+
+// 生成项目展示 HTML
+function generateProjectsHTML(repos, projectsConfig) {
+    if (!projectsConfig.enabled || repos.length === 0) {
+        return '';
+    }
+
+    // 瀑布流布局：为每个项目添加排名 class
+    const reposHTML = repos.map((repo, index) => {
+        const rank = index + 1;
+        const cardClass = `project-card project-rank-${rank}`;
+
+        // 格式化数字
+        const starsText = repo.stars >= 1000 ? formatNumber(repo.stars) : repo.stars.toString();
+        const forksText = repo.forks >= 1000 ? formatNumber(repo.forks) : repo.forks.toString();
+
+        return `                    <a href="${escapeHTML(repo.url)}" class="${cardClass}" target="_blank" rel="noopener">
+                        <div class="project-tab">
+                            <i class="fa-solid fa-file-code"></i>
+                            <span class="project-name">${escapeHTML(repo.name)}</span>
+                            <div class="project-stats">
+                                <span class="project-stat"><i class="fa-solid fa-star"></i> ${starsText}</span>
+                                <span class="project-stat"><i class="fa-solid fa-code-fork"></i> ${forksText}</span>
+                            </div>
+                        </div>
+                        <div class="project-body">
+                            <p class="project-description">${escapeHTML(repo.description)}</p>
+                        </div>
+                        <div class="project-footer">
+                            <span class="project-language">
+                                <span class="language-dot" style="background-color: ${repo.languageColor}"></span>
+                                ${escapeHTML(repo.language || 'Unknown')}
+                            </span>
+                            <i class="fa-solid fa-arrow-up-right-from-square project-arrow"></i>
+                        </div>
+                    </a>`;
+    }).join('\n');
+
+    // 如果项目数超过3个，添加 has-more class
+    const gridClass = repos.length > 3 ? 'projects-grid has-more' : 'projects-grid';
+
+    return `                <div class="divider divider-compact lazy-load" data-delay="4"></div>
+
+                <!-- Projects Section -->
+                <div class="projects-section lazy-load" data-delay="4">
+                    <div class="projects-header">
+                        <i class="${escapeHTML(projectsConfig.titleIcon)}"></i>
+                        <span class="projects-title">${escapeHTML(projectsConfig.titleText)}</span>
+                    </div>
+                    <div class="${gridClass}">
+${reposHTML}
+                    </div>
+                </div>`;
+}
+
+// 生成骨架屏项目占位 HTML
+function generateSkeletonProjectsHTML(projectsConfig) {
+    if (!projectsConfig.enabled || !projectsConfig.githubUser) {
+        return '';
+    }
+
+    const count = Math.min(projectsConfig.count || 4, 4);
+    const skeletonProjects = [];
+    for (let i = 0; i < count; i++) {
+        const rank = i + 1;
+        const skeletonClass = rank === 1 ? 'skeleton-project skeleton-project-rank-1 skeleton' : 'skeleton-project skeleton';
+        skeletonProjects.push(`                    <div class="${skeletonClass}"></div>`);
+    }
+
+    return `<div class="skeleton-divider skeleton"></div>
+
+                <!-- Projects Skeleton -->
+                <div class="skeleton-projects-section">
+                    <div class="skeleton-projects-header skeleton"></div>
+                    <div class="skeleton-projects-grid">
+${skeletonProjects.join('\n')}
+                    </div>
+                </div>`;
 }
 
 // HTML 转义函数
@@ -466,6 +665,9 @@ const config = {
     // RSS
     rss: extractRSSConfig(),
 
+    // Projects
+    projects: extractProjectsConfig(),
+
     // Analytics
     gaEnabled: extractAnalyticsValue('googleAnalytics', 'enabled') === 'true',
     gaId: extractAnalyticsValue('googleAnalytics', 'id'),
@@ -492,6 +694,19 @@ async function build() {
         rssArticles = await getRSSArticles(config.rss.url, config.rss.count);
     }
 
+    // 获取 GitHub 项目信息
+    let githubRepos = [];
+    if (config.projects.enabled && config.projects.githubUser) {
+        const username = parseGitHubUser(config.projects.githubUser);
+        if (username) {
+            githubRepos = await fetchUserRepos(
+                username,
+                config.projects.count,
+                config.projects.exclude
+            );
+        }
+    }
+
     // 替换所有占位符
     let html = template
         // SEO
@@ -515,8 +730,8 @@ async function build() {
         .replace(/{{INTERESTS}}/g, config.interests.join(' / '))
 
         // Links
-        .replace(/{{LINKS}}/g, generateLinksHTML(config.links))
-        .replace(/{{SKELETON_LINKS}}/g, generateSkeletonLinksHTML(config.links))
+        .replace(/{{LINKS_SECTION}}/g, generateLinksSectionHTML(config.links))
+        .replace(/{{SKELETON_LINKS_SECTION}}/g, generateSkeletonLinksSectionHTML(config.links))
 
         // Notice
         .replace(/{{NOTICE}}/g, generateNoticeHTML({
@@ -532,6 +747,10 @@ async function build() {
         // RSS
         .replace(/{{RSS}}/g, generateRSSHTML(rssArticles, config.rss))
         .replace(/{{SKELETON_RSS}}/g, generateSkeletonRSSHTML(config.rss))
+
+        // Projects
+        .replace(/{{PROJECTS}}/g, generateProjectsHTML(githubRepos, config.projects))
+        .replace(/{{SKELETON_PROJECTS}}/g, generateSkeletonProjectsHTML(config.projects))
 
         // Footer
         .replace(/{{FOOTER_TEXT}}/g, config.footerText)
@@ -573,6 +792,9 @@ async function build() {
     console.log('🔑 关键词: ' + config.keywords.join(', '));
     if (config.rss.enabled) {
         console.log('📰 RSS 文章: ' + rssArticles.length + ' 篇');
+    }
+    if (config.projects.enabled && githubRepos.length > 0) {
+        console.log('📦 GitHub 项目: ' + githubRepos.length + ' 个');
     }
 }
 

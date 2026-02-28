@@ -145,6 +145,30 @@ rss: {
 
 设置 `enabled: false` 可完全隐藏文章列表模块。
 
+### GitHub 项目展示
+
+自动获取 GitHub 用户公开仓库，构建时静态注入，瀑布流布局：
+
+```javascript
+projects: {
+    enabled: true,                              // 启用/禁用
+    githubUser: 'https://github.com/moewah',   // GitHub 用户主页
+    count: 5,                                   // 显示数量（按 star 排序）
+    exclude: ['.github', 'moewah'],            // 排除的仓库名
+    title: {
+        text: '我的项目',                       // 区块标题
+        icon: 'fa-solid fa-folder-open'        // 标题图标
+    }
+}
+```
+
+**布局规则**：
+- 第 1 名：大卡片，跨 2 行高度
+- 第 2-3 名：中卡片
+- 第 4 名及之后：小卡片
+
+设置 `enabled: false` 可完全隐藏项目模块。
+
 ### 统计代码
 
 支持多种统计工具配置，构建时注入到 HTML `<head>` 中：

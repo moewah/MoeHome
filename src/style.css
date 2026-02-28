@@ -1041,6 +1041,274 @@ body {
     border-radius: 10px;
 }
 
+/* ========== Projects Section ========== */
+.projects-section {
+    width: 100%;
+    margin: 0;
+    opacity: 0;
+    animation: fadeIn 1s ease 1s forwards;
+}
+
+.projects-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 0 4px;
+}
+
+.projects-header i {
+    color: var(--accent);
+    font-size: 1rem;
+}
+
+.projects-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+}
+
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+/* 项目卡片 - 代码窗口风格 */
+.project-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.project-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+        circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(0, 255, 159, 0.06),
+        transparent 60%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.project-card:hover::before {
+    opacity: 1;
+}
+
+.project-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow:
+        0 8px 24px -8px rgba(0, 255, 159, 0.15),
+        0 0 0 1px rgba(0, 255, 159, 0.05);
+}
+
+/* ========== 瀑布流布局 ========== */
+/* 桌面端瀑布流布局 */
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto auto;
+    gap: 12px;
+}
+
+/* 第1名 - 大卡片（左上，跨2行） */
+.project-rank-1 {
+    grid-row: span 2;
+}
+
+/* 第2、3名 - 中卡片（右上区域） */
+.project-rank-2,
+.project-rank-3 {
+    /* 默认大小 */
+}
+
+/* 第4、5名及之后 - 小卡片（底部平铺） */
+.projects-grid.has-more {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.project-rank-4,
+.project-rank-5 {
+    /* 默认大小 */
+}
+
+/* 大卡片样式增强 */
+.project-rank-1 .project-tab {
+    padding: 12px 16px;
+}
+
+.project-rank-1 .project-name {
+    font-size: 1rem;
+}
+
+.project-rank-1 .project-body {
+    padding: 18px;
+    flex: 1;
+}
+
+.project-rank-1 .project-description {
+    -webkit-line-clamp: 4;
+    font-size: 0.85rem;
+}
+
+.project-rank-1 .project-footer {
+    padding: 12px 16px;
+}
+
+/* 编辑器标签头 */
+.project-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+}
+
+.project-tab i {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.project-name {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.project-stats {
+    display: flex;
+    gap: 10px;
+}
+
+.project-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.project-stat i {
+    font-size: 0.7rem;
+    color: var(--accent);
+}
+
+/* 项目主体 */
+.project-body {
+    padding: 14px;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.project-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+/* 项目底部 - 语言色条 */
+.project-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+}
+
+.project-language {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+}
+
+.language-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.project-arrow {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: all 0.25s ease;
+}
+
+.project-card:hover .project-arrow {
+    color: var(--accent);
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Projects Skeleton */
+.skeleton-projects-section {
+    width: 100%;
+    margin: 20px 0;
+}
+
+.skeleton-projects-header {
+    width: 100px;
+    height: 20px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+}
+
+.skeleton-projects-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.skeleton-project {
+    height: 140px;
+    border-radius: 10px;
+}
+
+.skeleton-project-rank-1 {
+    grid-row: span 2;
+    height: auto;
+    min-height: 292px;
+}
+
 /* ========== Footer ========== */
 .footer {
     margin-top: 40px;
@@ -1068,7 +1336,7 @@ body {
     }
 
     .links {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
         gap: 12px;
         max-width: 100%;
     }
@@ -1121,6 +1389,30 @@ body {
     .skeleton-rss-article {
         height: 80px;
     }
+
+    /* Projects responsive */
+    .projects-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto;
+    }
+
+    .project-rank-1 {
+        grid-row: span 1;
+    }
+
+    .project-card {
+        min-height: auto;
+    }
+
+    .skeleton-projects-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .skeleton-project,
+    .skeleton-project-rank-1 {
+        height: 120px;
+        min-height: auto;
+    }
 }
 
 /* 平板 - 保持单列，与终端一致 */
@@ -1137,6 +1429,16 @@ body {
 
     .rss-articles {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Projects 平板端瀑布流布局 */
+    .projects-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: auto auto;
+    }
+
+    .project-rank-1 {
+        grid-row: span 2;
     }
 }
 
@@ -1166,12 +1468,17 @@ body {
         width: 100%;
     }
 
-    /* RSS 桌面端 2列布局 */
-    .rss-articles {
+    /* Projects 桌面端瀑布流布局 */
+    .projects-grid {
         grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: auto auto;
     }
 
-    .rss-section {
+    .project-rank-1 {
+        grid-row: span 2;
+    }
+
+    .projects-section {
         width: 100%;
     }
 
