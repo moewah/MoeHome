@@ -961,7 +961,32 @@ body {
     color: var(--bg-primary);
 }
 
+/* ========== Screen Reader Only ========== */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 /* ========== Skeleton Screen ========== */
+/* 骨架屏容器过渡效果 */
+.skeleton-container {
+    transition: opacity 0.3s ease;
+}
+
+/* 骨架屏激活状态 - 隐藏交互元素 */
+body.skeleton-active .theme-switcher,
+body.skeleton-active .cursor {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
 .skeleton {
     background: linear-gradient(
         90deg,
@@ -971,6 +996,8 @@ body {
     );
     background-size: 200% 100%;
     animation: skeleton-loading 1.5s ease-in-out infinite;
+    will-change: background-position;
+    transform: translateZ(0);
 }
 
 @keyframes skeleton-loading {
@@ -990,15 +1017,15 @@ body {
 }
 
 .skeleton-name {
-    width: 200px;
-    height: 40px;
+    width: clamp(150px, 30vw, 250px);
+    height: clamp(32px, 5vw, 48px);
     border-radius: 8px;
     margin: 0 auto 20px;
 }
 
 .skeleton-tagline {
-    width: 240px;
-    height: 20px;
+    width: clamp(180px, 40vw, 300px);
+    height: clamp(16px, 2vw, 24px);
     border-radius: 6px;
     margin: 0 auto 40px;
 }
@@ -1006,7 +1033,7 @@ body {
 .skeleton-terminal {
     width: 100%;
     max-width: 600px;
-    height: 140px;
+    min-height: 140px;
     border-radius: 12px;
     margin: 0 auto 40px;
 }
@@ -1032,25 +1059,31 @@ body {
 }
 
 .skeleton-notice {
-    height: 50px;
+    min-height: 50px;
     border-radius: 10px;
     margin: 32px 0;
 }
 
 .skeleton-footer {
-    width: 200px;
+    width: clamp(150px, 25vw, 220px);
     height: 16px;
     border-radius: 6px;
     margin: 20px auto;
 }
 
-/* Content hidden state during skeleton */
-.content-hidden {
-    opacity: 0;
+/* Content hidden state during skeleton - 多重保障 */
+/* 初始隐藏状态 - 使用 !important 确保优先级最高 */
+.content-initial-hidden {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
 }
 
+/* 可见状态 - 使用 !important 覆盖初始隐藏 */
 .content-visible {
-    opacity: 1;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
     transition: opacity 0.3s ease;
 }
 

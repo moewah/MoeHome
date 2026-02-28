@@ -37,6 +37,16 @@
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
         />
 
+        <!-- Critical CSS for skeleton screen (inline to prevent FOUC) -->
+        <style>
+            /* 实际内容初始隐藏 - 使用类选择器，方便后续覆盖 */
+            .content-initial-hidden {
+                opacity: 0 !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
+        </style>
+
         <!-- Stylesheet -->
         <link rel="stylesheet" href="style.css" />
 
@@ -84,7 +94,8 @@
         <!-- Main content -->
         <div class="container">
             <!-- Skeleton Screen -->
-            <div class="profile skeleton-container" id="skeleton-screen">
+            <div class="profile skeleton-container" id="skeleton-screen" role="status" aria-label="内容加载中" aria-live="polite">
+                <span class="sr-only">正在加载页面内容，请稍候...</span>
                 <div class="skeleton-avatar skeleton"></div>
                 <div class="skeleton-name skeleton"></div>
                 <div class="skeleton-tagline skeleton"></div>
@@ -97,8 +108,8 @@
                 <div class="skeleton-footer skeleton"></div>
             </div>
 
-            <!-- Actual Content (hidden initially) -->
-            <div class="profile content-hidden" id="actual-content">
+            <!-- Actual Content (hidden initially via class for FOUC prevention) -->
+            <div class="profile content-initial-hidden" id="actual-content" aria-busy="true">
                 <!-- Avatar -->
                 <div class="avatar-wrapper lazy-load">
                     <div class="avatar image-placeholder" id="avatar-placeholder">

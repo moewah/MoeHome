@@ -22,14 +22,27 @@ function initPage() {
 
 // ========== 骨架屏和懒加载初始化 ==========
 function initSkeletonAndLazyLoad() {
-    // 等待页面资源加载
+    // 添加骨架屏激活状态（隐藏交互元素）
+    document.body.classList.add('skeleton-active');
+
+    // 骨架屏最小显示时间（毫秒），避免闪烁
+    const MIN_SKELETON_TIME = 500;
+    const startTime = performance.now();
+
+    // 等待页面资源加载完成
     window.addEventListener('load', () => {
-        // 隐藏骨架屏，显示实际内容
-        hideSkeleton();
-        
+        // 计算已过时间，确保骨架屏至少显示 MIN_SKELETON_TIME
+        const elapsed = performance.now() - startTime;
+        const remainingTime = Math.max(0, MIN_SKELETON_TIME - elapsed);
+
+        // 延迟隐藏骨架屏，确保用户能看到加载动画
+        setTimeout(() => {
+            hideSkeleton();
+        }, remainingTime);
+
         // 初始化懒加载动画
         initLazyLoad();
-        
+
         // 初始化渐进式图片加载
         initProgressiveImage();
     });
@@ -39,15 +52,29 @@ function initSkeletonAndLazyLoad() {
 function hideSkeleton() {
     const skeleton = document.getElementById('skeleton-screen');
     const actualContent = document.getElementById('actual-content');
-    
+
+    // 隐藏骨架屏
     if (skeleton) {
-        skeleton.style.display = 'none';
+        skeleton.style.opacity = '0';
+        skeleton.style.visibility = 'hidden';
+        // 延迟移除DOM，等待过渡完成
+        setTimeout(() => {
+            skeleton.style.display = 'none';
+        }, 300);
     }
-    
+
+    // 显示实际内容
     if (actualContent) {
-        actualContent.classList.remove('content-hidden');
+        // 移除初始隐藏类
+        actualContent.classList.remove('content-initial-hidden');
+        // 添加可见类（用于过渡动画）
         actualContent.classList.add('content-visible');
+        // 更新 ARIA 状态
+        actualContent.setAttribute('aria-busy', 'false');
     }
+
+    // 移除骨架屏激活状态（恢复交互元素）
+    document.body.classList.remove('skeleton-active');
 }
 
 // ========== 懒加载动画（Intersection Observer） ==========
