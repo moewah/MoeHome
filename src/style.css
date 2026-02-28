@@ -202,6 +202,8 @@ body {
         transparent 70%
     );
     animation: shine 3s infinite;
+    z-index: 2;
+    pointer-events: none;
 }
 
 @keyframes shine {
