@@ -63,7 +63,7 @@ links: [
     {
         name: 'Blog',
         description: '技术文章 & 教程',
-        url: 'https://blog.moewah.com/',
+        url: 'https://yourblog.com',
         icon: 'fa-solid fa-pen-nib',
         brand: 'blog',
         external: true,
@@ -113,9 +113,10 @@ quotes: [
 footer: {
     text: 'Powered by',
     link: {
-        text: '喵斯基部落',
-        url: 'https://blog.moewah.com/'
+        text: 'Your Name',
+        url: 'https://yourblog.com/'
     }
+}
 }
 ```
 
@@ -126,7 +127,7 @@ footer: {
 ```javascript
 rss: {
     enabled: true,                              // 启用/禁用
-    url: 'https://blog.moewah.com/rss.xml',    // RSS 源地址
+    url: 'https://yourblog.com/rss.xml',       // RSS 源地址
     count: 4,                                   // 显示文章数量
     openInNewTab: true,                         // 新标签页打开
     title: {
@@ -143,29 +144,37 @@ rss: {
 
 设置 `enabled: false` 可完全隐藏文章列表模块。
 
-### GitHub 项目展示
+### GitHub 模块
 
-自动获取 GitHub 用户公开仓库，构建时静态注入，瀑布流布局：
+项目展示和贡献图共用 GitHub 用户配置：
 
 ```javascript
+// GitHub 用户配置
 projects: {
-    enabled: true,                              // 启用/禁用
-    githubUser: 'https://github.com/moewah',   // GitHub 用户主页
-    count: 5,                                   // 显示数量（按 star 排序）
-    exclude: ['.github', 'moewah'],            // 排除的仓库名
-    title: {
-        text: '我的项目',                       // 区块标题
-        icon: 'fa-solid fa-folder-open'        // 标题图标
-    }
+    enabled: true,
+    githubUser: 'https://github.com/yourusername',   // GitHub 用户主页
+    count: 5,                                   // 显示项目数量（按 star 排序）
+    exclude: ['.github'],                      // 排除的仓库名（支持正则）
+}
+
+// 贡献图配置
+contribution: {
+    enabled: true,           // 是否启用贡献图
+    useRealData: true,       // true=真实数据, false=随机数据
+    githubUser: '',          // 留空则自动使用 projects.githubUser
 }
 ```
 
-**布局规则**：
-- 第 1 名：大卡片，跨 2 行高度
-- 第 2-3 名：中卡片
-- 第 4 名及之后：小卡片
+| 配置 | 说明 |
+|------|------|
+| `projects.githubUser` | GitHub 用户主页地址 |
+| `projects.count` | 显示项目数量（按 star 降序） |
+| `projects.exclude` | 排除的仓库名（支持正则匹配） |
+| `contribution.useRealData` | `true`=API 获取真实数据，`false`=随机数据 |
 
-设置 `enabled: false` 可完全隐藏项目模块。
+**数据获取方式**：
+- 项目列表：GitHub API `/users/{username}/repos`
+- 贡献图：GitHub Events API `/users/{username}/events/public`
 
 ### 统计代码
 
@@ -205,16 +214,22 @@ analytics: {
 ```
 MoeHome/
 ├── src/
-│   ├── app.js           # 页面交互逻辑
-│   ├── config.js        # 配置文件
-│   ├── style.css        # 样式文件
-│   └── images/          # 图片资源
-│       └── avatar.webp
+│   ├── app.js              # 页面交互逻辑
+│   ├── config.js           # 配置文件
+│   ├── style.css           # 样式文件
+│   ├── theme-utils.js      # 主题工具函数
+│   └── images/             # 图片资源
+│       ├── avatar.webp     # 默认头像
+│       ├── screenshot-full.png  # 预览截图
+│       └── wechat.png      # 微信赞赏码
 ├── scripts/
-│   └── build.js         # 构建脚本
+│   ├── build.js            # 构建脚本
+│   ├── contribution-fetcher.js  # GitHub 贡献数据获取
+│   ├── github-fetcher.js   # GitHub 项目数据获取
+│   └── rss-parser.js       # RSS 解析器
 ├── templates/
-│   └── index.template.html
-├── dist/                # 构建输出（部署用）
+│   └── index.template.html # HTML 模板
+├── dist/                   # 构建输出（部署用）
 ├── package.json
 └── README.md
 ```
