@@ -56,6 +56,26 @@ profile: {
 }
 ```
 
+### 链接模块配置
+
+控制链接导航模块的整体开关和标题显示：
+
+```javascript
+linksConfig: {
+    enabled: true,    // 改成 false 禁用整个链接导航模块
+    title: {
+        text: '链接导航',
+        icon: 'fa-solid fa-link',
+    },
+},
+```
+
+| 配置 | 说明 |
+|------|------|
+| `enabled` | 模块开关，`false` 时隐藏菜单导航中的 Links 和页面链接模块 |
+| `title.text` | 标题文字 |
+| `title.icon` | 标题图标（Font Awesome） |
+
 ### 社交链接
 
 ```javascript

@@ -71,10 +71,10 @@ function extractLinks() {
 
     const linksContent = linksMatch[1];
     const links = [];
-    
+
     // 匹配每个链接对象
     const linkPattern = /\{[\s\S]*?name:\s*['"`]([^'"`]+)['"`][\s\S]*?description:\s*['"`]([^'"`]+)['"`][\s\S]*?url:\s*['"`]([^'"`]+)['"`][\s\S]*?icon:\s*['"`]([^'"`]+)['"`][\s\S]*?brand:\s*['"`]([^'"`]+)['"`][\s\S]*?external:\s*(true|false)([\s\S]*?)\}/g;
-    
+
     let match;
     while ((match = linkPattern.exec(linksContent)) !== null) {
         // 提取 color 字段
@@ -83,14 +83,14 @@ function extractLinks() {
         if (colorMatch) {
             color = colorMatch[1].trim();
         }
-        
+
         // 提取 enabled 字段
         let enabled = true;
         const enabledMatch = match[7].match(/enabled:\s*(true|false)/);
         if (enabledMatch) {
             enabled = enabledMatch[1] === 'true';
         }
-        
+
         links.push({
             name: match[1].trim(),
             description: match[2].trim(),
@@ -102,8 +102,32 @@ function extractLinks() {
             enabled: enabled
         });
     }
-    
+
     return links;
+}
+
+// 提取 LinksConfig 配置
+function extractLinksConfig() {
+    const configMatch = configContent.match(/linksConfig:\s*\{([\s\S]*?)\n\s*\},?\s*\n\s*\/\/ =/);
+    if (!configMatch) {
+        return {
+            enabled: true,
+            titleText: '链接导航',
+            titleIcon: 'fa-solid fa-link',
+        };
+    }
+
+    const configStr = configMatch[1];
+
+    const enabledMatch = configStr.match(/enabled:\s*(true|false)/);
+    const titleTextMatch = configStr.match(/text:\s*['"`]([^'"`]+)['"`]/);
+    const titleIconMatch = configStr.match(/icon:\s*['"`]([^'"`]+)['"`]/);
+
+    return {
+        enabled: enabledMatch ? enabledMatch[1] === 'true' : true,
+        titleText: titleTextMatch ? titleTextMatch[1].trim() : '链接导航',
+        titleIcon: titleIconMatch ? titleIconMatch[1].trim() : 'fa-solid fa-link',
+    };
 }
 
 // 提取 analytics 子配置值
@@ -298,8 +322,13 @@ function generateLinksHTML(links) {
     }).join('\n');
 }
 
-// 生成链接模块（含顶部分割线）
-function generateLinksSectionHTML(links) {
+// 生成链接模块（含顶部分割线和标题）
+function generateLinksSectionHTML(links, linksConfig) {
+    // 模块开关检查
+    if (!linksConfig.enabled) {
+        return '';
+    }
+
     // 过滤掉未启用的链接
     const enabledLinks = links.filter(link => link.enabled !== false);
 
@@ -329,9 +358,15 @@ function generateLinksSectionHTML(links) {
 
     return `<div class="divider divider-compact lazy-load" data-delay="4"></div>
 
-                <!-- Links -->
-                <div class="links lazy-load" id="links-container" data-delay="4">
+                <!-- Links Section -->
+                <div class="links-section lazy-load" id="links-container" data-delay="4">
+                    <div class="links-header">
+                        <i class="${escapeHTML(linksConfig.titleIcon)}"></i>
+                        <span class="links-title">${escapeHTML(linksConfig.titleText)}</span>
+                    </div>
+                    <div class="links">
 ${linksHTML}
+                    </div>
                 </div>`;
 }
 
@@ -343,8 +378,13 @@ function generateSkeletonLinksHTML(links) {
     return Array(count).fill(`<div class="skeleton-link skeleton"></div>`).join('\n                    ');
 }
 
-// 生成骨架屏链接模块（含顶部分割线）
-function generateSkeletonLinksSectionHTML(links) {
+// 生成骨架屏链接模块（含顶部分割线和标题）
+function generateSkeletonLinksSectionHTML(links, linksConfig) {
+    // 模块开关检查
+    if (!linksConfig.enabled) {
+        return '';
+    }
+
     const enabledLinks = links.filter(link => link.enabled !== false);
 
     // 如果没有启用的链接，返回空字符串
@@ -355,8 +395,11 @@ function generateSkeletonLinksSectionHTML(links) {
     const skeletonLinks = Array(enabledLinks.length).fill(`<div class="skeleton-link skeleton"></div>`).join('\n                    ');
 
     return `                <div class="skeleton-divider skeleton"></div>
-                <div class="skeleton-links">
+                <div class="skeleton-links-section">
+                    <div class="skeleton-links-header skeleton"></div>
+                    <div class="skeleton-links">
                     ${skeletonLinks}
+                    </div>
                 </div>`;
 }
 
@@ -397,7 +440,7 @@ function generateRSSHTML(articles, rssConfig) {
 
     // 空文章列表时显示友好提示
     if (articles.length === 0) {
-        result += '<div class="rss-section lazy-load" data-delay="4">\n' +
+        result += '<div class="rss-section lazy-load" id="rss-section" data-delay="4">\n' +
             '                    <div class="rss-header">\n' +
             '                        <i class="' + rssConfig.titleIcon + '"></i>\n' +
             '                        <span class="rss-title">' + rssConfig.titleText + '</span>\n' +
@@ -444,7 +487,7 @@ function generateRSSHTML(articles, rssConfig) {
     }).join('\n');
 
     return '<div class="divider divider-compact lazy-load" data-delay="4"></div>\n' +
-        '<div class="rss-section lazy-load" data-delay="4">\n' +
+        '<div class="rss-section lazy-load" id="rss-section" data-delay="4">\n' +
         '                    <div class="rss-header">\n' +
         '                        <i class="' + escapeHTML(rssConfig.titleIcon) + '"></i>\n' +
         '                        <span class="rss-title">' + escapeHTML(rssConfig.titleText) + '</span>\n' +
@@ -610,6 +653,7 @@ function extractNavConfig() {
         const menusContent = navContent.substring(startIndex, endIndex);
 
         // 使用更精确的方式解析每个菜单对象
+        // 找到所有顶层菜单对象的开始位置
         let menuDepth = 0;
         let currentMenuStart = -1;
         const menuBlocks = [];
@@ -864,7 +908,7 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
     return `                <div class="divider divider-compact lazy-load" data-delay="4"></div>
 
                 <!-- Projects Section - Dashboard Style -->
-                <div class="projects-section lazy-load" data-delay="4">
+                <div class="projects-section lazy-load" id="projects-section" data-delay="4">
                     <div class="projects-header">
                         <i class="${escapeHTML(projectsConfig.titleIcon)}"></i>
                         <span class="projects-title">${escapeHTML(projectsConfig.titleText)}</span>
@@ -955,6 +999,7 @@ const config = {
 
     // Links
     links: extractLinks(),
+    linksConfig: extractLinksConfig(),
 
     // Footer
     footerText: extractNestedString(/footer:\s*\{([\s\S]*?)\}/, 'text', 'Powered by'),
@@ -1064,8 +1109,8 @@ async function build() {
         .replace(/{{INTERESTS}}/g, config.interests.join(' / '))
 
         // Links
-        .replace(/{{LINKS_SECTION}}/g, generateLinksSectionHTML(config.links))
-        .replace(/{{SKELETON_LINKS_SECTION}}/g, generateSkeletonLinksSectionHTML(config.links))
+        .replace(/{{LINKS_SECTION}}/g, generateLinksSectionHTML(config.links, config.linksConfig))
+        .replace(/{{SKELETON_LINKS_SECTION}}/g, generateSkeletonLinksSectionHTML(config.links, config.linksConfig))
 
         // Notice
         .replace(/{{NOTICE}}/g, generateNoticeHTML({
@@ -1086,18 +1131,20 @@ async function build() {
         .replace(/{{PROJECTS}}/g, generateProjectsHTML(githubRepos, config.projects, contributionData, config.contribution))
         .replace(/{{SKELETON_PROJECTS}}/g, generateSkeletonProjectsHTML(config.projects))
 
-        // Nav
-        .replace(/{{NAV_POSTS_LINK}}/g, generateNavLinksHTML(config.rss, config.projects))
-        .replace(/{{NAV_PROJECTS_LINK}}/g, '')
-        .replace(/{{NAV_CUSTOM_MENUS}}/g, generateCustomMenusHTML(config.nav.menus))
-        .replace(/{{NAV_POSTS_LINK_MOBILE}}/g, generateNavLinksMobileHTML(config.rss, config.projects))
-        .replace(/{{NAV_PROJECTS_LINK_MOBILE}}/g, '')
-        .replace(/{{NAV_CUSTOM_MENUS_MOBILE}}/g, generateCustomMenusMobileHTML(config.nav.menus))
-
         // Footer
         .replace(/{{FOOTER_TEXT}}/g, config.footerText)
         .replace(/{{FOOTER_LINK}}/g, config.footerLinkText)
         .replace(/{{FOOTER_URL}}/g, config.footerLinkUrl)
+
+        // Nav Links
+        .replace(/{{NAV_POSTS_LINK}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-link" data-section="rss-section">Posts</a>' : '')
+        .replace(/{{NAV_PROJECTS_LINK}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-link" data-section="projects-section">Projects</a>' : '')
+        .replace(/{{NAV_LINKS_LINK}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-link" data-section="links-container">Links</a>' : '')
+        .replace(/{{NAV_POSTS_LINK_MOBILE}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-sidebar-link" data-section="rss-section">Posts</a>' : '')
+        .replace(/{{NAV_PROJECTS_LINK_MOBILE}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-sidebar-link" data-section="projects-section">Projects</a>' : '')
+        .replace(/{{NAV_LINKS_LINK_MOBILE}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-sidebar-link" data-section="links-container">Links</a>' : '')
+        .replace(/{{NAV_CUSTOM_MENUS}}/g, generateCustomMenusHTML(config.nav?.menus))
+        .replace(/{{NAV_CUSTOM_MENUS_MOBILE}}/g, generateCustomMenusMobileHTML(config.nav?.menus))
 
         // Analytics
         .replace(/{{ANALYTICS}}/g, generateAnalyticsHTML(config));

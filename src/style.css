@@ -1122,13 +1122,37 @@ body {
 }
 
 /* ========== Links ========== */
+.links-section {
+    width: 100%;
+    max-width: 600px;
+}
+
+.links-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 0 4px;
+}
+
+.links-header i {
+    color: var(--accent);
+    font-size: 1rem;
+}
+
+.links-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+}
+
 .links {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 14px;
     width: 100%;
     max-width: 600px;
-    margin-top: 40px;
     opacity: 0;
     animation: fadeIn 1s ease 0.5s forwards;
 }
@@ -2494,13 +2518,24 @@ body.skeleton-active .cursor {
     margin: 0 auto 40px;
 }
 
+.skeleton-links-section {
+    width: 100%;
+    max-width: 600px;
+}
+
+.skeleton-links-header {
+    width: 100px;
+    height: 20px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+}
+
 .skeleton-links {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 14px;
     width: 100%;
     max-width: 600px;
-    margin-top: 40px;
 }
 
 .skeleton-link {

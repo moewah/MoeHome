@@ -88,6 +88,15 @@ window.HOMEPAGE_CONFIG = {
     "You have to compete within your own area of competence.",
   ],
 
+  // ========== 链接模块配置 ==========
+  linksConfig: {
+    enabled: true, // 改成 false 禁用整个链接导航模块
+    title: {
+      text: '链接导航',
+      icon: 'fa-solid fa-link',
+    },
+  },
+
   // ========== 链接配置 ==========
   links: [
     {
