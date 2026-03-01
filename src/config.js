@@ -304,7 +304,7 @@ window.HOMEPAGE_CONFIG = {
     },
     // Umami - 完整脚本标签，留空则不启用
     // 示例: '<script defer src="https://umami.example.com/script.js" data-website-id="xxx"></script>'
-    umami: "",
+    umami: '',
     // 自定义脚本 - 支持任意第三方统计代码
     // 留空数组则不启用
     customScripts: [],
