@@ -7,6 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { getRSSArticles } = require('./rss-parser');
 const { fetchUserRepos, parseGitHubUser, formatNumber } = require('./github-fetcher');
+const { fetchUserContributions } = require('./contribution-fetcher');
 
 // 定义路径
 const rootDir = path.join(__dirname, '..');
@@ -535,81 +536,159 @@ function extractProjectsConfig() {
     };
 }
 
-// 生成项目展示 HTML
-function generateProjectsHTML(repos, projectsConfig) {
+// 提取 Contribution 配置
+function extractContributionConfig() {
+    const contribMatch = configContent.match(/contribution:\s*\{([\s\S]*?)\n\s*\}/);
+    if (!contribMatch) {
+        return {
+            enabled: true,
+            useRealData: true,
+            githubUser: '',
+        };
+    }
+
+    const contribContent = contribMatch[1];
+
+    const enabledMatch = contribContent.match(/enabled:\s*(true|false)/);
+    const useRealDataMatch = contribContent.match(/useRealData:\s*(true|false)/);
+    const githubUserMatch = contribContent.match(/githubUser:\s*['"`]([^'"`]+)['"`]/);
+
+    return {
+        enabled: enabledMatch ? enabledMatch[1] === 'true' : true,
+        useRealData: useRealDataMatch ? useRealDataMatch[1] === 'true' : true,
+        githubUser: githubUserMatch ? githubUserMatch[1].trim() : '',
+    };
+}
+
+// 生成项目展示 HTML（仪表盘式布局）
+function generateProjectsHTML(repos, projectsConfig, contributionData, contributionConfig) {
     if (!projectsConfig.enabled || repos.length === 0) {
         return '';
     }
 
-    // 瀑布流布局：为每个项目添加排名 class
-    const reposHTML = repos.map((repo, index) => {
-        const rank = index + 1;
-        const cardClass = `project-card project-rank-${rank}`;
+    // 生成贡献图格子
+    let contributionCells = '';
+    
+    if (contributionConfig && contributionConfig.enabled) {
+        const levels = contributionData?.levels || [];
+        for (let i = 0; i < 78; i++) {
+            const level = levels[i] ?? 0;
+            contributionCells += `<div class="contribution-cell" data-level="${level}"></div>`;
+        }
+    } else {
+        // 禁用时显示空格子
+        for (let i = 0; i < 78; i++) {
+            contributionCells += `<div class="contribution-cell" data-level="0"></div>`;
+        }
+    }
 
-        // 格式化数字
-        const starsText = repo.stars >= 1000 ? formatNumber(repo.stars) : repo.stars.toString();
-        const forksText = repo.forks >= 1000 ? formatNumber(repo.forks) : repo.forks.toString();
+    // 第一个项目：大卡片（保留编辑器标签页风格）
+    const mainRepo = repos[0];
+    const mainStarsText = mainRepo.stars >= 1000 ? formatNumber(mainRepo.stars) : mainRepo.stars.toString();
+    const mainForksText = mainRepo.forks >= 1000 ? formatNumber(mainRepo.forks) : mainRepo.forks.toString();
 
-        return `                    <a href="${escapeHTML(repo.url)}" class="${cardClass}" target="_blank" rel="noopener">
+    // 计算进度条宽度（基于star数的相对比例，最小为10%）
+    const maxStars = Math.max(...repos.map(r => r.stars), 1); // 确保最小值为1避免除零
+    const progressWidth = Math.max(Math.min((mainRepo.stars / maxStars) * 100, 100), 10);
+
+    const mainCardHTML = `                    <a href="${escapeHTML(mainRepo.url)}" class="project-card project-card-main" target="_blank" rel="noopener">
                         <div class="project-tab">
                             <i class="fa-solid fa-file-code"></i>
-                            <span class="project-name">${escapeHTML(repo.name)}</span>
+                            <span class="project-name">${escapeHTML(mainRepo.name)}</span>
                             <div class="project-stats">
-                                <span class="project-stat"><i class="fa-solid fa-star"></i> ${starsText}</span>
-                                <span class="project-stat"><i class="fa-solid fa-code-fork"></i> ${forksText}</span>
+                                <span class="project-stat"><i class="fa-solid fa-star"></i> ${mainStarsText}</span>
+                                <span class="project-stat"><i class="fa-solid fa-code-fork"></i> ${mainForksText}</span>
                             </div>
                         </div>
                         <div class="project-body">
-                            <p class="project-description">${escapeHTML(repo.description)}</p>
+                            <p class="project-description">${escapeHTML(mainRepo.description)}</p>
+                            <div class="project-progress">
+                                <div class="project-progress-bar" style="width: ${progressWidth}%"></div>
+                            </div>
                         </div>
                         <div class="project-footer">
                             <span class="project-language">
-                                <span class="language-dot" style="background-color: ${repo.languageColor}"></span>
-                                ${escapeHTML(repo.language || 'Unknown')}
+                                <span class="language-dot" style="background-color: ${mainRepo.languageColor}"></span>
+                                ${escapeHTML(mainRepo.language || 'Unknown')}
                             </span>
                             <i class="fa-solid fa-arrow-up-right-from-square project-arrow"></i>
                         </div>
                     </a>`;
-    }).join('\n');
 
-    // 如果项目数超过3个，添加 has-more class
-    const gridClass = repos.length > 3 ? 'projects-grid has-more' : 'projects-grid';
+    // 其他项目：迷你卡片（编辑器标签页简化版）
+    const miniCardsHTML = repos.slice(1).map((repo) => {
+        const starsText = repo.stars >= 1000 ? formatNumber(repo.stars) : repo.stars.toString();
+        return `                    <a href="${escapeHTML(repo.url)}" class="project-card project-card-mini" target="_blank" rel="noopener">
+                        <div class="project-mini-header">
+                            <i class="fa-solid fa-file-code"></i>
+                            <span class="project-mini-stars"><i class="fa-solid fa-star"></i> ${starsText}</span>
+                        </div>
+                        <div class="project-mini-body">
+                            <span class="project-mini-name">${escapeHTML(repo.name)}</span>
+                        </div>
+                        <div class="project-mini-footer">
+                            <span class="project-language project-language-mini">
+                                <span class="language-dot language-dot-mini" style="background-color: ${repo.languageColor}"></span>
+                                ${escapeHTML(repo.language || 'Unknown')}
+                            </span>
+                        </div>
+                    </a>`;
+    }).join('\n');
 
     return `                <div class="divider divider-compact lazy-load" data-delay="4"></div>
 
-                <!-- Projects Section -->
+                <!-- Projects Section - Dashboard Style -->
                 <div class="projects-section lazy-load" data-delay="4">
                     <div class="projects-header">
                         <i class="${escapeHTML(projectsConfig.titleIcon)}"></i>
                         <span class="projects-title">${escapeHTML(projectsConfig.titleText)}</span>
+                        <span class="projects-count">${repos.length} repos</span>
                     </div>
-                    <div class="${gridClass}">
-${reposHTML}
+                    <!-- Contribution Graph -->
+                    <div class="contribution-graph" aria-hidden="true">
+                        ${contributionCells}
+                    </div>
+                    <!-- Projects Flow -->
+                    <div class="projects-flow">
+${mainCardHTML}
+${miniCardsHTML}
                     </div>
                 </div>`;
 }
 
-// 生成骨架屏项目占位 HTML
+// 生成骨架屏项目占位 HTML（仪表盘式布局）
 function generateSkeletonProjectsHTML(projectsConfig) {
     if (!projectsConfig.enabled || !projectsConfig.githubUser) {
         return '';
     }
 
     const count = Math.min(projectsConfig.count || 4, 4);
-    const skeletonProjects = [];
-    for (let i = 0; i < count; i++) {
-        const rank = i + 1;
-        const skeletonClass = rank === 1 ? 'skeleton-project skeleton-project-rank-1 skeleton' : 'skeleton-project skeleton';
-        skeletonProjects.push(`                    <div class="${skeletonClass}"></div>`);
+
+    // 贡献图骨架
+    let contributionCells = '';
+    for (let i = 0; i < 78; i++) {
+        contributionCells += '<div class="contribution-cell skeleton"></div>';
     }
+
+    // 主卡片骨架
+    const mainCardSkeleton = '<div class="skeleton-project-main skeleton"></div>';
+
+    // 迷你卡片骨架
+    const miniCardsSkeleton = Array(Math.max(0, count - 1))
+        .fill('<div class="skeleton-project-mini skeleton"></div>')
+        .join('\n                    ');
 
     return `<div class="skeleton-divider skeleton"></div>
 
                 <!-- Projects Skeleton -->
                 <div class="skeleton-projects-section">
                     <div class="skeleton-projects-header skeleton"></div>
-                    <div class="skeleton-projects-grid">
-${skeletonProjects.join('\n')}
+                    <div class="skeleton-contribution-graph">
+                        ${contributionCells}
+                    </div>
+                    <div class="skeleton-projects-flow">
+                        ${mainCardSkeleton}
+                        ${miniCardsSkeleton}
                     </div>
                 </div>`;
 }
@@ -668,6 +747,9 @@ const config = {
     // Projects
     projects: extractProjectsConfig(),
 
+    // Contribution
+    contribution: extractContributionConfig(),
+
     // Analytics
     gaEnabled: extractAnalyticsValue('googleAnalytics', 'enabled') === 'true',
     gaId: extractAnalyticsValue('googleAnalytics', 'id'),
@@ -694,8 +776,10 @@ async function build() {
         rssArticles = await getRSSArticles(config.rss.url, config.rss.count);
     }
 
-    // 获取 GitHub 项目信息
+    // 获取 GitHub 项目信息和贡献数据
     let githubRepos = [];
+    let contributionData = null;
+
     if (config.projects.enabled && config.projects.githubUser) {
         const username = parseGitHubUser(config.projects.githubUser);
         if (username) {
@@ -704,7 +788,28 @@ async function build() {
                 config.projects.count,
                 config.projects.exclude
             );
+            
+            // 获取贡献数据
+            if (config.contribution.enabled) {
+                const contribUser = config.contribution.githubUser 
+                    ? parseGitHubUser(config.contribution.githubUser) || username
+                    : username;
+                contributionData = await fetchUserContributions(contribUser, config.contribution.useRealData);
+            }
         }
+    }
+
+    // 如果 contribution 启用但 projects 未配置，单独获取贡献数据
+    if (config.contribution.enabled && !contributionData && config.contribution.githubUser) {
+        const contribUser = parseGitHubUser(config.contribution.githubUser);
+        if (contribUser) {
+            contributionData = await fetchUserContributions(contribUser, config.contribution.useRealData);
+        }
+    }
+
+    // 确保贡献数据始终有值
+    if (!contributionData) {
+        contributionData = await fetchUserContributions(null, false);
     }
 
     // 替换所有占位符
@@ -749,7 +854,7 @@ async function build() {
         .replace(/{{SKELETON_RSS}}/g, generateSkeletonRSSHTML(config.rss))
 
         // Projects
-        .replace(/{{PROJECTS}}/g, generateProjectsHTML(githubRepos, config.projects))
+        .replace(/{{PROJECTS}}/g, generateProjectsHTML(githubRepos, config.projects, contributionData, config.contribution))
         .replace(/{{SKELETON_PROJECTS}}/g, generateSkeletonProjectsHTML(config.projects))
 
         // Footer

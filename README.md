@@ -6,9 +6,7 @@
 
 ## 页面预览
 
-![终端打印动效](./src/images/screenshot-1.png)
-
-![页面效果](./src/images/screenshot-2.png)
+![终端打印动效](./src/images/screenshot-full.png)
 
 ## 特性
 

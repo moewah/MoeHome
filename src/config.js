@@ -257,6 +257,14 @@ window.HOMEPAGE_CONFIG = {
     exclude: [".github"], // 排除 .github 仓库
   },
 
+  // ========== GitHub 贡献图配置 ==========
+  contribution: {
+    enabled: true,           // 是否启用贡献图
+    useRealData: true,       // true=真实数据, false=随机数据
+    // GitHub 用户名（留空则从 projects.githubUser 自动提取）
+    githubUser: '',
+  },
+
   // ========== 统计代码配置 ==========
   analytics: {
     // Google Analytics - 填写 Measurement ID 启用

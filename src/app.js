@@ -7,9 +7,12 @@
 function initPage() {
     const config = window.HOMEPAGE_CONFIG;
 
+    // 初始化动态视口高度（解决移动端 100vh 问题）
+    initDynamicViewportHeight();
+
     // 初始化主题
     initTheme();
-    
+
     // 初始化骨架屏和懒加载
     initSkeletonAndLazyLoad();
 
@@ -18,6 +21,26 @@ function initPage() {
 
     // 初始化交互效果
     initInteractions();
+}
+
+// ========== 动态视口高度（解决移动端地址栏问题）==========
+function initDynamicViewportHeight() {
+    const setVH = () => {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    setVH();
+
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(setVH, 100);
+    });
+
+    window.addEventListener('orientationchange', () => {
+        setTimeout(setVH, 100);
+    });
 }
 
 // ========== 骨架屏和懒加载初始化 ==========
@@ -550,6 +573,16 @@ function initInteractions() {
             const y = ((e.clientY - rect.top) / rect.height) * 100;
             cardElement.style.setProperty("--mouse-x", `${x}%`);
             cardElement.style.setProperty("--mouse-y", `${y}%`);
+        });
+    });
+
+    // 贡献图格子悬停动效
+    document.querySelectorAll('.contribution-cell').forEach(cell => {
+        cell.addEventListener("mouseenter", () => {
+            cell.style.transform = "scale(1.2)";
+        });
+        cell.addEventListener("mouseleave", () => {
+            cell.style.transform = "scale(1)";
         });
     });
 

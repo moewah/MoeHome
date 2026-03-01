@@ -3,6 +3,7 @@
  * 个人主页样式文件
  */
 
+/* ========== CSS Variables ========== */
 :root {
     --bg-primary: #0a0a0a;
     --bg-secondary: #111111;
@@ -12,17 +13,23 @@
     --accent-dim: rgba(0, 255, 159, 0.1);
     --border: #222222;
     --grid-color: rgba(0, 255, 159, 0.03);
-    
-    --font-sans: "Noto Sans SC", "IBM Plex Mono", 
-        -apple-system, BlinkMacSystemFont, 
-        "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", 
+
+    --font-sans: "Noto Sans SC", "IBM Plex Mono",
+        -apple-system, BlinkMacSystemFont,
+        "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
         "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
-    --font-mono: "IBM Plex Mono", 
-        "SF Mono", "Monaco", "Inconsolata", "Fira Mono", 
+    --font-mono: "IBM Plex Mono",
+        "SF Mono", "Monaco", "Inconsolata", "Fira Mono",
         "Droid Sans Mono", "Source Code Pro", monospace;
+
+    /* 动态视口高度 - 解决移动端 100vh 问题 */
+    --vh: 1vh;
 }
 
-* {
+/* ========== Reset & Base ========== */
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -30,14 +37,24 @@
 
 html {
     scroll-behavior: smooth;
+    /* 关键：不设置 height，让内容自然决定 */
+    /* iOS Safari 需要这样设置才能正确滚动 */
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
     font-family: var(--font-sans);
     background: var(--bg-primary);
     color: var(--text-primary);
+    /* iOS Safari 触摸滚动优化 */
     overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     cursor: default;
+    /* 不设置固定高度，让内容决定 */
+    min-height: 100%;
+    position: relative;
 }
 
 /* ========== Custom cursor ========== */
@@ -47,12 +64,15 @@ body {
     border: 1px solid var(--accent);
     border-radius: 50%;
     position: fixed;
+    top: 0;
+    left: 0;
     pointer-events: none;
     z-index: 9999;
     transition:
         transform 0.15s ease,
         opacity 0.15s ease;
     mix-blend-mode: difference;
+    will-change: transform;
 }
 
 .cursor.hover {
@@ -66,7 +86,8 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 100vw;
+    /* iOS Safari 兼容：使用 100% 而非 dvh */
     height: 100%;
     background-image:
         linear-gradient(var(--grid-color) 1px, transparent 1px),
@@ -78,6 +99,7 @@ body {
     background-size: 50px 50px;
     animation: gridMove 20s linear infinite;
     z-index: 0;
+    pointer-events: none;
 }
 
 @keyframes gridMove {
@@ -95,10 +117,12 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 100vw;
+    /* iOS Safari 兼容：使用 100% 而非 dvh */
     height: 100%;
     z-index: 1;
     overflow: hidden;
+    pointer-events: none;
 }
 
 .particle {
@@ -114,7 +138,7 @@ body {
 @keyframes float {
     0%,
     100% {
-        transform: translateY(100vh) scale(0);
+        transform: translateY(calc(var(--vh, 1vh) * 100)) scale(0);
         opacity: 0;
     }
     10% {
@@ -124,7 +148,7 @@ body {
         opacity: 0.3;
     }
     100% {
-        transform: translateY(-100vh) scale(1);
+        transform: translateY(calc(var(--vh, 1vh) * -100)) scale(1);
         opacity: 0;
     }
 }
@@ -133,17 +157,21 @@ body {
 .container {
     position: relative;
     z-index: 10;
-    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    min-height: 100vh;
     padding: 40px 20px;
+    padding-bottom: 100px;
+    width: 100%;
+    max-width: 100%;
 }
 
 /* ========== Profile section ========== */
 .profile {
     text-align: center;
+    width: 100%;
     max-width: 600px;
     opacity: 0;
     animation: fadeIn 1s ease forwards;
@@ -191,10 +219,10 @@ body {
 .avatar::before {
     content: "";
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: linear-gradient(
         45deg,
         transparent 30%,
@@ -405,7 +433,7 @@ body {
 .divider-compact {
     height: 1px;
     width: 60px;
-    margin: 24px auto;
+    margin: 40px auto;
     background: linear-gradient(
         90deg,
         transparent,
@@ -856,6 +884,7 @@ body {
 /* ========== RSS Section ========== */
 .rss-section {
     width: 100%;
+    max-width: 600px;
     margin: 0;
     opacity: 0;
     animation: fadeIn 1s ease 1s forwards;
@@ -881,28 +910,81 @@ body {
     letter-spacing: 0.02em;
 }
 
+/* ========== RSS 文章列表 - 创新布局 ========== */
 .rss-articles {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
     gap: 12px;
+    position: relative;
 }
 
+/* 第一篇文章 - 大卡片突出展示 */
+.rss-article:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    min-height: 200px;
+}
+
+/* 第二篇文章 - 右上 */
+.rss-article:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+/* 第三篇文章 - 右下左 */
+.rss-article:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+/* 第四篇文章 - 底部通栏 */
+.rss-article:nth-child(4) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+}
+
+/* 文章卡片基础样式 */
 .rss-article {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 16px;
+    padding: 18px;
     background: var(--bg-secondary);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     text-decoration: none;
     color: var(--text-primary);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
-    min-height: 120px;
+    min-height: 100px;
 }
 
+/* 卡片扫描线动效 */
+.rss-article::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(0, 255, 159, 0.03),
+        transparent
+    );
+    transition: left 0.6s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.rss-article:hover::after {
+    left: 100%;
+}
+
+/* 鼠标追踪光晕 */
 .rss-article::before {
     content: "";
     position: absolute;
@@ -912,8 +994,8 @@ body {
     bottom: 0;
     background: radial-gradient(
         circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        rgba(0, 255, 159, 0.06),
-        transparent 60%
+        rgba(0, 255, 159, 0.08),
+        transparent 50%
     );
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -927,25 +1009,90 @@ body {
 
 .rss-article:hover {
     border-color: var(--accent);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     box-shadow:
-        0 8px 24px -8px rgba(0, 255, 159, 0.15),
-        0 0 0 1px rgba(0, 255, 159, 0.05);
+        0 12px 32px -8px rgba(0, 255, 159, 0.2),
+        0 0 0 1px rgba(0, 255, 159, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+/* 第一篇文章增强样式 */
+.rss-article:nth-child(1) {
+    background: linear-gradient(
+        135deg,
+        var(--bg-secondary) 0%,
+        rgba(0, 255, 159, 0.02) 100%
+    );
+    border-color: rgba(0, 255, 159, 0.2);
+}
+
+.rss-article:nth-child(1) .rss-article-title {
+    font-size: 1.05rem;
+    -webkit-line-clamp: 3;
+}
+
+.rss-article:nth-child(1) .rss-article-desc {
+    -webkit-line-clamp: 4;
+    font-size: 0.82rem;
+}
+
+/* 文章序号装饰 */
+.rss-article .article-index {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--accent);
+    opacity: 0.4;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    z-index: 2;
+    transition: opacity 0.3s ease;
+}
+
+.rss-article:hover .article-index {
+    opacity: 0.8;
+}
+
+/* 新文章标识 */
+.rss-article.is-new::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: newPulse 2s ease-in-out infinite;
+    z-index: 3;
+}
+
+@keyframes newPulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.3);
+    }
 }
 
 .rss-article-content {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
     flex: 1;
-    z-index: 1;
+    z-index: 2;
 }
 
 .rss-article-title {
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-primary);
-    line-height: 1.4;
+    line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -960,11 +1107,11 @@ body {
 }
 
 .rss-article-desc {
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.6;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -978,8 +1125,8 @@ body {
     align-items: center;
     justify-content: space-between;
     margin-top: auto;
-    padding-top: 8px;
-    z-index: 1;
+    padding-top: 12px;
+    z-index: 2;
 }
 
 .rss-article-date {
@@ -987,14 +1134,26 @@ body {
     color: var(--text-secondary);
     opacity: 0.6;
     font-family: var(--font-mono);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rss-article-date::before {
+    content: "";
+    width: 4px;
+    height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+    opacity: 0.5;
 }
 
 .rss-article-arrow {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
     opacity: 0;
-    transform: translateX(-4px);
-    transition: all 0.25s ease;
+    transform: translateX(-6px);
+    transition: all 0.3s ease;
 }
 
 .rss-article:hover .rss-article-arrow {
@@ -1006,7 +1165,7 @@ body {
 /* RSS Empty State */
 .rss-articles.rss-empty {
     display: block;
-    padding: 24px 16px;
+    padding: 32px 16px;
     text-align: center;
     grid-template-columns: none;
 }
@@ -1017,7 +1176,7 @@ body {
     opacity: 0.6;
 }
 
-/* RSS Skeleton */
+/* RSS Skeleton - 创新布局适配 */
 .skeleton-rss-section {
     width: 100%;
     margin: 20px 0;
@@ -1032,18 +1191,45 @@ body {
 
 .skeleton-rss-articles {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
     gap: 12px;
 }
 
 .skeleton-rss-article {
-    height: 120px;
-    border-radius: 10px;
+    height: 100px;
+    border-radius: 12px;
 }
 
-/* ========== Projects Section ========== */
+/* 第一篇骨架屏 - 大卡片 */
+.skeleton-rss-article:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    height: 212px;
+}
+
+/* 第二篇骨架屏 */
+.skeleton-rss-article:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+/* 第三篇骨架屏 */
+.skeleton-rss-article:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+/* 第四篇骨架屏 - 底部通栏 */
+.skeleton-rss-article:nth-child(4) {
+    grid-column: 1 / -1;
+    grid-row: 3;
+}
+
+/* ========== Projects Section - Dashboard Style ========== */
 .projects-section {
     width: 100%;
+    max-width: 600px;
     margin: 0;
     opacity: 0;
     animation: fadeIn 1s ease 1s forwards;
@@ -1069,13 +1255,66 @@ body {
     letter-spacing: 0.02em;
 }
 
-.projects-grid {
+.projects-count {
+    margin-left: auto;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    font-family: var(--font-mono);
+}
+
+/* ========== 贡献图装饰 ========== */
+/* 固定13列×6行，共78个格子 */
+.contribution-graph {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(13, minmax(0, 1fr));
+    grid-template-rows: repeat(6, minmax(0, 1fr));
+    gap: 3px;
+    height: 72px;
+    margin-bottom: 16px;
+    padding: 8px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.contribution-cell {
+    width: 100%;
+    height: 100%;
+    background: var(--border);
+    border-radius: 2px;
+    opacity: 0.4;
+    transition: all 0.3s ease;
+}
+
+.contribution-cell[data-level="1"] {
+    background: rgba(0, 255, 159, 0.2);
+    opacity: 0.6;
+}
+
+.contribution-cell[data-level="2"] {
+    background: rgba(0, 255, 159, 0.4);
+    opacity: 0.7;
+}
+
+.contribution-cell[data-level="3"] {
+    background: rgba(0, 255, 159, 0.6);
+    opacity: 0.8;
+}
+
+.contribution-cell[data-level="4"] {
+    background: var(--accent);
+    opacity: 1;
+}
+
+/* ========== 项目流式布局 ========== */
+.projects-flow {
+    display: flex;
+    flex-wrap: wrap;
     gap: 12px;
 }
 
-/* 项目卡片 - 代码窗口风格 */
+/* 项目卡片 - 编辑器标签页风格（保留原样式） */
 .project-card {
     display: flex;
     flex-direction: column;
@@ -1119,56 +1358,31 @@ body {
         0 0 0 1px rgba(0, 255, 159, 0.05);
 }
 
-/* ========== 瀑布流布局 ========== */
-/* 桌面端瀑布流布局 */
-.projects-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: auto auto;
-    gap: 12px;
+/* ========== 主卡片（第一个项目）========== */
+.project-card-main {
+    flex: 1 1 100%;
 }
 
-/* 第1名 - 大卡片（左上，跨2行） */
-.project-rank-1 {
-    grid-row: span 2;
-}
-
-/* 第2、3名 - 中卡片（右上区域） */
-.project-rank-2,
-.project-rank-3 {
-    /* 默认大小 */
-}
-
-/* 第4、5名及之后 - 小卡片（底部平铺） */
-.projects-grid.has-more {
-    grid-template-columns: repeat(2, 1fr);
-}
-
-.project-rank-4,
-.project-rank-5 {
-    /* 默认大小 */
-}
-
-/* 大卡片样式增强 */
-.project-rank-1 .project-tab {
+.project-card-main .project-tab {
     padding: 12px 16px;
 }
 
-.project-rank-1 .project-name {
-    font-size: 1rem;
+.project-card-main .project-name {
+    font-size: 0.95rem;
 }
 
-.project-rank-1 .project-body {
-    padding: 18px;
+.project-card-main .project-body {
+    padding: 16px 18px;
     flex: 1;
 }
 
-.project-rank-1 .project-description {
-    -webkit-line-clamp: 4;
-    font-size: 0.85rem;
+.project-card-main .project-description {
+    -webkit-line-clamp: 3;
+    font-size: 0.82rem;
+    margin-bottom: 14px;
 }
 
-.project-rank-1 .project-footer {
+.project-card-main .project-footer {
     padding: 12px 16px;
 }
 
@@ -1238,6 +1452,21 @@ body {
     margin: 0;
 }
 
+/* 项目进度条 */
+.project-progress {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.project-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), rgba(0, 255, 159, 0.5));
+    border-radius: 2px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* 项目底部 - 语言色条 */
 .project-footer {
     display: flex;
@@ -1279,7 +1508,77 @@ body {
     transform: translateX(0);
 }
 
-/* Projects Skeleton */
+/* ========== 迷你卡片（其他项目）========== */
+.project-card-mini {
+    flex: 1 1 calc(25% - 9px);
+    min-width: 120px;
+}
+
+.project-mini-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--border);
+}
+
+.project-mini-header i {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.project-mini-stars {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+}
+
+.project-mini-stars i {
+    font-size: 0.65rem;
+}
+
+.project-mini-body {
+    padding: 12px;
+    text-align: center;
+}
+
+.project-mini-name {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+    transition: color 0.2s ease;
+}
+
+.project-card-mini:hover .project-mini-name {
+    color: var(--accent);
+}
+
+.project-mini-footer {
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+.project-language-mini {
+    font-size: 0.65rem;
+    justify-content: center;
+}
+
+.language-dot-mini {
+    width: 8px;
+    height: 8px;
+}
+
+/* ========== Projects Skeleton ========== */
 .skeleton-projects-section {
     width: 100%;
     margin: 20px 0;
@@ -1292,21 +1591,48 @@ body {
     margin-bottom: 14px;
 }
 
-.skeleton-projects-grid {
+.skeleton-contribution-graph {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(13, minmax(0, 1fr));
+    grid-template-rows: repeat(6, minmax(0, 1fr));
+    gap: 3px;
+    height: 72px;
+    margin-bottom: 16px;
+    padding: 8px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.skeleton-contribution-graph .contribution-cell {
+    background: linear-gradient(
+        90deg,
+        var(--border) 25%,
+        rgba(255, 255, 255, 0.05) 50%,
+        var(--border) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    opacity: 0.6;
+}
+
+.skeleton-projects-flow {
+    display: flex;
+    flex-wrap: wrap;
     gap: 12px;
 }
 
-.skeleton-project {
-    height: 140px;
+.skeleton-project-main {
+    width: 100%;
+    height: 160px;
     border-radius: 10px;
 }
 
-.skeleton-project-rank-1 {
-    grid-row: span 2;
-    height: auto;
-    min-height: 292px;
+.skeleton-project-mini {
+    flex: 1 1 calc(25% - 9px);
+    min-width: 120px;
+    height: 100px;
+    border-radius: 10px;
 }
 
 /* ========== Footer ========== */
@@ -1362,19 +1688,43 @@ body {
         content: "打开";
     }
 
-    /* RSS responsive */
+    /* RSS 移动端响应式 - 单列堆叠 */
     .rss-articles {
         grid-template-columns: 1fr;
+        grid-template-rows: auto;
+        gap: 10px;
+    }
+
+    .rss-article:nth-child(1),
+    .rss-article:nth-child(2),
+    .rss-article:nth-child(3),
+    .rss-article:nth-child(4) {
+        grid-column: 1;
+        grid-row: auto;
+        min-height: auto;
     }
 
     .rss-article {
         padding: 14px 16px;
-        min-height: auto;
+    }
+
+    /* 第一篇文章移动端增强 */
+    .rss-article:nth-child(1) {
+        min-height: 140px;
+    }
+
+    .rss-article:nth-child(1) .rss-article-title {
+        font-size: 0.95rem;
+        -webkit-line-clamp: 2;
+    }
+
+    .rss-article:nth-child(1) .rss-article-desc {
+        -webkit-line-clamp: 3;
     }
 
     .rss-article-title {
         font-size: 0.85rem;
-        -webkit-line-clamp: 1;
+        -webkit-line-clamp: 2;
     }
 
     .rss-article-desc {
@@ -1382,40 +1732,44 @@ body {
         text-align: left;
     }
 
+    /* 骨架屏移动端适配 */
     .skeleton-rss-articles {
-        grid-template-columns: 1fr;
-    }
-
-    .skeleton-rss-article {
-        height: 80px;
-    }
-
-    /* Projects responsive */
-    .projects-grid {
         grid-template-columns: 1fr;
         grid-template-rows: auto;
     }
 
-    .project-rank-1 {
-        grid-row: span 1;
+    .skeleton-rss-article,
+    .skeleton-rss-article:nth-child(1) {
+        grid-column: 1;
+        grid-row: auto;
+        height: 100px;
     }
 
-    .project-card {
-        min-height: auto;
+    /* Projects responsive - Dashboard Style */
+    .projects-flow {
+        flex-direction: column;
     }
 
-    .skeleton-projects-grid {
-        grid-template-columns: 1fr;
+    .project-card-mini {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 100px;
     }
 
-    .skeleton-project,
-    .skeleton-project-rank-1 {
-        height: 120px;
-        min-height: auto;
+    .skeleton-projects-flow {
+        flex-wrap: wrap;
+    }
+
+    .skeleton-project-main {
+        height: 140px;
+    }
+
+    .skeleton-project-mini {
+        flex: 1 1 calc(50% - 6px);
+        height: 90px;
     }
 }
 
-/* 平板 - 保持单列，与终端一致 */
+/* 平板 - 保持创新布局 */
 @media (min-width: 601px) and (max-width: 768px) {
     .links {
         grid-template-columns: 1fr;
@@ -1427,18 +1781,59 @@ body {
         max-width: 100%;
     }
 
+    /* RSS 平板端布局 */
     .rss-articles {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
     }
 
-    /* Projects 平板端瀑布流布局 */
-    .projects-grid {
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: auto auto;
+    /* Projects 平板端 - Dashboard Style */
+    .project-card-mini {
+        flex: 1 1 calc(33.333% - 8px);
+    }
+}
+
+/* iPad 专用断点 (768px - 1024px)，包含竖屏和横屏 */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .container {
+        padding: 30px 24px;
+        padding-bottom: 60px;
     }
 
-    .project-rank-1 {
-        grid-row: span 2;
+    .profile {
+        max-width: 600px;
+    }
+
+    .terminal {
+        max-width: 600px;
+    }
+
+    .links {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 600px;
+    }
+
+    .links:has(.link:nth-child(6)) {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* RSS iPad端布局 */
+    .rss-articles {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
+    }
+
+    .rss-section {
+        max-width: 600px;
+    }
+
+    /* Projects iPad端 - Dashboard Style */
+    .project-card-mini {
+        flex: 1 1 calc(25% - 9px);
+    }
+
+    .projects-section {
+        max-width: 600px;
     }
 }
 
@@ -1459,27 +1854,26 @@ body {
         max-width: 800px;
     }
 
-    /* RSS 桌面端 2列布局 */
+    /* RSS 桌面端创新布局 */
     .rss-articles {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
+        max-width: 600px;
     }
 
     .rss-section {
         width: 100%;
+        max-width: 600px;
     }
 
-    /* Projects 桌面端瀑布流布局 */
-    .projects-grid {
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-rows: auto auto;
-    }
-
-    .project-rank-1 {
-        grid-row: span 2;
+    /* Projects 桌面端 - Dashboard Style */
+    .project-card-mini {
+        flex: 1 1 calc(25% - 9px);
     }
 
     .projects-section {
         width: 100%;
+        max-width: 600px;
     }
 
     /* 桌面端隐藏"打开"文本 */
@@ -1692,9 +2086,16 @@ body.skeleton-active .cursor {
     transition: opacity 0.3s ease;
 }
 
+/* 头像骨架屏 - 圆形裁剪 */
+.avatar.image-placeholder::after {
+    border-radius: 50%;
+}
+
 .image-placeholder.loaded::after {
     opacity: 0;
     pointer-events: none;
+    /* 停止动画，避免性能问题和潜在的渲染问题 */
+    animation: none;
 }
 
 .image-placeholder img {
