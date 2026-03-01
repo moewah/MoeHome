@@ -115,7 +115,7 @@ function initNavbarBrandEffect() {
     });
 }
 
-// 当前区域高亮（Intersection Observer）
+// 当前区域高亮（Intersection Observer + 滚动检测）
 function initNavbarActiveSection() {
     const navLinks = document.querySelectorAll('.nav-link, .nav-sidebar-link');
     if (navLinks.length === 0) return;
@@ -130,8 +130,21 @@ function initNavbarActiveSection() {
         });
     }
 
+    // 检测是否在页面顶部附近（考虑导航栏高度）
+    function isNearTop() {
+        const navbar = document.getElementById('navbar');
+        const navbarHeight = navbar ? navbar.offsetHeight : 60;
+        return window.scrollY < navbarHeight + 50;
+    }
+
     // 使用 IntersectionObserver 检测当前可见的 section
     const observer = new IntersectionObserver((entries) => {
+        // 如果在页面顶部，强制高亮 Home
+        if (isNearTop()) {
+            updateActiveNav('actual-content');
+            return;
+        }
+
         // 找出所有 intersecting 的 sections
         const intersectingEntries = entries.filter(entry => entry.isIntersecting);
 
@@ -154,6 +167,22 @@ function initNavbarActiveSection() {
     });
 
     sections.forEach(section => observer.observe(section));
+
+    // 监听滚动事件，确保顶部位置正确高亮
+    let scrollTimeout = null;
+    window.addEventListener('scroll', () => {
+        if (scrollTimeout) clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            if (isNearTop()) {
+                updateActiveNav('actual-content');
+            }
+        }, 50);
+    }, { passive: true });
+
+    // 初始化时检查
+    if (isNearTop()) {
+        updateActiveNav('actual-content');
+    }
 
     // 点击导航链接后立即更新高亮状态
     navLinks.forEach(link => {
