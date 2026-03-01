@@ -560,6 +560,232 @@ function extractContributionConfig() {
     };
 }
 
+// 提取 Nav 配置
+function extractNavConfig() {
+    // 使用更精确的模式匹配 nav 配置块
+    const navMatch = configContent.match(/nav:\s*\{([\s\S]*?)(?=\n\s*\},?\s*\n\s*\/\/ =|\n\s*\},?\s*$)/);
+    if (!navMatch) {
+        return {
+            enabled: true,
+            brand: { showPrompt: true, hoverText: '~/whoami' },
+            menus: []
+        };
+    }
+
+    const navContent = navMatch[1];
+
+    const enabledMatch = navContent.match(/enabled:\s*(true|false)/);
+
+    // 提取 brand 配置
+    const brandMatch = navContent.match(/brand:\s*\{([^}]+)\}/);
+    let brand = { showPrompt: true, hoverText: '~/whoami' };
+    if (brandMatch) {
+        const brandContent = brandMatch[1];
+        const showPromptMatch = brandContent.match(/showPrompt:\s*(true|false)/);
+        const hoverTextMatch = brandContent.match(/hoverText:\s*['"`]([^'"`]+)['"`]/);
+        brand = {
+            showPrompt: showPromptMatch ? showPromptMatch[1] === 'true' : true,
+            hoverText: hoverTextMatch ? hoverTextMatch[1].trim() : '~/whoami'
+        };
+    }
+
+    // 提取 menus 配置
+    let menus = [];
+    const menusStartMatch = navContent.match(/menus:\s*\[/);
+    if (menusStartMatch) {
+        const startIndex = menusStartMatch.index + menusStartMatch[0].length;
+        let depth = 1;
+        let endIndex = startIndex;
+
+        for (let i = startIndex; i < navContent.length && depth > 0; i++) {
+            const char = navContent[i];
+            if (char === '[' || char === '{') depth++;
+            else if (char === ']' || char === '}') depth--;
+            if (depth === 0) {
+                endIndex = i;
+                break;
+            }
+        }
+
+        const menusContent = navContent.substring(startIndex, endIndex);
+
+        // 使用更精确的方式解析每个菜单对象
+        let menuDepth = 0;
+        let currentMenuStart = -1;
+        const menuBlocks = [];
+
+        for (let i = 0; i < menusContent.length; i++) {
+            const char = menusContent[i];
+            if (char === '{') {
+                if (menuDepth === 0) {
+                    currentMenuStart = i;
+                }
+                menuDepth++;
+            } else if (char === '}') {
+                menuDepth--;
+                if (menuDepth === 0 && currentMenuStart >= 0) {
+                    menuBlocks.push(menusContent.substring(currentMenuStart, i + 1));
+                    currentMenuStart = -1;
+                }
+            }
+        }
+
+        // 解析每个菜单块
+        for (const menuBlock of menuBlocks) {
+            const nameMatch = menuBlock.match(/name:\s*['"`]([^'"`]+)['"`]/);
+            const iconMatch = menuBlock.match(/icon:\s*['"`]([^'"`]+)['"`]/);
+
+            // 解析 items 数组
+            let menuItems = [];
+            const itemsStartMatch = menuBlock.match(/items:\s*\[/);
+            if (itemsStartMatch) {
+                const itemsStartIndex = itemsStartMatch.index + itemsStartMatch[0].length;
+                let itemsDepth = 1;
+                let itemsEndIndex = itemsStartIndex;
+
+                for (let j = itemsStartIndex; j < menuBlock.length && itemsDepth > 0; j++) {
+                    const char = menuBlock[j];
+                    if (char === '[' || char === '{') itemsDepth++;
+                    else if (char === ']' || char === '}') itemsDepth--;
+                    if (itemsDepth === 0) {
+                        itemsEndIndex = j;
+                        break;
+                    }
+                }
+
+                const itemsContent = menuBlock.substring(itemsStartIndex, itemsEndIndex);
+
+                // 解析每个 item 对象
+                let itemDepth = 0;
+                let currentItemStart = -1;
+
+                for (let k = 0; k < itemsContent.length; k++) {
+                    const char = itemsContent[k];
+                    if (char === '{') {
+                        if (itemDepth === 0) {
+                            currentItemStart = k;
+                        }
+                        itemDepth++;
+                    } else if (char === '}') {
+                        itemDepth--;
+                        if (itemDepth === 0 && currentItemStart >= 0) {
+                            const itemBlock = itemsContent.substring(currentItemStart, k + 1);
+
+                            const iNameMatch = itemBlock.match(/name:\s*['"`]([^'"`]+)['"`]/);
+                            const iUrlMatch = itemBlock.match(/url:\s*['"`]([^'"`]+)['"`]/);
+                            const iExternalMatch = itemBlock.match(/external:\s*(true|false)/);
+
+                            if (iNameMatch && iUrlMatch) {
+                                menuItems.push({
+                                    name: iNameMatch[1].trim(),
+                                    url: iUrlMatch[1].trim(),
+                                    external: iExternalMatch ? iExternalMatch[1] === 'true' : true
+                                });
+                            }
+
+                            currentItemStart = -1;
+                        }
+                    }
+                }
+            }
+
+            if (nameMatch) {
+                menus.push({
+                    name: nameMatch[1].trim(),
+                    icon: iconMatch ? iconMatch[1].trim() : '',
+                    items: menuItems
+                });
+            }
+        }
+    }
+
+    return {
+        enabled: enabledMatch ? enabledMatch[1] === 'true' : true,
+        brand: brand,
+        menus: menus
+    };
+}
+
+// 生成导航链接 HTML（桌面端）
+function generateNavLinksHTML(rssConfig, projectsConfig) {
+    let html = '';
+
+    // Posts 链接
+    if (rssConfig.enabled) {
+        html += '\n                    <a href="#rss-section" class="nav-link" data-section="rss-section">Posts</a>';
+    }
+
+    // Projects 链接
+    if (projectsConfig.enabled) {
+        html += '\n                    <a href="#projects-section" class="nav-link" data-section="projects-section">Projects</a>';
+    }
+
+    return html;
+}
+
+// 生成导航链接 HTML（移动端）
+function generateNavLinksMobileHTML(rssConfig, projectsConfig) {
+    let html = '';
+
+    // Posts 链接
+    if (rssConfig.enabled) {
+        html += '\n                <a href="#rss-section" class="nav-sidebar-link" data-section="rss-section">Posts</a>';
+    }
+
+    // Projects 链接
+    if (projectsConfig.enabled) {
+        html += '\n                <a href="#projects-section" class="nav-sidebar-link" data-section="projects-section">Projects</a>';
+    }
+
+    return html;
+}
+
+// 生成自定义菜单 HTML（桌面端）
+function generateCustomMenusHTML(menus) {
+    if (!menus || menus.length === 0) return '';
+
+    return menus.map(menu => {
+        const itemsHTML = menu.items.map(item => {
+            const externalAttrs = item.external ? 'target="_blank" rel="noopener"' : '';
+            return `                    <a href="${escapeHTML(item.url)}" ${externalAttrs}>${escapeHTML(item.name)}</a>`;
+        }).join('\n                    ');
+
+        return `
+                <div class="nav-dropdown">
+                    <button class="nav-dropdown-toggle">
+                        <span>${escapeHTML(menu.name)}</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        ${itemsHTML}
+                    </div>
+                </div>`;
+    }).join('');
+}
+
+// 生成自定义菜单 HTML（移动端）
+function generateCustomMenusMobileHTML(menus) {
+    if (!menus || menus.length === 0) return '';
+
+    return menus.map(menu => {
+        const itemsHTML = menu.items.map(item => {
+            const externalAttrs = item.external ? 'target="_blank" rel="noopener"' : '';
+            return `                <a href="${escapeHTML(item.url)}" ${externalAttrs}>${escapeHTML(item.name)}</a>`;
+        }).join('\n                ');
+
+        return `
+            <div class="nav-sidebar-dropdown">
+                <button class="nav-sidebar-dropdown-toggle">
+                    <span>${escapeHTML(menu.name)}</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div class="nav-sidebar-dropdown-items">
+                    ${itemsHTML}
+                </div>
+            </div>`;
+    }).join('');
+}
+
 // 生成项目展示 HTML（仪表盘式布局）
 function generateProjectsHTML(repos, projectsConfig, contributionData, contributionConfig) {
     if (!projectsConfig.enabled || repos.length === 0) {
@@ -750,6 +976,9 @@ const config = {
     // Contribution
     contribution: extractContributionConfig(),
 
+    // Nav
+    nav: extractNavConfig(),
+
     // Analytics
     gaEnabled: extractAnalyticsValue('googleAnalytics', 'enabled') === 'true',
     gaId: extractAnalyticsValue('googleAnalytics', 'id'),
@@ -856,6 +1085,14 @@ async function build() {
         // Projects
         .replace(/{{PROJECTS}}/g, generateProjectsHTML(githubRepos, config.projects, contributionData, config.contribution))
         .replace(/{{SKELETON_PROJECTS}}/g, generateSkeletonProjectsHTML(config.projects))
+
+        // Nav
+        .replace(/{{NAV_POSTS_LINK}}/g, generateNavLinksHTML(config.rss, config.projects))
+        .replace(/{{NAV_PROJECTS_LINK}}/g, '')
+        .replace(/{{NAV_CUSTOM_MENUS}}/g, generateCustomMenusHTML(config.nav.menus))
+        .replace(/{{NAV_POSTS_LINK_MOBILE}}/g, generateNavLinksMobileHTML(config.rss, config.projects))
+        .replace(/{{NAV_PROJECTS_LINK_MOBILE}}/g, '')
+        .replace(/{{NAV_CUSTOM_MENUS_MOBILE}}/g, generateCustomMenusMobileHTML(config.nav.menus))
 
         // Footer
         .replace(/{{FOOTER_TEXT}}/g, config.footerText)

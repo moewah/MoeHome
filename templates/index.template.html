@@ -2,7 +2,7 @@
 <html lang="zh-CN">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, shrink-to-fit=no" />
 
         <!-- SEO Meta Tags (由 build.js 从 config.js 注入) -->
         <meta name="description" content="{{DESCRIPTION}}" />
@@ -60,36 +60,71 @@
         {{ANALYTICS}}
     </head>
     <body>
+        <!-- Navigation Bar -->
+        <nav class="navbar" id="navbar">
+            <div class="navbar-inner">
+                <!-- Brand -->
+                <a href="#" class="navbar-brand" id="navbar-brand">
+                    <span class="prompt">$</span>
+                    <span class="brand-name">{{NAME}}</span>
+                </a>
+
+                <!-- Desktop Nav Links -->
+                <div class="navbar-menu" id="navbar-menu">
+                    <a href="#actual-content" class="nav-link active" data-section="actual-content">Home</a>
+                    {{NAV_POSTS_LINK}}
+                    {{NAV_PROJECTS_LINK}}
+                    <a href="#links-container" class="nav-link" data-section="links-container">Links</a>
+                    {{NAV_CUSTOM_MENUS}}
+                </div>
+
+                <!-- Right Actions -->
+                <div class="navbar-actions">
+                    <!-- Theme Switcher - 点击循环切换 -->
+                    <button class="nav-theme-toggle" id="nav-theme-toggle" aria-label="切换主题" title="切换主题">
+                        <i class="fa-solid fa-desktop"></i>
+                    </button>
+
+                    <!-- Mobile Menu Toggle -->
+                    <button class="navbar-toggle" id="navbar-toggle" aria-label="菜单">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Mobile Sidebar Overlay -->
+        <div class="nav-overlay" id="nav-overlay"></div>
+
+        <!-- Mobile Sidebar -->
+        <aside class="nav-sidebar" id="nav-sidebar">
+            <div class="nav-sidebar-header">
+                <span class="nav-sidebar-title">Menu</span>
+                <button class="nav-sidebar-close" id="nav-sidebar-close" aria-label="关闭菜单">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <nav class="nav-sidebar-body">
+                <a href="#actual-content" class="nav-sidebar-link" data-section="actual-content">Home</a>
+                {{NAV_POSTS_LINK_MOBILE}}
+                {{NAV_PROJECTS_LINK_MOBILE}}
+                <a href="#links-container" class="nav-sidebar-link" data-section="links-container">Links</a>
+                {{NAV_CUSTOM_MENUS_MOBILE}}
+            </nav>
+            <div class="nav-sidebar-footer">
+                <button class="nav-sidebar-theme" id="nav-sidebar-theme" aria-label="切换主题">
+                    <i class="fa-solid fa-desktop"></i>
+                    <span>主题</span>
+                </button>
+            </div>
+        </aside>
+
         <!-- Custom cursor -->
         <div class="cursor"></div>
 
         <!-- Background effects -->
         <div class="grid-bg"></div>
         <div class="particles" id="particles"></div>
-
-        <!-- Theme Switcher -->
-        <div class="theme-switcher">
-            <div class="theme-toggle">
-                <i class="fa-solid fa-circle-half-stroke"></i>
-            </div>
-            <div class="theme-menu">
-                <div class="theme-menu-item" data-theme="auto">
-                    <i class="fa-solid fa-desktop"></i>
-                    <span class="theme-menu-label">Auto</span>
-                    <div class="theme-menu-check"><i class="fa-solid fa-check"></i></div>
-                </div>
-                <div class="theme-menu-item" data-theme="light">
-                    <i class="fa-regular fa-sun"></i>
-                    <span class="theme-menu-label">Light</span>
-                    <div class="theme-menu-check"><i class="fa-solid fa-check"></i></div>
-                </div>
-                <div class="theme-menu-item" data-theme="dark">
-                    <i class="fa-regular fa-moon"></i>
-                    <span class="theme-menu-label">Dark</span>
-                    <div class="theme-menu-check"><i class="fa-solid fa-check"></i></div>
-                </div>
-            </div>
-        </div>
 
         <!-- Main content -->
         <div class="container">

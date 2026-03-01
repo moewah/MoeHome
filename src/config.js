@@ -225,10 +225,33 @@ window.HOMEPAGE_CONFIG = {
     showToggle: true,
   },
 
+  // ========== 导航栏配置 ==========
+  nav: {
+    enabled: true,
+
+    // 品牌区配置
+    brand: {
+      showPrompt: true, // 显示 $ 符号
+      hoverText: "~/whoami", // hover 打字机效果文字
+    },
+
+    // 自定义二级菜单
+    menus: [], // 默认空，示例：
+    // menus: [
+    //   {
+    //     name: 'Resources',
+    //     items: [
+    //       { name: '工具推荐', url: 'https://...', external: true },
+    //       { name: '友情链接', url: 'https://...', external: true },
+    //     ]
+    //   }
+    // ],
+  },
+
   // ========== RSS 文章配置 ==========
   rss: {
-    enabled: false,  // 设置为 true 启用
-    url: "https://yourblog.com/rss.xml",  // 你的博客 RSS 地址
+    enabled: false, // 设置为 true 启用
+    url: "https://yourblog.com/rss.xml", // 你的博客 RSS 地址
     count: 4,
     openInNewTab: true,
     title: {
@@ -244,7 +267,7 @@ window.HOMEPAGE_CONFIG = {
 
   // ========== GitHub 项目展示配置 ==========
   projects: {
-    enabled: true, // 设置为 false 可禁用此模块
+    enabled: false, // 设置为 false 可禁用此模块
     title: {
       text: "我的项目",
       icon: "fa-solid fa-folder-open",
@@ -259,10 +282,10 @@ window.HOMEPAGE_CONFIG = {
 
   // ========== GitHub 贡献图配置 ==========
   contribution: {
-    enabled: true,           // 是否启用贡献图
-    useRealData: true,       // true=真实数据, false=随机数据
+    enabled: true, // 是否启用贡献图
+    useRealData: true, // true=真实数据, false=随机数据
     // GitHub 用户名（留空则从 projects.githubUser 自动提取）
-    githubUser: '',
+    githubUser: "",
   },
 
   // ========== 统计代码配置 ==========
@@ -281,7 +304,7 @@ window.HOMEPAGE_CONFIG = {
     },
     // Umami - 完整脚本标签，留空则不启用
     // 示例: '<script defer src="https://umami.example.com/script.js" data-website-id="xxx"></script>'
-    umami: '',
+    umami: "",
     // 自定义脚本 - 支持任意第三方统计代码
     // 留空数组则不启用
     customScripts: [],

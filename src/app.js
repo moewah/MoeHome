@@ -13,6 +13,9 @@ function initPage() {
     // 初始化主题
     initTheme();
 
+    // 初始化导航栏
+    initNavbar();
+
     // 初始化骨架屏和懒加载
     initSkeletonAndLazyLoad();
 
@@ -23,21 +26,281 @@ function initPage() {
     initInteractions();
 }
 
+// ========== 导航栏初始化 ==========
+function initNavbar() {
+    initNavbarScroll();
+    initNavbarBrandEffect();
+    initNavbarActiveSection();
+    initNavbarThemeSwitcher();
+    initMobileSidebar();
+    initCustomMenus();
+}
+
+// 滚动时背景变化
+function initNavbarScroll() {
+    const navbar = document.getElementById('navbar');
+    if (!navbar) return;
+
+    const checkScroll = () => {
+        if (window.scrollY > 50) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+    };
+
+    window.addEventListener('scroll', checkScroll, { passive: true });
+    checkScroll(); // 初始检查
+}
+
+// 品牌区打字机效果
+function initNavbarBrandEffect() {
+    const brand = document.getElementById('navbar-brand');
+    if (!brand) return;
+
+    const nameEl = brand.querySelector('.brand-name');
+    const promptEl = brand.querySelector('.prompt');
+    if (!nameEl) return;
+
+    const config = window.HOMEPAGE_CONFIG;
+    const originalName = config?.profile?.name || 'MoeWah';
+    const hoverText = config?.nav?.brand?.hoverText || '~/whoami';
+
+    let typingInterval = null;
+    let isHovering = false;
+
+    const startTypewriter = () => {
+        if (isHovering) return;
+        isHovering = true;
+
+        // 打字机效果
+        let i = 0;
+        nameEl.textContent = '';
+
+        // 清除之前的定时器
+        if (typingInterval) {
+            clearInterval(typingInterval);
+            typingInterval = null;
+        }
+
+        typingInterval = setInterval(() => {
+            if (i < hoverText.length) {
+                nameEl.textContent += hoverText.charAt(i);
+                i++;
+            } else {
+                clearInterval(typingInterval);
+                typingInterval = null;
+            }
+        }, 80);
+    };
+
+    const stopTypewriter = () => {
+        isHovering = false;
+
+        if (typingInterval) {
+            clearInterval(typingInterval);
+            typingInterval = null;
+        }
+        nameEl.textContent = originalName;
+    };
+
+    // 为整个品牌区添加 hover 事件
+    brand.addEventListener('mouseenter', startTypewriter);
+    brand.addEventListener('mouseleave', stopTypewriter);
+
+    // 点击回到顶部
+    brand.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+}
+
+// 当前区域高亮（Intersection Observer）
+function initNavbarActiveSection() {
+    const navLinks = document.querySelectorAll('.nav-link, .nav-sidebar-link');
+    if (navLinks.length === 0) return;
+
+    const sections = document.querySelectorAll('#actual-content, #rss-section, #projects-section, #links-container');
+    if (sections.length === 0) return;
+
+    // 更新导航高亮状态
+    function updateActiveNav(sectionId) {
+        navLinks.forEach(link => {
+            link.classList.toggle('active', link.dataset.section === sectionId);
+        });
+    }
+
+    // 使用 IntersectionObserver 检测当前可见的 section
+    const observer = new IntersectionObserver((entries) => {
+        // 找出所有 intersecting 的 sections
+        const intersectingEntries = entries.filter(entry => entry.isIntersecting);
+
+        if (intersectingEntries.length === 0) return;
+
+        // 按照距离视口顶部的距离排序，选择最接近顶部的 section
+        intersectingEntries.sort((a, b) => {
+            const rectA = a.boundingClientRect;
+            const rectB = b.boundingClientRect;
+            // 优先选择顶部在视口内且最接近顶部的
+            return Math.abs(rectA.top) - Math.abs(rectB.top);
+        });
+
+        // 更新高亮状态
+        const activeSection = intersectingEntries[0].target.id;
+        updateActiveNav(activeSection);
+    }, {
+        rootMargin: '-10% 0px -80% 0px',
+        threshold: 0
+    });
+
+    sections.forEach(section => observer.observe(section));
+
+    // 点击导航链接后立即更新高亮状态
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            const targetSection = link.dataset.section;
+            if (targetSection) {
+                updateActiveNav(targetSection);
+            }
+        });
+    });
+
+    // 滚动到顶部时，高亮 Home
+    const brand = document.getElementById('navbar-brand');
+    if (brand) {
+        brand.addEventListener('click', () => {
+            updateActiveNav('actual-content');
+        });
+    }
+}
+
+// 导航栏主题切换（点击循环切换）
+function initNavbarThemeSwitcher() {
+    const toggle = document.getElementById('nav-theme-toggle');
+    const mobileThemeBtn = document.getElementById('nav-sidebar-theme');
+
+    // PC 端主题循环切换
+    if (toggle) {
+        toggle.addEventListener('click', () => {
+            if (typeof ThemeManager !== 'undefined') {
+                const newTheme = ThemeManager.toggle();
+                updateThemeToggleIcon(newTheme);
+            }
+        });
+    }
+
+    // 移动端主题循环切换
+    if (mobileThemeBtn) {
+        mobileThemeBtn.addEventListener('click', () => {
+            if (typeof ThemeManager !== 'undefined') {
+                const newTheme = ThemeManager.toggle();
+                updateThemeToggleIcon(newTheme);
+            }
+        });
+    }
+
+    // 初始化图标状态
+    if (typeof ThemeManager !== 'undefined') {
+        updateThemeToggleIcon(ThemeManager.getSavedTheme());
+    }
+}
+
+// 更新主题切换按钮图标
+function updateThemeToggleIcon(theme) {
+    const toggle = document.getElementById('nav-theme-toggle');
+    const mobileToggle = document.getElementById('nav-sidebar-theme');
+
+    const iconMap = {
+        auto: 'fa-solid fa-desktop',
+        light: 'fa-solid fa-sun',
+        dark: 'fa-solid fa-moon'
+    };
+
+    const iconClass = iconMap[theme] || 'fa-solid fa-desktop';
+
+    // PC 端图标
+    if (toggle) {
+        const icon = toggle.querySelector('i');
+        if (icon) {
+            icon.className = iconClass;
+        }
+    }
+
+    // 移动端侧边栏图标
+    if (mobileToggle) {
+        const icon = mobileToggle.querySelector('i');
+        if (icon) {
+            icon.className = iconClass;
+        }
+    }
+}
+
+// 移动端侧边栏
+function initMobileSidebar() {
+    const toggle = document.getElementById('navbar-toggle');
+    const sidebar = document.getElementById('nav-sidebar');
+    const overlay = document.getElementById('nav-overlay');
+    const closeBtn = document.getElementById('nav-sidebar-close');
+
+    if (!toggle || !sidebar || !overlay) return;
+
+    const open = () => {
+        sidebar.classList.add('open');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    };
+
+    const close = () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    };
+
+    toggle.addEventListener('click', open);
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', close);
+
+    // 点击链接后关闭
+    sidebar.querySelectorAll('.nav-sidebar-link').forEach(link => {
+        link.addEventListener('click', close);
+    });
+
+    // 移动端下拉菜单
+    sidebar.querySelectorAll('.nav-sidebar-dropdown-toggle').forEach(toggleBtn => {
+        toggleBtn.addEventListener('click', () => {
+            const dropdown = toggleBtn.closest('.nav-sidebar-dropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('open');
+            }
+        });
+    });
+}
+
+// 自定义菜单交互
+function initCustomMenus() {
+    // 桌面端 hover 展开已在 CSS 中处理
+    // 移动端点击展开在 initMobileSidebar 中处理
+}
+
 // ========== 动态视口高度（解决移动端地址栏问题）==========
 function initDynamicViewportHeight() {
+    // 设置 CSS 变量 --vh 为实际视口高度的 1%
     const setVH = () => {
         const vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
     };
 
+    // 初始设置
     setVH();
 
+    // 监听窗口大小变化（包括地址栏收起/展开）
     let resizeTimeout;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(setVH, 100);
     });
 
+    // 监听设备方向变化
     window.addEventListener('orientationchange', () => {
         setTimeout(setVH, 100);
     });
