@@ -832,8 +832,26 @@ function generateCustomMenusMobileHTML(menus) {
 
 // 生成项目展示 HTML（仪表盘式布局）
 function generateProjectsHTML(repos, projectsConfig, contributionData, contributionConfig) {
-    if (!projectsConfig.enabled || repos.length === 0) {
+    if (!projectsConfig.enabled) {
         return '';
+    }
+    
+    // 即使没有仓库数据，也要显示项目区域但带错误提示
+    if (repos.length === 0) {
+        return `                <div class="divider divider-compact lazy-load" data-delay="4"></div>
+
+                <!-- Projects Section - Dashboard Style -->
+                <div class="projects-section lazy-load error-state" id="projects-section" data-delay="4">
+                    <div class="projects-header">
+                        <i class="${escapeHTML(projectsConfig.titleIcon)}"></i>
+                        <span class="projects-title">${escapeHTML(projectsConfig.titleText)}</span>
+                        <span class="projects-count">0 repos</span>
+                    </div>
+                    <div class="error-message">
+                        <i class="fa-solid fa-exclamation-triangle"></i>
+                        <p>无法加载 GitHub 项目数据。请检查配置或稍后重试。</p>
+                    </div>
+                </div>`;
     }
 
     // 生成贡献图格子
@@ -885,24 +903,28 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
                         </div>
                     </a>`;
 
-    // 其他项目：迷你卡片（编辑器标签页简化版）
-    const miniCardsHTML = repos.slice(1).map((repo) => {
+    // 迷你卡片轮播容器
+    const miniCardsCount = repos.slice(1).length;
+    const hasCarousel = miniCardsCount > 0;
+
+    // 生成迷你卡片
+    const miniCardsHTML = repos.slice(1).map((repo, index) => {
         const starsText = repo.stars >= 1000 ? formatNumber(repo.stars) : repo.stars.toString();
-        return `                    <a href="${escapeHTML(repo.url)}" class="project-card project-card-mini" target="_blank" rel="noopener">
-                        <div class="project-mini-header">
-                            <i class="fa-solid fa-file-code"></i>
-                            <span class="project-mini-stars"><i class="fa-solid fa-star"></i> ${starsText}</span>
-                        </div>
-                        <div class="project-mini-body">
-                            <span class="project-mini-name">${escapeHTML(repo.name)}</span>
-                        </div>
-                        <div class="project-mini-footer">
-                            <span class="project-language project-language-mini">
-                                <span class="language-dot language-dot-mini" style="background-color: ${repo.languageColor}"></span>
-                                ${escapeHTML(repo.language || 'Unknown')}
-                            </span>
-                        </div>
-                    </a>`;
+        return `                        <a href="${escapeHTML(repo.url)}" class="project-card project-card-mini" target="_blank" rel="noopener" data-index="${index}">
+                            <div class="project-mini-header">
+                                <i class="fa-solid fa-file-code"></i>
+                                <span class="project-mini-stars"><i class="fa-solid fa-star"></i> ${starsText}</span>
+                            </div>
+                            <div class="project-mini-body">
+                                <span class="project-mini-name">${escapeHTML(repo.name)}</span>
+                            </div>
+                            <div class="project-mini-footer">
+                                <span class="project-language project-language-mini">
+                                    <span class="language-dot language-dot-mini" style="background-color: ${repo.languageColor}"></span>
+                                    ${escapeHTML(repo.language || 'Unknown')}
+                                </span>
+                            </div>
+                        </a>`;
     }).join('\n');
 
     return `                <div class="divider divider-compact lazy-load" data-delay="4"></div>
@@ -918,10 +940,17 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
                     <div class="contribution-graph" aria-hidden="true">
                         ${contributionCells}
                     </div>
-                    <!-- Projects Flow -->
-                    <div class="projects-flow">
+                    <!-- Projects Container -->
+                    <div class="projects-container">
+                        <!-- Main Project Card -->
 ${mainCardHTML}
+                        <!-- Mini Cards Carousel -->
+${hasCarousel ? `                        <div class="projects-carousel-wrapper" data-total="${miniCardsCount}">
+                            <div class="carousel-track">
 ${miniCardsHTML}
+                            </div>
+                            <div class="carousel-indicators" role="tablist" aria-label="项目轮播导航"></div>
+                        </div>` : ''}
                     </div>
                 </div>`;
 }
@@ -943,10 +972,10 @@ function generateSkeletonProjectsHTML(projectsConfig) {
     // 主卡片骨架
     const mainCardSkeleton = '<div class="skeleton-project-main skeleton"></div>';
 
-    // 迷你卡片骨架
+    // 迷你卡片骨架（轮播样式）
     const miniCardsSkeleton = Array(Math.max(0, count - 1))
         .fill('<div class="skeleton-project-mini skeleton"></div>')
-        .join('\n                    ');
+        .join('\n                            ');
 
     return `<div class="skeleton-divider skeleton"></div>
 
@@ -956,9 +985,13 @@ function generateSkeletonProjectsHTML(projectsConfig) {
                     <div class="skeleton-contribution-graph">
                         ${contributionCells}
                     </div>
-                    <div class="skeleton-projects-flow">
+                    <div class="skeleton-projects-container">
                         ${mainCardSkeleton}
-                        ${miniCardsSkeleton}
+                        <div class="skeleton-carousel">
+                            <div class="skeleton-carousel-track">
+                            ${miniCardsSkeleton}
+                            </div>
+                        </div>
                     </div>
                 </div>`;
 }

@@ -3,6 +3,14 @@
  * 个人主页主逻辑文件（仅保留动态交互部分）
  */
 
+// ========== 强制页面从顶部开始（必须在最早时机执行）==========
+// 禁用浏览器自动恢复滚动位置
+if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+}
+// 立即滚动到顶部（不等待 DOMContentLoaded）
+window.scrollTo(0, 0);
+
 // ========== 页面初始化 ==========
 function initPage() {
     const config = window.HOMEPAGE_CONFIG;
@@ -24,6 +32,9 @@ function initPage() {
 
     // 初始化交互效果
     initInteractions();
+
+    // 初始化项目轮播
+    initProjectsCarousel();
 }
 
 // ========== 导航栏初始化 ==========
@@ -341,7 +352,7 @@ function initSkeletonAndLazyLoad() {
     document.body.classList.add('skeleton-active');
 
     // 骨架屏最小显示时间（毫秒），避免闪烁
-    const MIN_SKELETON_TIME = 500;
+    const MIN_SKELETON_TIME = 300;
     const startTime = performance.now();
 
     // 等待页面资源加载完成
@@ -375,7 +386,7 @@ function hideSkeleton() {
         // 延迟移除DOM，等待过渡完成
         setTimeout(() => {
             skeleton.style.display = 'none';
-        }, 300);
+        }, 200);
     }
 
     // 显示实际内容
@@ -888,6 +899,369 @@ function initInteractions() {
             articleElement.style.setProperty("--mouse-y", `${y}%`);
         });
     });
+}
+
+// ========== 项目轮播 ==========
+class ProjectsCarousel {
+    constructor(wrapper) {
+        this.wrapper = wrapper;
+        this.track = wrapper.querySelector('.carousel-track');
+        this.originalCards = Array.from(this.track.querySelectorAll('.project-card-mini'));
+        this.totalCards = this.originalCards.length;
+
+        // 单卡片滚动 + 无缝循环
+        this.currentIndex = 0;
+        this.autoplayInterval = null;
+        this.autoplayDelay = 4000;
+        this.isPaused = false;
+        this.isTransitioning = false;
+        this.cardWidth = 0;
+        this.gap = 12;
+
+        // 检查是否启用减少动画
+        this.prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        this.init();
+    }
+
+    init() {
+        if (this.totalCards <= 1) {
+            this.hideIndicators();
+            return;
+        }
+
+        // 克隆首尾卡片实现无缝循环
+        this.cloneCards();
+
+        // 计算卡片宽度
+        this.calculateCardWidth();
+
+        // 设置初始位置（从第一个真正的卡片开始，跳过克隆卡片）
+        this.currentIndex = this.indexOffset;
+        this.updateTrackPosition(false);
+
+        // 绑定事件
+        this.bindEvents();
+
+        // 更新指示器
+        this.updateIndicators(0);
+
+        // 开始自动播放
+        this.startAutoplay();
+    }
+
+    cloneCards() {
+        // 无缝轮播的关键：
+        // 1. 末尾克隆足够多的卡片，确保最后一张真实卡片后面有 visibleCards 张克隆卡片
+        // 2. 开头克隆足够多的卡片，确保第一张真实卡片前面有 visibleCards 张克隆卡片
+        // 这样无论滚动到哪里，都有卡片预先准备好，实现真正的无缝循环
+
+        const visibleCards = this.calculateVisibleCards();
+
+        // 在末尾克隆前 visibleCards 张卡片
+        // 这样当显示最后一张真实卡片时，右边已经有克隆卡片准备好
+        for (let i = 0; i < visibleCards; i++) {
+            const clone = this.originalCards[i % this.totalCards].cloneNode(true);
+            clone.classList.add('carousel-clone');
+            clone.dataset.cloneIndex = i;
+            this.track.appendChild(clone);
+        }
+
+        // 在开头克隆后 visibleCards 张卡片（逆序插入）
+        // 这样当显示第一张真实卡片时，左边已经有克隆卡片准备好
+        for (let i = 0; i < visibleCards; i++) {
+            const originalIndex = this.totalCards - 1 - (i % this.totalCards);
+            const clone = this.originalCards[originalIndex].cloneNode(true);
+            clone.classList.add('carousel-clone');
+            clone.dataset.cloneIndex = -(i + 1);
+            this.track.insertBefore(clone, this.track.firstChild);
+        }
+
+        // 更新卡片列表
+        this.allCards = Array.from(this.track.querySelectorAll('.project-card-mini'));
+        // 索引偏移：因为我们添加了 visibleCards 张克隆卡片在开头
+        this.indexOffset = visibleCards;
+        this.visibleCards = visibleCards;
+    }
+
+    calculateVisibleCards() {
+        // 根据视口宽度决定可见卡片数（不使用容器宽度，因为容器有 max-width 限制）
+        const viewportWidth = window.innerWidth;
+        
+        // 移动端显示2张，平板/PC显示3张
+        if (viewportWidth <= 600) {
+            return 2;
+        } else {
+            return 3;
+        }
+    }
+
+    calculateCardWidth() {
+        // 计算基于可见区域的卡片宽度
+        const wrapperStyle = getComputedStyle(this.wrapper);
+        const paddingLeft = parseFloat(wrapperStyle.paddingLeft);
+        const paddingRight = parseFloat(wrapperStyle.paddingRight);
+        const wrapperFullWidth = this.wrapper.offsetWidth;
+        const wrapperContentWidth = wrapperFullWidth - paddingLeft - paddingRight;
+        const gap = 12;
+
+        // 使用已计算的 visibleCards
+        const visibleCards = this.visibleCards || 3;
+        const totalGapWidth = (visibleCards - 1) * gap;
+        const cardWidth = (wrapperContentWidth - totalGapWidth) / visibleCards;
+
+        // 设置所有卡片宽度
+        this.allCards.forEach(card => {
+            card.style.width = `${cardWidth}px`;
+            card.style.minWidth = `${cardWidth}px`;
+            card.style.maxWidth = `${cardWidth}px`;
+        });
+
+        this.cardWidth = cardWidth;
+        this.gap = gap;
+    }
+
+    bindEvents() {
+        // 悬停暂停
+        this.wrapper.addEventListener('mouseenter', () => this.pause());
+        this.wrapper.addEventListener('mouseleave', () => this.resume());
+
+        // 监听过渡结束，处理无缝循环跳转
+        this.track.addEventListener('transitionend', () => {
+            this.handleTransitionEnd();
+        });
+
+        // 触摸滑动支持
+        this.initTouchSwipe();
+
+        // 页面可见性变化
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.stopAutoplay();
+            } else if (!this.prefersReducedMotion) {
+                this.startAutoplay();
+            }
+        });
+
+        // 窗口大小变化
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                this.visibleCards = this.calculateVisibleCards();
+                this.calculateCardWidth();
+                this.updateTrackPosition(false);
+            }, 150);
+        });
+    }
+
+    initTouchSwipe() {
+        let startX = 0;
+        let isDragging = false;
+
+        this.track.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isDragging = true;
+        }, { passive: true });
+
+        this.track.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const diffX = Math.abs(e.touches[0].clientX - startX);
+            const diffY = Math.abs(e.touches[0].clientY - startX);
+            if (diffX > diffY && diffX > 10) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        this.track.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+
+            const diffX = e.changedTouches[0].clientX - startX;
+            if (Math.abs(diffX) > 50) {
+                if (diffX < 0) {
+                    this.next();
+                } else {
+                    this.prev();
+                }
+            }
+        }, { passive: true });
+    }
+
+    next() {
+        if (this.isTransitioning) return;
+        this.goToIndex(this.currentIndex + 1);
+    }
+
+    prev() {
+        if (this.isTransitioning) return;
+        this.goToIndex(this.currentIndex - 1);
+    }
+
+    goToIndex(targetIndex) {
+        if (this.isTransitioning) return;
+
+        this.isTransitioning = true;
+        this.currentIndex = targetIndex;
+
+        // 正常滑动到目标位置
+        this.updateTrackPosition(true);
+
+        // 更新指示器（显示原始索引）
+        const displayIndex = this.getDisplayIndex();
+        this.updateIndicators(displayIndex);
+
+        this.restartAutoplay();
+    }
+
+    handleTransitionEnd() {
+        // 无缝循环跳转逻辑
+        // 当到达边界克隆区域时，瞬间跳转到对应的真实卡片位置
+
+        // 计算边界索引
+        const firstRealIndex = this.indexOffset; // 第一张真实卡片的索引
+        const lastRealIndex = this.indexOffset + this.totalCards - 1; // 最后一张真实卡片的索引
+
+        if (this.currentIndex > lastRealIndex) {
+            // 向左滑动超过了最后一张真实卡片，跳转到开头的对应位置
+            // 例如：currentIndex = lastRealIndex + 1 应该跳转到 firstRealIndex
+            this.currentIndex = firstRealIndex + (this.currentIndex - lastRealIndex - 1);
+            this.updateTrackPosition(false);
+        } else if (this.currentIndex < firstRealIndex) {
+            // 向右滑动超过了第一张真实卡片，跳转到末尾的对应位置
+            // 例如：currentIndex = firstRealIndex - 1 应该跳转到 lastRealIndex
+            this.currentIndex = lastRealIndex - (firstRealIndex - this.currentIndex - 1);
+            this.updateTrackPosition(false);
+        }
+
+        this.isTransitioning = false;
+
+        // 更新指示器
+        const displayIndex = this.getDisplayIndex();
+        this.updateIndicators(displayIndex);
+    }
+
+    getDisplayIndex() {
+        // 将内部索引转换为显示索引（0 到 totalCards-1）
+        let displayIndex = this.currentIndex - this.indexOffset;
+        if (displayIndex < 0) displayIndex = this.totalCards - 1;
+        if (displayIndex >= this.totalCards) displayIndex = 0;
+        return displayIndex;
+    }
+
+    updateTrackPosition(animate) {
+        const offset = this.currentIndex * (this.cardWidth + this.gap);
+
+        if (animate && !this.prefersReducedMotion) {
+            this.track.classList.remove('no-transition');
+        } else {
+            this.track.classList.add('no-transition');
+        }
+
+        this.track.style.transform = `translateX(-${offset}px)`;
+    }
+
+    updateIndicators(activeIndex = 0) {
+        const indicatorsContainer = this.wrapper.querySelector('.carousel-indicators');
+        if (!indicatorsContainer) return;
+
+        // 如果指示器数量不匹配，重新生成
+        if (indicatorsContainer.children.length !== this.totalCards) {
+            while (indicatorsContainer.firstChild) {
+                indicatorsContainer.removeChild(indicatorsContainer.firstChild);
+            }
+
+            for (let i = 0; i < this.totalCards; i++) {
+                const indicator = document.createElement('button');
+                indicator.className = `carousel-indicator${i === activeIndex ? ' active' : ''}`;
+                indicator.setAttribute('role', 'tab');
+                indicator.setAttribute('aria-selected', i === activeIndex);
+                indicator.setAttribute('aria-label', `查看项目 ${i + 1}`);
+                indicator.addEventListener('click', () => {
+                    if (!this.isTransitioning) {
+                        // 点击指示器时，跳转到对应的真正卡片
+                        this.goToIndex(i + this.indexOffset);
+                    }
+                });
+                indicatorsContainer.appendChild(indicator);
+            }
+        } else {
+            // 只更新active状态
+            const indicators = indicatorsContainer.querySelectorAll('.carousel-indicator');
+            indicators.forEach((ind, idx) => {
+                ind.classList.toggle('active', idx === activeIndex);
+                ind.setAttribute('aria-selected', idx === activeIndex);
+            });
+        }
+    }
+
+    hideIndicators() {
+        const indicators = this.wrapper.querySelector('.carousel-indicators');
+        if (indicators) indicators.style.display = 'none';
+    }
+
+    startAutoplay() {
+        if (this.autoplayInterval || this.totalCards <= 1 || this.prefersReducedMotion) return;
+        this.isPaused = false;
+        this.autoplayInterval = setInterval(() => {
+            if (!this.isPaused) {
+                this.next();
+            }
+        }, this.autoplayDelay);
+    }
+
+    stopAutoplay() {
+        if (this.autoplayInterval) {
+            clearInterval(this.autoplayInterval);
+            this.autoplayInterval = null;
+        }
+    }
+
+    restartAutoplay() {
+        this.stopAutoplay();
+        this.startAutoplay();
+    }
+
+    pause() {
+        this.isPaused = true;
+    }
+
+    resume() {
+        this.isPaused = false;
+    }
+
+    // 公共API方法
+    goTo(index) {
+        if (index < 0 || index >= this.totalCards || this.isTransitioning) return;
+        this.goToIndex(index + this.indexOffset);
+    }
+
+    stop() {
+        this.stopAutoplay();
+        this.isPaused = true;
+    }
+
+    play() {
+        if (!this.prefersReducedMotion) {
+            this.isPaused = false;
+            this.startAutoplay();
+        }
+    }
+}
+
+// 初始化所有轮播
+function initProjectsCarousel() {
+    const wrappers = document.querySelectorAll('.projects-carousel-wrapper');
+    const carousels = [];
+    wrappers.forEach(wrapper => {
+        const carousel = new ProjectsCarousel(wrapper);
+        carousels.push(carousel);
+    });
+    
+    // 暴露到全局以便外部控制
+    if (typeof window !== 'undefined') {
+        window.ProjectsCarousels = carousels;
+    }
 }
 
 // ========== 页面加载完成后初始化 ==========

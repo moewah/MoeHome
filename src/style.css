@@ -1848,11 +1848,85 @@ body {
     opacity: 1;
 }
 
-/* ========== 项目流式布局 ========== */
-.projects-flow {
+/* ========== 项目容器布局 ========== */
+.projects-container {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 12px;
+}
+
+/* ========== 项目轮播 ========== */
+/*
+ * 架构设计：
+ * - wrapper: overflow:hidden，不设置左右padding，确保与上下板块对齐
+ * - track: 承载卡片，自由移动
+ * - 卡片宽度由JavaScript动态计算，确保精确填满可见区域
+ */
+.projects-carousel-wrapper {
+    overflow: hidden;
+    /* 只保留上下padding，左右padding为0确保对齐 */
+    padding: 8px 0 14px 0;
+}
+
+.carousel-track {
+    display: flex;
+    gap: 12px;
+    /* 优化的过渡动画 - 使用更平滑的贝塞尔曲线 */
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+
+/* 无动画状态（用于无缝循环的瞬间跳转） */
+.carousel-track.no-transition {
+    transition: none;
+}
+
+/* 轮播指示器 - 增加与轮播的间距 */
+.carousel-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 16px;
+}
+
+.carousel-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.carousel-indicator:hover {
+    background: var(--text-secondary);
+}
+
+.carousel-indicator.active {
+    background: var(--accent);
+    width: 16px;
+    border-radius: 3px;
+}
+
+/* 错误消息样式 */
+.error-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+}
+
+.error-message i {
+    font-size: 24px;
+    margin-bottom: 12px;
+    color: var(--warning);
+}
+
+.error-message p {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
 }
 
 /* 项目卡片 - 编辑器标签页风格（保留原样式） */
@@ -2049,10 +2123,10 @@ body {
     transform: translateX(0);
 }
 
-/* ========== 迷你卡片（其他项目）========== */
+/* 迷你卡片 - 轮播项样式 */
 .project-card-mini {
-    flex: 1 1 calc(25% - 9px);
-    min-width: 120px;
+    /* 宽度由JavaScript动态计算，确保精确对齐 */
+    flex-shrink: 0;
 }
 
 .project-mini-header {
@@ -2163,6 +2237,21 @@ body {
     gap: 12px;
 }
 
+.skeleton-projects-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.skeleton-carousel {
+    overflow: hidden;
+}
+
+.skeleton-carousel-track {
+    display: flex;
+    gap: 12px;
+}
+
 .skeleton-project-main {
     width: 100%;
     height: 160px;
@@ -2170,8 +2259,8 @@ body {
 }
 
 .skeleton-project-mini {
-    flex: 1 1 calc(25% - 9px);
-    min-width: 120px;
+    flex: 1 1 calc(33.333% - 8px);
+    min-width: 140px;
     height: 100px;
     border-radius: 10px;
 }
@@ -2203,6 +2292,12 @@ body {
     }
 
     .links {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        max-width: 100%;
+    }
+
+    .skeleton-links {
         grid-template-columns: 1fr;
         gap: 12px;
         max-width: 100%;
@@ -2287,17 +2382,15 @@ body {
     }
 
     /* Projects responsive - Dashboard Style */
-    .projects-flow {
-        flex-direction: column;
-    }
-
+    /* 移动端迷你卡片每页2个 - 宽度由JavaScript动态计算 */
     .project-card-mini {
-        flex: 1 1 calc(50% - 6px);
-        min-width: 100px;
+        /* 宽度由JavaScript动态计算 */
     }
 
-    .skeleton-projects-flow {
-        flex-wrap: wrap;
+    .skeleton-projects-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
     }
 
     .skeleton-project-main {
@@ -2305,7 +2398,7 @@ body {
     }
 
     .skeleton-project-mini {
-        flex: 1 1 calc(50% - 6px);
+        flex: 0 0 calc(50% - 6px);
         height: 90px;
     }
 }
@@ -2322,15 +2415,25 @@ body {
         max-width: 100%;
     }
 
+    .skeleton-links {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+    }
+
+    .skeleton-links:has(.skeleton-link:nth-child(4)) {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 100%;
+    }
+
     /* RSS 平板端布局 */
     .rss-articles {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto auto;
     }
 
-    /* Projects 平板端 - Dashboard Style */
-    .project-card-mini {
-        flex: 1 1 calc(33.333% - 8px);
+    .skeleton-rss-articles {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
     }
 }
 
@@ -2359,19 +2462,28 @@ body {
         grid-template-columns: repeat(3, 1fr);
     }
 
+    .skeleton-links {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 600px;
+    }
+
+    .skeleton-links:has(.skeleton-link:nth-child(6)) {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
     /* RSS iPad端布局 */
     .rss-articles {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto auto;
     }
 
-    .rss-section {
-        max-width: 600px;
+    .skeleton-rss-articles {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
     }
 
-    /* Projects iPad端 - Dashboard Style */
-    .project-card-mini {
-        flex: 1 1 calc(25% - 9px);
+    .rss-section {
+        max-width: 600px;
     }
 
     .projects-section {
@@ -2396,8 +2508,29 @@ body {
         max-width: 800px;
     }
 
+    .skeleton-links {
+        grid-template-columns: 1fr;
+        max-width: 600px;
+    }
+
+    .skeleton-links:has(.skeleton-link:nth-child(4)) {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 600px;
+    }
+
+    .skeleton-links:has(.skeleton-link:nth-child(6)) {
+        grid-template-columns: repeat(3, 1fr);
+        max-width: 800px;
+    }
+
     /* RSS 桌面端创新布局 */
     .rss-articles {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto auto;
+        max-width: 600px;
+    }
+
+    .skeleton-rss-articles {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto auto;
         max-width: 600px;
@@ -2406,11 +2539,6 @@ body {
     .rss-section {
         width: 100%;
         max-width: 600px;
-    }
-
-    /* Projects 桌面端 - Dashboard Style */
-    .project-card-mini {
-        flex: 1 1 calc(25% - 9px);
     }
 
     .projects-section {
