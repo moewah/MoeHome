@@ -1451,42 +1451,80 @@ body {
     letter-spacing: 0.02em;
 }
 
-/* ========== RSS 文章列表 - 创新布局 ========== */
+.rss-count {
+    margin-left: auto;
+    padding: 2px 8px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 10px;
+    font-family: var(--font-mono);
+}
+
+/* ========== RSS 文章列表 - 3D翻转Masonry布局 ========== */
+
+/* RSS文章容器 - 响应式Masonry布局 */
 .rss-articles {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
     gap: 12px;
     position: relative;
+    perspective: 1200px;
 }
 
-/* 第一篇文章 - 大卡片突出展示 */
-.rss-article:nth-child(1) {
+/* ========== 3D翻转卡片容器 ========== */
+.rss-card-container {
+    position: relative;
+    transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 主卡片位置 - 左侧正方形，占据两行 */
+.rss-card-container:nth-child(1) {
     grid-column: 1;
     grid-row: 1 / 3;
-    min-height: 200px;
+    min-height: 240px;
+    aspect-ratio: 1 / 1;
 }
 
-/* 第二篇文章 - 右上 */
-.rss-article:nth-child(2) {
+/* 次要卡片1 - 右上 */
+.rss-card-container:nth-child(2) {
     grid-column: 2;
     grid-row: 1;
 }
 
-/* 第三篇文章 - 右下左 */
-.rss-article:nth-child(3) {
+/* 次要卡片2 - 右下 */
+.rss-card-container:nth-child(3) {
     grid-column: 2;
     grid-row: 2;
 }
 
-/* 第四篇文章 - 底部通栏 */
-.rss-article:nth-child(4) {
-    grid-column: 1 / -1;
+/* 底部普通卡片行 */
+.rss-card-container:nth-child(n+4) {
+    grid-column: auto;
     grid-row: 3;
 }
 
-/* 文章卡片基础样式 */
+/* 底部卡片网格 - 每行两个 */
+.rss-articles.has-extra-cards {
+    grid-template-rows: auto auto auto auto;
+}
+
+/* ========== 3D翻转状态 ========== */
+.rss-card-container.flipped {
+    transform: rotateY(180deg);
+}
+
+/* ========== 文章卡片基础样式 ========== */
 .rss-article {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -1496,13 +1534,101 @@ body {
     border-radius: 12px;
     text-decoration: none;
     color: var(--text-primary);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    position: relative;
+    /* 3D翻转关键属性 - iOS WebKit必须同时设置两个前缀 */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease, visibility 0s linear 0.4s, opacity 0.4s ease;
     overflow: hidden;
-    min-height: 100px;
 }
 
-/* 卡片扫描线动效 */
+/* 卡片反面 - 初始状态隐藏 */
+.rss-article.rss-article-back {
+    transform: rotateY(180deg);
+    -webkit-transform: rotateY(180deg);
+    visibility: hidden;
+    opacity: 0;
+}
+
+/* ========== 主卡片差异化配色 ========== */
+.rss-card-container:nth-child(1) .rss-article {
+    background: linear-gradient(
+        135deg,
+        rgba(0, 255, 159, 0.08) 0%,
+        var(--bg-secondary) 50%,
+        rgba(0, 255, 159, 0.03) 100%
+    );
+    border-color: rgba(0, 255, 159, 0.25);
+}
+
+.rss-card-container:nth-child(1) .rss-article.rss-article-back {
+    background: linear-gradient(
+        225deg,
+        rgba(0, 255, 159, 0.08) 0%,
+        var(--bg-secondary) 50%,
+        rgba(0, 255, 159, 0.03) 100%
+    );
+    border-color: rgba(0, 255, 159, 0.25);
+}
+
+/* ========== 次要卡片差异化配色 ========== */
+.rss-card-container:nth-child(2) .rss-article {
+    background: linear-gradient(
+        135deg,
+        rgba(100, 180, 255, 0.06) 0%,
+        var(--bg-secondary) 100%
+    );
+    border-color: rgba(100, 180, 255, 0.2);
+}
+
+.rss-card-container:nth-child(3) .rss-article {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 180, 100, 0.06) 0%,
+        var(--bg-secondary) 100%
+    );
+    border-color: rgba(255, 180, 100, 0.2);
+}
+
+/* ========== 底部普通卡片 ========== */
+.rss-card-container:nth-child(n+4) .rss-article {
+    background: var(--bg-secondary);
+    border-color: var(--border);
+}
+
+/* ========== 卡片交互效果 ========== */
+.rss-card-container:hover .rss-article {
+    border-color: var(--accent);
+    box-shadow:
+        0 12px 32px -8px rgba(0, 255, 159, 0.2),
+        0 0 0 1px rgba(0, 255, 159, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+/* 鼠标追踪光晕 */
+.rss-card-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+        circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(0, 255, 159, 0.08),
+        transparent 50%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 10;
+    border-radius: 12px;
+}
+
+.rss-card-container:hover::before {
+    opacity: 1;
+}
+
+/* 扫描线动效 */
 .rss-article::after {
     content: "";
     position: absolute;
@@ -1521,106 +1647,11 @@ body {
     z-index: 1;
 }
 
-.rss-article:hover::after {
+.rss-card-container:hover .rss-article::after {
     left: 100%;
 }
 
-/* 鼠标追踪光晕 */
-.rss-article::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(
-        circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        rgba(0, 255, 159, 0.08),
-        transparent 50%
-    );
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    z-index: 0;
-}
-
-.rss-article:hover::before {
-    opacity: 1;
-}
-
-.rss-article:hover {
-    border-color: var(--accent);
-    transform: translateY(-3px);
-    box-shadow:
-        0 12px 32px -8px rgba(0, 255, 159, 0.2),
-        0 0 0 1px rgba(0, 255, 159, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.02);
-}
-
-/* 第一篇文章增强样式 */
-.rss-article:nth-child(1) {
-    background: linear-gradient(
-        135deg,
-        var(--bg-secondary) 0%,
-        rgba(0, 255, 159, 0.02) 100%
-    );
-    border-color: rgba(0, 255, 159, 0.2);
-}
-
-.rss-article:nth-child(1) .rss-article-title {
-    font-size: 1.05rem;
-    -webkit-line-clamp: 3;
-}
-
-.rss-article:nth-child(1) .rss-article-desc {
-    -webkit-line-clamp: 4;
-    font-size: 0.82rem;
-}
-
-/* 文章序号装饰 */
-.rss-article .article-index {
-    position: absolute;
-    top: 12px;
-    right: 14px;
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: var(--accent);
-    opacity: 0.4;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    z-index: 2;
-    transition: opacity 0.3s ease;
-}
-
-.rss-article:hover .article-index {
-    opacity: 0.8;
-}
-
-/* 新文章标识 */
-.rss-article.is-new::after {
-    content: "";
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    width: 6px;
-    height: 6px;
-    background: var(--accent);
-    border-radius: 50%;
-    animation: newPulse 2s ease-in-out infinite;
-    z-index: 3;
-}
-
-@keyframes newPulse {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.5;
-        transform: scale(1.3);
-    }
-}
-
+/* ========== 卡片内容布局 ========== */
 .rss-article-content {
     display: flex;
     flex-direction: column;
@@ -1643,7 +1674,7 @@ body {
     text-align: left;
 }
 
-.rss-article:hover .rss-article-title {
+.rss-card-container:hover .rss-article-title {
     color: var(--accent);
 }
 
@@ -1697,13 +1728,80 @@ body {
     transition: all 0.3s ease;
 }
 
-.rss-article:hover .rss-article-arrow {
+.rss-card-container:hover .rss-article-arrow {
     color: var(--accent);
     opacity: 1;
     transform: translateX(0);
 }
 
-/* RSS Empty State */
+/* ========== 主卡片内容增强（仅PC/平板） ========== */
+.rss-card-container:nth-child(1) .rss-article-title {
+    font-size: 1.05rem;
+    -webkit-line-clamp: 3;
+}
+
+.rss-card-container:nth-child(1) .rss-article-desc {
+    -webkit-line-clamp: 4;
+    font-size: 0.82rem;
+}
+
+/* PC/平板次要卡片标题一行截断 */
+.rss-card-container:nth-child(2) .rss-article-title,
+.rss-card-container:nth-child(3) .rss-article-title {
+    -webkit-line-clamp: 1;
+}
+
+/* PC/平板次要卡片摘要两行 */
+.rss-card-container:nth-child(2) .rss-article-desc,
+.rss-card-container:nth-child(3) .rss-article-desc {
+    -webkit-line-clamp: 2;
+}
+
+/* ========== 新文章标识 ========== */
+.rss-article.is-new::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: newPulse 2s ease-in-out infinite;
+    z-index: 3;
+}
+
+@keyframes newPulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.3);
+    }
+}
+
+/* ========== 文章序号装饰 ========== */
+.rss-article .article-index {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--accent);
+    opacity: 0.4;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    z-index: 2;
+    transition: opacity 0.3s ease;
+}
+
+.rss-card-container:hover .article-index {
+    opacity: 0.8;
+}
+
+/* ========== RSS Empty State ========== */
 .rss-articles.rss-empty {
     display: block;
     padding: 32px 16px;
@@ -1717,23 +1815,43 @@ body {
     opacity: 0.6;
 }
 
-/* RSS Skeleton - 创新布局适配 */
+/* RSS Skeleton - 与实际卡片布局一致 */
 .skeleton-rss-section {
     width: 100%;
     margin: 20px 0;
 }
 
 .skeleton-rss-header {
-    width: 100px;
-    height: 20px;
-    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin-bottom: 14px;
+    padding: 0 4px;
+}
+
+.skeleton-rss-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.skeleton-rss-title {
+    width: 80px;
+    height: 18px;
+    border-radius: 6px;
+}
+
+.skeleton-rss-count {
+    width: 50px;
+    height: 14px;
+    border-radius: 4px;
+    margin-left: auto;
 }
 
 .skeleton-rss-articles {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto auto;
     gap: 12px;
 }
 
@@ -1742,29 +1860,12 @@ body {
     border-radius: 12px;
 }
 
-/* 第一篇骨架屏 - 大卡片 */
-.skeleton-rss-article:nth-child(1) {
+/* 主卡片骨架屏 - 正方形布局，占据两行 */
+.skeleton-rss-main {
     grid-column: 1;
     grid-row: 1 / 3;
-    height: 212px;
-}
-
-/* 第二篇骨架屏 */
-.skeleton-rss-article:nth-child(2) {
-    grid-column: 2;
-    grid-row: 1;
-}
-
-/* 第三篇骨架屏 */
-.skeleton-rss-article:nth-child(3) {
-    grid-column: 2;
-    grid-row: 2;
-}
-
-/* 第四篇骨架屏 - 底部通栏 */
-.skeleton-rss-article:nth-child(4) {
-    grid-column: 1 / -1;
-    grid-row: 3;
+    aspect-ratio: 1 / 1;
+    min-height: 240px;
 }
 
 /* ========== Projects Section - Dashboard Style ========== */
@@ -1796,11 +1897,14 @@ body {
     letter-spacing: 0.02em;
 }
 
-.projects-count {
+.projects-badge {
     margin-left: auto;
+    padding: 2px 8px;
+    background: var(--accent-dim);
+    color: var(--accent);
     font-size: 0.7rem;
-    color: var(--text-secondary);
-    opacity: 0.6;
+    font-weight: 600;
+    border-radius: 10px;
     font-family: var(--font-mono);
 }
 
@@ -2324,73 +2428,97 @@ body {
         content: "打开";
     }
 
-    /* RSS 移动端响应式 - 单列堆叠 */
+    /* RSS 移动端响应式 - 单列布局 + 3D翻转支持 */
     .rss-articles {
         grid-template-columns: 1fr;
         grid-template-rows: auto;
         gap: 10px;
+        perspective: 1000px;
     }
 
-    .rss-article:nth-child(1),
-    .rss-article:nth-child(2),
-    .rss-article:nth-child(3),
-    .rss-article:nth-child(4) {
+    /* 移动端所有卡片容器统一单列布局 */
+    /* 关键修复：设置统一的固定高度，解决3D翻转时高度塌陷导致的位置乱飞问题 */
+    .rss-card-container,
+    .rss-card-container:nth-child(1),
+    .rss-card-container:nth-child(2),
+    .rss-card-container:nth-child(3),
+    .rss-card-container:nth-child(n+4) {
         grid-column: 1;
         grid-row: auto;
-        min-height: auto;
+        /* 统一固定高度，确保3D翻转有确定的尺寸边界 */
+        height: 120px;
+        min-height: unset;
+        aspect-ratio: auto;
+        transform-style: preserve-3d;
+        transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    /* 移动端翻转状态 - 在固定高度容器内翻转不会影响布局 */
+    .rss-card-container.flipped {
+        transform: rotateY(180deg);
+        -webkit-transform: rotateY(180deg);
+    }
+
+    /* 移动端卡片统一样式 - absolute定位相对于有固定高度的父容器 */
     .rss-article {
         padding: 14px 16px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        /* iOS WebKit 3D翻转修复 */
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
     }
 
-    /* 第一篇文章移动端增强 */
-    .rss-article:nth-child(1) {
-        min-height: 140px;
-    }
-
-    .rss-article:nth-child(1) .rss-article-title {
-        font-size: 0.95rem;
-        -webkit-line-clamp: 2;
-    }
-
-    .rss-article:nth-child(1) .rss-article-desc {
-        -webkit-line-clamp: 3;
-    }
-
+    /* 移动端所有卡片统一布局：一行标题 + 两行摘要 */
     .rss-article-title {
         font-size: 0.85rem;
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 1;
     }
 
     .rss-article-desc {
+        font-size: 0.75rem;
         -webkit-line-clamp: 2;
         text-align: left;
     }
 
-    /* 骨架屏移动端适配 */
+    /* 移动端主卡片与其他卡片统一尺寸（仅配色不同） */
+    .rss-card-container:nth-child(1) .rss-article-title {
+        font-size: 0.85rem;
+        -webkit-line-clamp: 1;
+    }
+
+    .rss-card-container:nth-child(1) .rss-article-desc {
+        font-size: 0.75rem;
+        -webkit-line-clamp: 2;
+    }
+
+    /* 骨架屏移动端适配 - 与实际卡片统一高度 */
     .skeleton-rss-articles {
         grid-template-columns: 1fr;
         grid-template-rows: auto;
     }
 
     .skeleton-rss-article,
-    .skeleton-rss-article:nth-child(1) {
+    .skeleton-rss-main {
         grid-column: 1;
         grid-row: auto;
-        height: 100px;
+        height: 120px;
+        aspect-ratio: auto;
+        min-height: unset;
     }
 
     /* Projects responsive - Dashboard Style */
-    /* 移动端迷你卡片每页2个 - 宽度由JavaScript动态计算 */
+    /* 移动端迷你卡片每行2个 */
     .project-card-mini {
-        /* 宽度由JavaScript动态计算 */
+        flex: 1 1 calc(50% - 6px);
+        min-width: 100px;
     }
 
-    .skeleton-projects-container {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
+    .skeleton-projects-flow {
+        flex-wrap: wrap;
     }
 
     .skeleton-project-main {
@@ -2398,7 +2526,7 @@ body {
     }
 
     .skeleton-project-mini {
-        flex: 0 0 calc(50% - 6px);
+        flex: 1 1 calc(50% - 6px);
         height: 90px;
     }
 }
@@ -2425,15 +2553,44 @@ body {
         max-width: 100%;
     }
 
-    /* RSS 平板端布局 */
+    /* RSS 平板端布局 - Masonry布局 + 3D翻转 */
     .rss-articles {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto auto;
+        perspective: 1200px;
+    }
+
+    /* 平板端主卡片正方形 */
+    .rss-card-container:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        aspect-ratio: 1 / 1;
+    }
+
+    .rss-card-container:nth-child(2) {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .rss-card-container:nth-child(3) {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .rss-card-container:nth-child(n+4) {
+        grid-column: auto;
+        grid-row: 3;
     }
 
     .skeleton-rss-articles {
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto auto;
+        grid-template-rows: auto auto;
+    }
+
+    .skeleton-rss-main {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        aspect-ratio: 1 / 1;
     }
 }
 
@@ -2471,15 +2628,44 @@ body {
         grid-template-columns: repeat(3, 1fr);
     }
 
-    /* RSS iPad端布局 */
+    /* RSS iPad端布局 - Masonry布局 + 3D翻转 */
     .rss-articles {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto auto;
+        perspective: 1200px;
+    }
+
+    /* iPad端主卡片正方形 */
+    .rss-card-container:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        aspect-ratio: 1 / 1;
+    }
+
+    .rss-card-container:nth-child(2) {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .rss-card-container:nth-child(3) {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .rss-card-container:nth-child(n+4) {
+        grid-column: auto;
+        grid-row: 3;
     }
 
     .skeleton-rss-articles {
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto auto;
+        grid-template-rows: auto auto;
+    }
+
+    .skeleton-rss-main {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        aspect-ratio: 1 / 1;
     }
 
     .rss-section {
@@ -2523,17 +2709,46 @@ body {
         max-width: 800px;
     }
 
-    /* RSS 桌面端创新布局 */
+    /* RSS 桌面端布局 - Masonry布局 + 3D翻转 */
     .rss-articles {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto auto;
         max-width: 600px;
+        perspective: 1200px;
+    }
+
+    /* 桌面端主卡片正方形 */
+    .rss-card-container:nth-child(1) {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        aspect-ratio: 1 / 1;
+    }
+
+    .rss-card-container:nth-child(2) {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .rss-card-container:nth-child(3) {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .rss-card-container:nth-child(n+4) {
+        grid-column: auto;
+        grid-row: 3;
     }
 
     .skeleton-rss-articles {
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: auto auto auto;
+        grid-template-rows: auto auto;
         max-width: 600px;
+    }
+
+    .skeleton-rss-main {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        aspect-ratio: 1 / 1;
     }
 
     .rss-section {

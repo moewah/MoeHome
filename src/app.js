@@ -33,6 +33,9 @@ function initPage() {
     // 初始化交互效果
     initInteractions();
 
+    // 初始化 RSS 翻转轮播
+    initRssFlipCarousel();
+
     // 初始化项目轮播
     initProjectsCarousel();
 }
@@ -889,16 +892,102 @@ function initInteractions() {
         });
     });
 
-    // RSS 文章卡片鼠标位置跟踪（用于光晕效果）
-    document.querySelectorAll('.rss-article').forEach(articleElement => {
-        articleElement.addEventListener("mousemove", (e) => {
-            const rect = articleElement.getBoundingClientRect();
+    // RSS 文章卡片容器鼠标位置跟踪（用于光晕效果）
+    document.querySelectorAll('.rss-card-container').forEach(containerElement => {
+        containerElement.addEventListener("mousemove", (e) => {
+            const rect = containerElement.getBoundingClientRect();
             const x = ((e.clientX - rect.left) / rect.width) * 100;
             const y = ((e.clientY - rect.top) / rect.height) * 100;
-            articleElement.style.setProperty("--mouse-x", `${x}%`);
-            articleElement.style.setProperty("--mouse-y", `${y}%`);
+            containerElement.style.setProperty("--mouse-x", `${x}%`);
+            containerElement.style.setProperty("--mouse-y", `${y}%`);
         });
     });
+
+    // 初始化RSS卡片自动翻转功能
+    initRSSCardAutoFlip();
+}
+
+// ========== RSS卡片自动翻转控制 ==========
+let rssFlipInterval = null;
+let rssFlipCards = [];
+let rssCurrentFlipIndex = 0;
+
+function initRSSCardAutoFlip() {
+    // 获取所有有背面内容的卡片容器
+    rssFlipCards = Array.from(document.querySelectorAll('.rss-card-container')).filter(container => {
+        return container.querySelector('.rss-article-back');
+    });
+
+    if (rssFlipCards.length === 0) return;
+
+    // 启动自动翻转
+    startAutoFlip();
+
+    // 页面可见性变化时暂停/恢复
+    document.addEventListener('visibilitychange', handleRSSVisibilityChange);
+}
+
+// 切换单张卡片的翻转状态
+function toggleCardFlip(container) {
+    const isFlipped = container.classList.toggle('flipped');
+
+    // iOS WebKit 修复：手动控制卡片的显示/隐藏
+    // 因为 backface-visibility 在某些 iOS 版本上不可靠
+    const frontCard = container.querySelector('.rss-article:not(.rss-article-back)');
+    const backCard = container.querySelector('.rss-article-back');
+
+    if (frontCard && backCard) {
+        if (isFlipped) {
+            // 翻转后：隐藏正面，显示背面
+            frontCard.style.visibility = 'hidden';
+            frontCard.style.opacity = '0';
+            backCard.style.visibility = 'visible';
+            backCard.style.opacity = '1';
+        } else {
+            // 翻转前：显示正面，隐藏背面
+            frontCard.style.visibility = 'visible';
+            frontCard.style.opacity = '1';
+            backCard.style.visibility = 'hidden';
+            backCard.style.opacity = '0';
+        }
+    }
+}
+
+// 启动自动翻转
+function startAutoFlip() {
+    if (rssFlipCards.length === 0) return;
+
+    // 清除之前的定时器
+    if (rssFlipInterval) {
+        clearInterval(rssFlipInterval);
+    }
+
+    // 每6秒翻转一张卡片
+    rssFlipInterval = setInterval(() => {
+        if (document.hidden) return;
+
+        // 顺序翻转每张卡片
+        if (rssFlipCards[rssCurrentFlipIndex]) {
+            toggleCardFlip(rssFlipCards[rssCurrentFlipIndex]);
+        }
+
+        // 移动到下一张卡片
+        rssCurrentFlipIndex = (rssCurrentFlipIndex + 1) % rssFlipCards.length;
+    }, 6000);
+}
+
+// 页面可见性变化处理
+function handleRSSVisibilityChange() {
+    if (document.hidden) {
+        // 页面隐藏时停止自动翻转
+        if (rssFlipInterval) {
+            clearInterval(rssFlipInterval);
+            rssFlipInterval = null;
+        }
+    } else {
+        // 页面可见时恢复自动翻转
+        startAutoFlip();
+    }
 }
 
 // ========== 项目轮播 ==========
@@ -1257,11 +1346,17 @@ function initProjectsCarousel() {
         const carousel = new ProjectsCarousel(wrapper);
         carousels.push(carousel);
     });
-    
+
     // 暴露到全局以便外部控制
     if (typeof window !== 'undefined') {
         window.ProjectsCarousels = carousels;
     }
+}
+
+// ========== RSS 卡片初始化（简化版）==========
+function initRssFlipCarousel() {
+    // RSS卡片已简化为静态布局，无需复杂的翻转逻辑
+    // 鼠标跟踪光晕效果已在initInteractions中处理
 }
 
 // ========== 页面加载完成后初始化 ==========

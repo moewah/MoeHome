@@ -429,7 +429,7 @@ function generateSkeletonNoticeHTML(notice) {
     return '<div class="skeleton-notice skeleton"></div>';
 }
 
-// 生成 RSS 文章列表 HTML
+// 生成 RSS 文章列表 HTML（支持3D翻转Masonry布局）
 function generateRSSHTML(articles, rssConfig) {
     if (!rssConfig.enabled) {
         return '';
@@ -438,12 +438,16 @@ function generateRSSHTML(articles, rssConfig) {
     // RSS 模块前面带分割线
     let result = '<div class="divider divider-compact lazy-load" data-delay="4"></div>\n';
 
+    // 文章数量显示
+    const countText = articles.length + ' posts';
+
     // 空文章列表时显示友好提示
     if (articles.length === 0) {
         result += '<div class="rss-section lazy-load" id="rss-section" data-delay="4">\n' +
             '                    <div class="rss-header">\n' +
             '                        <i class="' + rssConfig.titleIcon + '"></i>\n' +
             '                        <span class="rss-title">' + rssConfig.titleText + '</span>\n' +
+            '                        <span class="rss-count">' + countText + '</span>\n' +
             '                    </div>\n' +
             '                    <div class="rss-articles rss-empty">\n' +
             '                        <span class="rss-empty-text">暂无最新文章</span>\n' +
@@ -454,7 +458,8 @@ function generateRSSHTML(articles, rssConfig) {
 
     const targetAttr = rssConfig.openInNewTab ? ' target="_blank" rel="noopener"' : '';
 
-    const articlesHTML = articles.map(function(article) {
+    // 生成单张卡片HTML
+    function generateCardHTML(article, index, isBack) {
         // 截断描述并进行 HTML 转义
         let desc = escapeHTML(article.description || '');
         if (desc.length > rssConfig.maxDescriptionLength) {
@@ -474,49 +479,102 @@ function generateRSSHTML(articles, rssConfig) {
         // 对链接进行安全校验和转义
         const safeLink = escapeHTML(article.link);
 
-        return '                    <a href="' + safeLink + '" class="rss-article"' + targetAttr + '>\n' +
-            '                        <div class="rss-article-content">\n' +
-            '                            <span class="rss-article-title">' + escapeHTML(article.title) + '</span>\n' +
-            '                            ' + descHTML + '\n' +
-            '                        </div>\n' +
-            '                        <div class="rss-article-meta">\n' +
-            '                            ' + dateHTML + '\n' +
-            '                            <i class="fa-solid fa-arrow-right rss-article-arrow"></i>\n' +
-            '                        </div>\n' +
-            '                    </a>';
-    }).join('\n');
+        // 背面卡片额外类名
+        const backClass = isBack ? ' rss-article-back' : '';
+
+        return '<a href="' + safeLink + '" class="rss-article' + backClass + '"' + targetAttr + '>\n' +
+            '                            <div class="rss-article-content">\n' +
+            '                                <span class="rss-article-title">' + escapeHTML(article.title) + '</span>\n' +
+            '                                ' + descHTML + '\n' +
+            '                            </div>\n' +
+            '                            <div class="rss-article-meta">\n' +
+            '                                ' + dateHTML + '\n' +
+            '                                <i class="fa-solid fa-arrow-right rss-article-arrow"></i>\n' +
+            '                            </div>\n' +
+            '                        </a>';
+    }
+
+    // 生成卡片容器（包含正面和背面）
+    function generateCardContainer(article, index, backArticle) {
+        const frontCard = generateCardHTML(article, index, false);
+        const backCard = backArticle ? generateCardHTML(backArticle, index, true) : '';
+
+        return '<div class="rss-card-container" data-card-index="' + index + '">\n' +
+            '                        ' + frontCard + '\n' +
+            '                        ' + backCard + '\n' +
+            '                    </div>';
+    }
+
+    // 将文章分组：主卡片组（前3篇）和额外卡片组（第4篇及以后）
+    const primaryArticles = articles.slice(0, 3);
+    const extraArticles = articles.slice(3);
+
+    // 生成卡片容器HTML
+    const cardContainersHTML = [];
+
+    // 主卡片区域：前3篇文章，支持翻转
+    for (let i = 0; i < 3; i++) {
+        const frontArticle = primaryArticles[i];
+        // 背面文章：从额外文章中取，如果没有则不显示背面
+        const backArticle = extraArticles[i] || null;
+
+        if (frontArticle) {
+            cardContainersHTML.push(generateCardContainer(frontArticle, i, backArticle));
+        }
+    }
+
+    // 额外卡片区域：第4篇及以后的文章（如果还有剩余）
+    // 这些文章每两篇一组，正面背面
+    const remainingArticles = extraArticles.slice(3);
+    for (let i = 0; i < remainingArticles.length; i += 2) {
+        const frontArticle = remainingArticles[i];
+        const backArticle = remainingArticles[i + 1] || null;
+
+        if (frontArticle) {
+            cardContainersHTML.push(generateCardContainer(frontArticle, 4 + Math.floor(i / 2), backArticle));
+        }
+    }
+
+    // 如果有多余卡片，添加has-extra-cards类
+    const extraClass = extraArticles.length > 0 ? ' has-extra-cards' : '';
 
     return '<div class="divider divider-compact lazy-load" data-delay="4"></div>\n' +
         '<div class="rss-section lazy-load" id="rss-section" data-delay="4">\n' +
         '                    <div class="rss-header">\n' +
         '                        <i class="' + escapeHTML(rssConfig.titleIcon) + '"></i>\n' +
         '                        <span class="rss-title">' + escapeHTML(rssConfig.titleText) + '</span>\n' +
+        '                        <span class="rss-count">' + countText + '</span>\n' +
         '                    </div>\n' +
-        '                    <div class="rss-articles">\n' +
-        articlesHTML + '\n' +
+        '                    <div class="rss-articles' + extraClass + '">\n' +
+        cardContainersHTML.join('\n') + '\n' +
         '                    </div>\n' +
         '                </div>';
 }
 
-// 生成骨架屏 RSS 占位 HTML
+// 生成骨架屏 RSS 占位 HTML（适配Masonry布局）
 function generateSkeletonRSSHTML(rssConfig) {
     if (!rssConfig.enabled) {
         return '';
     }
 
-    const count = rssConfig.count;
+    // 骨架屏显示3个占位，模拟Masonry布局的前3张卡片
+    // 第1张是主卡片（占据两行），第2、3张是次要卡片
     const skeletonArticles = [];
-    for (let i = 0; i < count; i++) {
-        skeletonArticles.push('                    <div class="skeleton-rss-article skeleton"></div>');
-    }
+    skeletonArticles.push('                    <div class="skeleton-rss-article skeleton-rss-main skeleton"></div>');
+    skeletonArticles.push('                    <div class="skeleton-rss-article skeleton"></div>');
+    skeletonArticles.push('                    <div class="skeleton-rss-article skeleton"></div>');
 
     return '<div class="skeleton-divider skeleton"></div>\n' +
         '                <!-- RSS Articles Skeleton -->\n' +
         '                <div class="skeleton-rss-section">\n' +
-            '                    <div class="skeleton-rss-header skeleton"></div>\n' +
-            '                    <div class="skeleton-rss-articles">\n' +
+        '                    <div class="skeleton-rss-header">\n' +
+        '                        <div class="skeleton-rss-icon skeleton"></div>\n' +
+        '                        <div class="skeleton-rss-title skeleton"></div>\n' +
+        '                        <div class="skeleton-rss-count skeleton"></div>\n' +
+        '                    </div>\n' +
+        '                    <div class="skeleton-rss-articles">\n' +
                 skeletonArticles.join('\n') + '\n' +
-            '                    </div>\n' +
+        '                    </div>\n' +
         '                </div>';
 }
 
@@ -845,7 +903,7 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
                     <div class="projects-header">
                         <i class="${escapeHTML(projectsConfig.titleIcon)}"></i>
                         <span class="projects-title">${escapeHTML(projectsConfig.titleText)}</span>
-                        <span class="projects-count">0 repos</span>
+                        <span class="projects-badge">0 repos</span>
                     </div>
                     <div class="error-message">
                         <i class="fa-solid fa-exclamation-triangle"></i>
@@ -934,7 +992,7 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
                     <div class="projects-header">
                         <i class="${escapeHTML(projectsConfig.titleIcon)}"></i>
                         <span class="projects-title">${escapeHTML(projectsConfig.titleText)}</span>
-                        <span class="projects-count">${repos.length} repos</span>
+                        <span class="projects-badge">${repos.length} repos</span>
                     </div>
                     <!-- Contribution Graph -->
                     <div class="contribution-graph" aria-hidden="true">
