@@ -363,6 +363,7 @@ function generateLinksSectionHTML(links, linksConfig) {
                     <div class="links-header">
                         <i class="${escapeHTML(linksConfig.titleIcon)}"></i>
                         <span class="links-title">${escapeHTML(linksConfig.titleText)}</span>
+                        <span class="section-count">${enabledLinks.length} links</span>
                     </div>
                     <div class="links">
 ${linksHTML}
@@ -396,7 +397,10 @@ function generateSkeletonLinksSectionHTML(links, linksConfig) {
 
     return `                <div class="skeleton-divider skeleton"></div>
                 <div class="skeleton-links-section">
-                    <div class="skeleton-links-header skeleton"></div>
+                    <div class="skeleton-links-header">
+                        <div class="skeleton-links-title skeleton"></div>
+                        <div class="skeleton-section-count skeleton"></div>
+                    </div>
                     <div class="skeleton-links">
                     ${skeletonLinks}
                     </div>
@@ -447,7 +451,7 @@ function generateRSSHTML(articles, rssConfig) {
             '                    <div class="rss-header">\n' +
             '                        <i class="' + rssConfig.titleIcon + '"></i>\n' +
             '                        <span class="rss-title">' + rssConfig.titleText + '</span>\n' +
-            '                        <span class="rss-count">' + countText + '</span>\n' +
+            '                        <span class="section-count">' + countText + '</span>\n' +
             '                    </div>\n' +
             '                    <div class="rss-articles rss-empty">\n' +
             '                        <span class="rss-empty-text">暂无最新文章</span>\n' +
@@ -543,7 +547,7 @@ function generateRSSHTML(articles, rssConfig) {
         '                    <div class="rss-header">\n' +
         '                        <i class="' + escapeHTML(rssConfig.titleIcon) + '"></i>\n' +
         '                        <span class="rss-title">' + escapeHTML(rssConfig.titleText) + '</span>\n' +
-        '                        <span class="rss-count">' + countText + '</span>\n' +
+        '                        <span class="section-count">' + countText + '</span>\n' +
         '                    </div>\n' +
         '                    <div class="rss-articles' + extraClass + '">\n' +
         cardContainersHTML.join('\n') + '\n' +
@@ -570,7 +574,7 @@ function generateSkeletonRSSHTML(rssConfig) {
         '                    <div class="skeleton-rss-header">\n' +
         '                        <div class="skeleton-rss-icon skeleton"></div>\n' +
         '                        <div class="skeleton-rss-title skeleton"></div>\n' +
-        '                        <div class="skeleton-rss-count skeleton"></div>\n' +
+        '                        <div class="skeleton-section-count skeleton"></div>\n' +
         '                    </div>\n' +
         '                    <div class="skeleton-rss-articles">\n' +
                 skeletonArticles.join('\n') + '\n' +
@@ -903,7 +907,7 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
                     <div class="projects-header">
                         <i class="${escapeHTML(projectsConfig.titleIcon)}"></i>
                         <span class="projects-title">${escapeHTML(projectsConfig.titleText)}</span>
-                        <span class="projects-badge">0 repos</span>
+                        <span class="section-count">0 repos</span>
                     </div>
                     <div class="error-message">
                         <i class="fa-solid fa-exclamation-triangle"></i>
@@ -992,7 +996,7 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
                     <div class="projects-header">
                         <i class="${escapeHTML(projectsConfig.titleIcon)}"></i>
                         <span class="projects-title">${escapeHTML(projectsConfig.titleText)}</span>
-                        <span class="projects-badge">${repos.length} repos</span>
+                        <span class="section-count">${repos.length} repos</span>
                     </div>
                     <!-- Contribution Graph -->
                     <div class="contribution-graph" aria-hidden="true">

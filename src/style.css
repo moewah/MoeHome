@@ -1451,7 +1451,8 @@ body {
     letter-spacing: 0.02em;
 }
 
-.rss-count {
+/* ========== 模块标题数量统计（统一样式） ========== */
+.section-count {
     margin-left: auto;
     padding: 2px 8px;
     background: var(--accent-dim);
@@ -1841,7 +1842,7 @@ body {
     border-radius: 6px;
 }
 
-.skeleton-rss-count {
+.skeleton-section-count {
     width: 50px;
     height: 14px;
     border-radius: 4px;
@@ -1895,17 +1896,6 @@ body {
     font-weight: 600;
     color: var(--text-primary);
     letter-spacing: 0.02em;
-}
-
-.projects-badge {
-    margin-left: auto;
-    padding: 2px 8px;
-    background: var(--accent-dim);
-    color: var(--accent);
-    font-size: 0.7rem;
-    font-weight: 600;
-    border-radius: 10px;
-    font-family: var(--font-mono);
 }
 
 /* ========== 贡献图装饰 ========== */
@@ -2868,10 +2858,17 @@ body.skeleton-active .cursor {
 }
 
 .skeleton-links-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 0 4px;
+}
+
+.skeleton-links-title {
     width: 100px;
     height: 20px;
     border-radius: 6px;
-    margin-bottom: 14px;
 }
 
 .skeleton-links {
