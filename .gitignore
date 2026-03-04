@@ -8,6 +8,9 @@ dist/
 .DS_Store
 *.log
 
+# 工具缓存
+.playwright-mcp/
+
 # 编辑器
 .vscode/
 .idea/

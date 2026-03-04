@@ -1,21 +1,29 @@
 # MoeHome 个人主页
 
-一个简约、酷炫的个人主页模板，支持静态 SEO 优化和配置化开发。
+一个简约、酷炫的个人主页模板，配置驱动、静态优先，支持双主题、GitHub 集成、RSS 聚合，专注性能与视觉体验。
 
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ## 页面预览
 
-![终端打印动效](./src/images/screenshot-full.png)
+**暗色主题**
+![暗色主题预览](./src/images/screenshot-dark.png)
+
+**亮色主题**
+![亮色主题预览](./src/images/screenshot-light.png)
 
 ## 特性
 
 - 🎨 **配置驱动** - 所有内容在 config.js 中管理，无需修改代码
 - 🔍 **SEO 友好** - 构建生成纯静态 HTML，搜索引擎完美支持
-- ✨ **动态效果** - 粒子背景、发光分割线、自定义光标
+- ✨ **动态效果** - 粒子背景、发光分割线、自定义光标、终端打字机
+- 🌓 **双主题** - 明暗主题一键切换，支持 7 种配色变量自定义
 - 📱 **响应式设计** - 完美适配移动端和桌面端
 - 🚀 **零依赖** - 仅一个 Node.js 构建脚本，无需框架
 - 📦 **易部署** - 构建输出即插即用，支持任意静态托管
+- 🐙 **GitHub 集成** - 自动展示项目和贡献图（支持真实/随机数据）
+- 📰 **RSS 聚合** - 构建时预获取博客文章，无运行时延迟
+- 📊 **多统计支持** - Google Analytics、Clarity、Umami、自定义脚本
 
 ## 快速开始
 
@@ -40,161 +48,47 @@ npm run serve
 
 ## 配置说明
 
-所有配置都在 `src/config.js` 文件中：
+所有配置都在 `src/config.js` 文件中，按页面渲染顺序：
 
-### 基础信息
+### 主题配色
+
+在 `src/config.js` 中配置明暗双主题配色：
 
 ```javascript
-profile: {
-    name: 'MoeWah',
-    tagline: {
-        prefix: '🐾',
-        text: 'Meow~',
-        highlight: '万物皆可萌！'
+theme: {
+    default: 'auto',  // 'light' | 'dark' | 'auto'
+
+    light: {
+        accent: "#D97706",        // 强调色（链接、按钮、高亮）
+        bgPrimary: "#FFFFFF",     // 主背景
+        bgSecondary: "#F9FAFB",   // 次背景（卡片、区块）
+        textPrimary: "#18181B",   // 主文字
+        textSecondary: "#71717A", // 次文字（描述、标签）
+        border: "#E4E4E7",        // 边框
     },
-    avatar: 'images/avatar.webp'
-}
-```
 
-### 链接模块配置
-
-控制链接导航模块的整体开关和标题显示：
-
-```javascript
-linksConfig: {
-    enabled: true,    // 改成 false 禁用整个链接导航模块
-    title: {
-        text: '链接导航',
-        icon: 'fa-solid fa-link',
+    dark: {
+        accent: "#00ff9f",
+        bgPrimary: "#0a0a0a",
+        bgSecondary: "#111111",
+        textPrimary: "#e8e8e8",
+        textSecondary: "#888888",
+        border: "#222222",
     },
-},
-```
-
-| 配置 | 说明 |
-|------|------|
-| `enabled` | 模块开关，`false` 时隐藏菜单导航中的 Links 和页面链接模块 |
-| `title.text` | 标题文字 |
-| `title.icon` | 标题图标（Font Awesome） |
-
-### 社交链接
-
-```javascript
-links: [
-    {
-        name: 'Blog',
-        description: '技术文章 & 教程',
-        url: 'https://yourblog.com',
-        icon: 'fa-solid fa-pen-nib',
-        brand: 'blog',
-        external: true,
-        color: '#00ff9f',
-        enabled: true  // 显示/隐藏按钮
-    }
-]
-```
-
-- `name` - 按钮显示名称
-- `description` - 描述文字（移动端显示）
-- `url` - 链接地址
-- `icon` - Font Awesome 图标类
-- `brand` - 品牌标识（用于 CSS 样式）
-- `external` - 是否在新窗口打开
-- `color` - 主题颜色（按钮颜色）
-- `enabled` - 是否显示
-
-### 终端内容
-
-```javascript
-identity: ['开源爱好者', 'Astro爱好者', 'AI探索者'],
-interests: ['Astro & 前端开发', 'Docker & 容器技术'],
-
-terminal: {
-    title: '🐾 meow@tribe:~|',
-    prompts: [
-        { command: 'whoami', output: 'identity' },
-        { command: 'cat interests.txt', output: 'interests' },
-        { command: './wisdom.sh', output: 'dynamic' }
-    ]
-}
-```
-
-### 名人语录
-
-```javascript
-quotes: [
-    "Empty your mind, be formless, shapeless, like water...",
-    "Be water, my friend."
-]
-```
-
-### 页脚
-
-```javascript
-footer: {
-    text: 'Powered by',
-    link: {
-        text: 'Your Name',
-        url: 'https://yourblog.com/'
-    }
-}
-}
-```
-
-### 博客文章 RSS
-
-从自定义 RSS 源获取最新文章，构建时预获取，零运行时延迟：
-
-```javascript
-rss: {
-    enabled: true,                              // 启用/禁用
-    url: 'https://yourblog.com/rss.xml',       // RSS 源地址
-    count: 4,                                   // 显示文章数量
-    openInNewTab: true,                         // 新标签页打开
-    title: {
-        text: '近期更新',                        // 区块标题
-        icon: 'fa-solid fa-newspaper'          // 标题图标
-    },
-    display: {
-        showDate: true,                         // 显示日期
-        showDescription: true,                  // 显示摘要
-        maxDescriptionLength: 100               // 摘要最大长度
-    }
-}
-```
-
-设置 `enabled: false` 可完全隐藏文章列表模块。
-
-### GitHub 模块
-
-项目展示和贡献图共用 GitHub 用户配置：
-
-```javascript
-// GitHub 用户配置
-projects: {
-    enabled: true,
-    githubUser: 'https://github.com/yourusername',   // GitHub 用户主页
-    count: 5,                                   // 显示项目数量（按 star 排序）
-    exclude: ['.github'],                      // 排除的仓库名（支持正则）
-}
-
-// 贡献图配置
-contribution: {
-    enabled: true,           // 是否启用贡献图
-    useRealData: true,       // true=真实数据, false=随机数据
-    githubUser: '',          // 留空则自动使用 projects.githubUser
 }
 ```
 
 | 配置 | 说明 |
 |------|------|
-| `projects.githubUser` | GitHub 用户主页地址 |
-| `projects.count` | 显示项目数量（按 star 降序） |
-| `projects.exclude` | 排除的仓库名（支持正则匹配） |
-| `contribution.useRealData` | `true`=API 获取真实数据，`false`=随机数据 |
+| `default` | 首屏默认主题，`auto` 时使用深色 |
+| `accent` | 强调色，用于链接、按钮、高亮元素 |
+| `bgPrimary` | 页面主背景色 |
+| `bgSecondary` | 次级背景色（卡片、区块） |
+| `textPrimary` | 主要文字颜色 |
+| `textSecondary` | 次要文字颜色（描述、标签） |
+| `border` | 边框、分割线颜色 |
 
-**数据获取方式**：
-- 项目列表：GitHub API `/users/{username}/repos`
-- 贡献图：GitHub Events API `/users/{username}/events/public`
+**注意**：衍生色会根据主色自动计算，无需手动配置。
 
 ### 导航栏配置
 
@@ -229,16 +123,145 @@ nav: {
 | `brand.hoverText` | 鼠标悬停时打字机效果显示的文字 |
 | `menus` | 自定义二级菜单数组 |
 
-**功能特性**：
-- 滚动时背景模糊效果
-- 当前区域自动高亮
-- 移动端响应式侧边栏
-- 品牌区点击返回顶部
+**主题切换**：点击循环切换 (auto → light → dark)，图标动态变化：🖥️ / ☀️ / 🌙
 
-**主题切换**：
-- PC 端：顶部导航栏按钮，点击循环切换 (auto → light → dark)
-- 移动端：侧边栏底部按钮，点击循环切换
-- 图标动态变化：🖥️ auto / ☀️ light / 🌙 dark
+### 基础信息
+
+```javascript
+profile: {
+    name: 'MoeWah',
+    tagline: {
+        prefix: '🐾',
+        text: 'Meow~',
+        highlight: '万物皆可萌！'
+    },
+    avatar: 'images/avatar.webp'
+}
+```
+
+### 终端内容
+
+```javascript
+identity: ['开源爱好者', 'Astro爱好者', 'AI探索者'],
+interests: ['Astro & 前端开发', 'Docker & 容器技术'],
+
+terminal: {
+    title: '🐾 meow@tribe:~|',
+    prompts: [
+        { command: 'whoami', output: 'identity' },
+        { command: 'cat interests.txt', output: 'interests' },
+        { command: './wisdom.sh', output: 'dynamic' }
+    ]
+}
+```
+
+### 名人语录
+
+```javascript
+quotes: [
+    "Empty your mind, be formless, shapeless, like water...",
+    "Be water, my friend."
+]
+```
+
+### 博客文章 RSS
+
+从自定义 RSS 源获取最新文章，构建时预获取：
+
+```javascript
+rss: {
+    enabled: true,
+    url: 'https://yourblog.com/rss.xml',
+    count: 4,
+    openInNewTab: true,
+    title: {
+        text: '近期更新',
+        icon: 'fa-solid fa-newspaper'
+    },
+    display: {
+        showDate: true,
+        showDescription: true,
+        maxDescriptionLength: 100
+    }
+}
+```
+
+### GitHub 模块
+
+项目展示和贡献图共用 GitHub 用户配置：
+
+```javascript
+projects: {
+    enabled: true,
+    githubUser: 'https://github.com/yourusername',
+    count: 5,
+    exclude: ['.github'],
+}
+
+contribution: {
+    enabled: true,
+    useRealData: true,      // true=真实数据, false=随机数据
+    githubUser: '',         // 留空则自动使用 projects.githubUser
+}
+```
+
+| 配置 | 说明 |
+|------|------|
+| `projects.githubUser` | GitHub 用户主页地址 |
+| `projects.count` | 显示项目数量（按 star 降序） |
+| `projects.exclude` | 排除的仓库名（支持正则匹配） |
+| `contribution.useRealData` | `true`=API 获取真实数据，`false`=随机数据 |
+
+### 链接模块配置
+
+控制链接导航模块的整体开关和标题显示：
+
+```javascript
+linksConfig: {
+    enabled: true,    // 改成 false 禁用整个链接导航模块
+    title: {
+        text: '链接导航',
+        icon: 'fa-solid fa-link',
+    },
+},
+```
+
+### 社交链接
+
+```javascript
+links: [
+    {
+        name: 'Blog',
+        description: '技术文章 & 教程',
+        url: 'https://yourblog.com',
+        icon: 'fa-solid fa-pen-nib',
+        brand: 'blog',
+        external: true,
+        color: '#00ff9f',
+        enabled: true
+    }
+]
+```
+
+| 配置 | 说明 |
+|------|------|
+| `name` | 按钮显示名称 |
+| `url` | 链接地址 |
+| `icon` | Font Awesome 图标类 |
+| `color` | 按钮主题颜色 |
+| `enabled` | 是否显示 |
+
+### 页脚
+
+```javascript
+footer: {
+    text: 'Powered by',
+    link: {
+        text: 'Your Name',
+        url: 'https://yourblog.com/'
+    }
+}
+```
 
 ### 统计代码
 
@@ -316,42 +339,6 @@ npm run build
 - 阿里云 OSS
 - 腾讯云 COS
 - 自己的 Nginx 服务器
-
-## 自定义样式
-
-### 颜色变量
-
-在 `src/style.css` 中修改 CSS 变量：
-
-```css
-:root {
-    --bg-primary: #0a0a0a;      /* 背景色 */
-    --bg-secondary: #111111;    /* 次级背景 */
-    --text-primary: #e8e8e8;   /* 主文字 */
-    --text-secondary: #888888;  /* 次级文字 */
-    --accent: #00ff9f;          /* 主题色 */
-    --border: #222222;          /* 边框色 */
-}
-```
-
-### 添加新按钮
-
-1. 在 `src/config.js` 的 `links` 数组中添加：
-
-```javascript
-{
-    name: 'Telegram',
-    description: '联系',
-    url: 'https://t.me/yourname',
-    icon: 'fa-brands fa-telegram',
-    brand: 'telegram',
-    external: true,
-    color: '#229ED9',
-    enabled: true
-}
-```
-
-2. 运行 `npm run build`
 
 ## 技术栈
 
