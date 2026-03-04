@@ -31,6 +31,62 @@ window.HOMEPAGE_CONFIG = {
     },
   },
 
+  // ========== 主题配色 ==========
+  theme: {
+    // 默认主题模式（'auto' 时构建使用 dark 作为首屏默认）
+    default: 'auto', // 'light' | 'dark' | 'auto'
+
+    // 浅色主题（Claude 暖灰风格示例）
+    light: {
+      accent: "#D97706",        // 琥珀橙（Claude 品牌色）
+      bgPrimary: "#FBF8F3",     // 暖白（米白带暖调）
+      bgSecondary: "#F5F2ED",   // 暖灰（卡片背景）
+      textPrimary: "#1C1917",   // 深炭灰（Stone 900）
+      textSecondary: "#78716C", // 暖中灰（Stone 500）
+      border: "#E7E5E4",        // 暖浅灰边框（Stone 200）
+    },
+
+    // 深色主题
+    dark: {
+      accent: "#00ff9f",
+      bgPrimary: "#0a0a0a",
+      bgSecondary: "#111111",
+      textPrimary: "#e8e8e8",
+      textSecondary: "#888888",
+      border: "#222222",
+    },
+  },
+
+  // ========== 主题切换配置 ==========
+  themeSwitcher: {
+    enabled: true,
+    defaultMode: "auto",
+    showToggle: true,
+  },
+
+  // ========== 导航栏配置 ==========
+  nav: {
+    enabled: true,
+
+    // 品牌区配置
+    brand: {
+      showPrompt: true, // 显示 $ 符号
+      hoverText: "~/whoami", // hover 打字机效果文字
+    },
+
+    // 自定义二级菜单
+    menus: [], // 默认空，示例：
+    // menus: [
+    //   {
+    //     name: 'Resources',
+    //     items: [
+    //       { name: '工具推荐', url: 'https://...', external: true },
+    //       { name: '友情链接', url: 'https://...', external: true },
+    //     ]
+    //   }
+    // ],
+  },
+
   // ========== 个人信息 ==========
   profile: {
     name: "MoeWah",
@@ -88,6 +144,54 @@ window.HOMEPAGE_CONFIG = {
     "You have to compete within your own area of competence.",
   ],
 
+  // ========== 动画配置 ==========
+  animation: {
+    fadeInDelay: 1000, // ms
+    typingSpeed: 60, // ms per character（打字速度）
+    quoteDisplayTime: 4000, // ms（每条语录显示时间）
+    quoteDeleteSpeed: 42, // ms per character（删除速度，比打字快）
+  },
+
+  // ========== RSS 文章配置 ==========
+  rss: {
+    enabled: false, // 设置为 true 启用
+    url: "https://yourblog.com/rss.xml", // 你的博客 RSS 地址
+    count: 4,
+    openInNewTab: true,
+    title: {
+      text: "近期更新",
+      icon: "fa-solid fa-newspaper",
+    },
+    display: {
+      showDate: true,
+      showDescription: true,
+      maxDescriptionLength: 100,
+    },
+  },
+
+  // ========== GitHub 项目展示配置 ==========
+  projects: {
+    enabled: false, // 设置为 false 可禁用此模块
+    title: {
+      text: "我的项目",
+      icon: "fa-solid fa-folder-open",
+    },
+    // GitHub 用户主页地址，构建时自动获取公开仓库
+    githubUser: "https://github.com/yourusername", // 替换为你的 GitHub 主页
+    // 显示数量限制（按 star 数排序后取前 N 个）
+    count: 5,
+    // 排除的仓库名（可选，支持正则）
+    exclude: [".github"], // 排除 .github 仓库
+  },
+
+  // ========== GitHub 贡献图配置 ==========
+  contribution: {
+    enabled: true, // 是否启用贡献图
+    useRealData: true, // true=真实数据, false=随机数据
+    // GitHub 用户名（留空则从 projects.githubUser 自动提取）
+    githubUser: "",
+  },
+
   // ========== 链接模块配置 ==========
   linksConfig: {
     enabled: true, // 改成 false 禁用整个链接导航模块
@@ -97,7 +201,7 @@ window.HOMEPAGE_CONFIG = {
     },
   },
 
-  // ========== 链接配置 ==========
+  // ========== 社交链接 ==========
   links: [
     {
       name: "Blog",
@@ -206,110 +310,6 @@ window.HOMEPAGE_CONFIG = {
     type: "warning", // warning | info | success
     icon: "fa-solid fa-shield-halved",
     text: "声明：本人不会主动邀请或联系任何人，任何冒用本人名义的一切事物，请务必谨防受骗！",
-  },
-
-  // ========== 动画配置 ==========
-  animation: {
-    fadeInDelay: 1000, // ms
-    typingSpeed: 60, // ms per character（打字速度）
-    quoteDisplayTime: 4000, // ms（每条语录显示时间）
-    quoteDeleteSpeed: 42, // ms per character（删除速度，比打字快）
-  },
-
-  // ========== 主题配色 ==========
-  theme: {
-    // 默认主题模式（'auto' 时构建使用 dark 作为首屏默认）
-    default: 'auto', // 'light' | 'dark' | 'auto'
-
-    // 浅色主题（Claude 暖灰风格示例）
-    light: {
-      accent: "#D97706",        // 琥珀橙（Claude 品牌色）
-      bgPrimary: "#FBF8F3",     // 暖白（米白带暖调）
-      bgSecondary: "#F5F2ED",   // 暖灰（卡片背景）
-      textPrimary: "#1C1917",   // 深炭灰（Stone 900）
-      textSecondary: "#78716C", // 暖中灰（Stone 500）
-      border: "#E7E5E4",        // 暖浅灰边框（Stone 200）
-    },
-
-    // 深色主题
-    dark: {
-      accent: "#00ff9f",
-      bgPrimary: "#0a0a0a",
-      bgSecondary: "#111111",
-      textPrimary: "#e8e8e8",
-      textSecondary: "#888888",
-      border: "#222222",
-    },
-  },
-
-  // ========== 主题切换配置 ==========
-  themeSwitcher: {
-    enabled: true,
-    defaultMode: "auto",
-    showToggle: true,
-  },
-
-  // ========== 导航栏配置 ==========
-  nav: {
-    enabled: true,
-
-    // 品牌区配置
-    brand: {
-      showPrompt: true, // 显示 $ 符号
-      hoverText: "~/whoami", // hover 打字机效果文字
-    },
-
-    // 自定义二级菜单
-    menus: [], // 默认空，示例：
-    // menus: [
-    //   {
-    //     name: 'Resources',
-    //     items: [
-    //       { name: '工具推荐', url: 'https://...', external: true },
-    //       { name: '友情链接', url: 'https://...', external: true },
-    //     ]
-    //   }
-    // ],
-  },
-
-  // ========== RSS 文章配置 ==========
-  rss: {
-    enabled: false, // 设置为 true 启用
-    url: "https://yourblog.com/rss.xml", // 你的博客 RSS 地址
-    count: 4,
-    openInNewTab: true,
-    title: {
-      text: "近期更新",
-      icon: "fa-solid fa-newspaper",
-    },
-    display: {
-      showDate: true,
-      showDescription: true,
-      maxDescriptionLength: 100,
-    },
-  },
-
-  // ========== GitHub 项目展示配置 ==========
-  projects: {
-    enabled: false, // 设置为 false 可禁用此模块
-    title: {
-      text: "我的项目",
-      icon: "fa-solid fa-folder-open",
-    },
-    // GitHub 用户主页地址，构建时自动获取公开仓库
-    githubUser: "https://github.com/yourusername", // 替换为你的 GitHub 主页
-    // 显示数量限制（按 star 数排序后取前 N 个）
-    count: 5,
-    // 排除的仓库名（可选，支持正则）
-    exclude: [".github"], // 排除 .github 仓库
-  },
-
-  // ========== GitHub 贡献图配置 ==========
-  contribution: {
-    enabled: true, // 是否启用贡献图
-    useRealData: true, // true=真实数据, false=随机数据
-    // GitHub 用户名（留空则从 projects.githubUser 自动提取）
-    githubUser: "",
   },
 
   // ========== 统计代码配置 ==========
