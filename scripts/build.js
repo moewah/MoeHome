@@ -25,7 +25,9 @@ function cleanDist() {
 // 读取配置文件
 const configContent = fs.readFileSync(path.join(rootDir, 'src/config.js'), 'utf8');
 
-// 提取字符串值
+/**
+ * 提取字符串值 - 支持字符串内包含引号
+ */
 function extractString(pattern, fallback = '') {
     const match = configContent.match(pattern);
     if (match && match[1]) {
@@ -34,37 +36,75 @@ function extractString(pattern, fallback = '') {
     return fallback;
 }
 
-// 提取数组
+/**
+ * 提取数组 - 支持字符串内包含引号
+ * 正确处理：
+ * - 字符串内的引号（如 "I'm"）
+ * - 不同引号类型混用（单引号、双引号、反引号）
+ * - 转义字符
+ */
 function extractArray(pattern, fallback = []) {
     const match = configContent.match(pattern);
-    if (match && match[1]) {
-        try {
-            const arrayContent = match[1];
-            const items = arrayContent.match(/['"`]([^'"`]+)['"`]/g);
-            if (items) {
-                return items.map(item => item.replace(/['"`]/g, '').trim());
-            }
-        } catch (e) {
-            return fallback;
-        }
+    if (!match || !match[1]) {
+        return fallback;
     }
-    return fallback;
+
+    const arrayContent = match[1];
+    const items = [];
+
+    // 匹配三种引号类型，正确处理内部引号和转义
+    // 双引号: "..." 或 "..."
+    // 单引号: '...' 或 '...'
+    // 反引号: `...`
+    const stringPattern = /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`/g;
+
+    let stringMatch;
+    while ((stringMatch = stringPattern.exec(arrayContent)) !== null) {
+        const str = stringMatch[0];
+        // 移除首尾引号
+        const content = str.slice(1, -1);
+        // 处理转义字符
+        items.push(content.replace(/\\(['"`\\])/g, '$1').trim());
+    }
+
+    return items.length > 0 ? items : fallback;
 }
 
-// 提取嵌套字符串
+/**
+ * 提取嵌套字符串 - 支持字符串内包含引号
+ * 正确处理转义字符和字符串内的引号
+ */
 function extractNestedString(parentPattern, key, fallback = '') {
     const parentMatch = configContent.match(parentPattern);
-    if (parentMatch && parentMatch[1]) {
-        const keyPattern = new RegExp(key + ':\\s*[\'"`]([^\'"`]+)[\'"`]');
-        const keyMatch = parentMatch[1].match(keyPattern);
-        if (keyMatch && keyMatch[1]) {
-            return keyMatch[1].trim();
+    if (!parentMatch || !parentMatch[1]) {
+        return fallback;
+    }
+
+    const parentContent = parentMatch[1];
+
+    // 使用更健壮的正则，匹配三种引号类型
+    // 匹配 key: "..." 或 key: '...' 或 key: `...`
+    const patterns = [
+        new RegExp(key + ':\\s*"((?:[^"\\\\]|\\\\.)*)"'),  // 双引号
+        new RegExp(key + ":\\s*'((?:[^'\\\\]|\\\\.)*)'"),  // 单引号
+        new RegExp(key + ':\\s*`((?:[^`\\\\]|\\\\.)*)`'),  // 反引号
+    ];
+
+    for (const pattern of patterns) {
+        const match = parentContent.match(pattern);
+        if (match && match[1]) {
+            // 处理转义字符
+            return match[1].replace(/\\(['"`\\])/g, '$1').trim();
         }
     }
+
     return fallback;
 }
 
-// 提取链接数组
+/**
+ * 提取链接数组 - 支持字符串内包含引号
+ * 使用健壮的字符串匹配，正确处理转义字符
+ */
 function extractLinks() {
     const linksMatch = configContent.match(/links:\s*\[([\s\S]*?)\n\s*\]/);
     if (!linksMatch) return [];
@@ -72,38 +112,69 @@ function extractLinks() {
     const linksContent = linksMatch[1];
     const links = [];
 
-    // 匹配每个链接对象
-    const linkPattern = /\{[\s\S]*?name:\s*['"`]([^'"`]+)['"`][\s\S]*?description:\s*['"`]([^'"`]+)['"`][\s\S]*?url:\s*['"`]([^'"`]+)['"`][\s\S]*?icon:\s*['"`]([^'"`]+)['"`][\s\S]*?brand:\s*['"`]([^'"`]+)['"`][\s\S]*?external:\s*(true|false)([\s\S]*?)\}/g;
+    // 匹配每个链接对象 {...}
+    const objectPattern = /\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g;
 
-    let match;
-    while ((match = linkPattern.exec(linksContent)) !== null) {
+    let objectMatch;
+    while ((objectMatch = objectPattern.exec(linksContent)) !== null) {
+        const objContent = objectMatch[1];
+
+        // 使用健壮的字符串提取函数
+        const name = extractStringValue(objContent, 'name');
+        const description = extractStringValue(objContent, 'description');
+        const url = extractStringValue(objContent, 'url');
+        const icon = extractStringValue(objContent, 'icon');
+        const brand = extractStringValue(objContent, 'brand');
+
+        // 提取 external 布尔值
+        const externalMatch = objContent.match(/external:\s*(true|false)/);
+        const external = externalMatch ? externalMatch[1] === 'true' : true;
+
         // 提取 color 字段
-        let color = '#00ff9f'; // 默认颜色
-        const colorMatch = match[7].match(/color:\s*['"`]([^'"`]+)['"`]/);
-        if (colorMatch) {
-            color = colorMatch[1].trim();
-        }
+        const color = extractStringValue(objContent, 'color') || '#00ff9f';
 
         // 提取 enabled 字段
-        let enabled = true;
-        const enabledMatch = match[7].match(/enabled:\s*(true|false)/);
-        if (enabledMatch) {
-            enabled = enabledMatch[1] === 'true';
-        }
+        const enabledMatch = objContent.match(/enabled:\s*(true|false)/);
+        const enabled = enabledMatch ? enabledMatch[1] === 'true' : true;
 
-        links.push({
-            name: match[1].trim(),
-            description: match[2].trim(),
-            url: match[3].trim(),
-            icon: match[4].trim(),
-            brand: match[5].trim(),
-            external: match[6] === 'true',
-            color: color,
-            enabled: enabled
-        });
+        if (name && url) {
+            links.push({
+                name,
+                description: description || '',
+                url,
+                icon: icon || 'fa-solid fa-link',
+                brand: brand || 'link',
+                external,
+                color,
+                enabled
+            });
+        }
     }
 
     return links;
+}
+
+/**
+ * 从对象内容中提取字符串值 - 支持字符串内包含引号
+ * @param {string} content - 对象内容
+ * @param {string} key - 键名
+ * @returns {string|null} - 提取的值或 null
+ */
+function extractStringValue(content, key) {
+    // 匹配三种引号类型
+    const patterns = [
+        new RegExp(key + ':\\s*"((?:[^"\\\\]|\\\\.)*)"'),  // 双引号
+        new RegExp(key + ":\\s*'((?:[^'\\\\]|\\\\.)*)'"),  // 单引号
+        new RegExp(key + ':\\s*`((?:[^`\\\\]|\\\\.)*)`'),  // 反引号
+    ];
+
+    for (const pattern of patterns) {
+        const match = content.match(pattern);
+        if (match && match[1]) {
+            return match[1].replace(/\\(['"`\\])/g, '$1').trim();
+        }
+    }
+    return null;
 }
 
 // 提取 LinksConfig 配置
