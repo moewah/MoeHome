@@ -101,7 +101,7 @@ nav: {
     // 品牌区配置
     brand: {
         showPrompt: true,       // 显示 $ 符号
-        hoverText: '~/whoami',  // hover 打字机效果文字
+        hoverText: '~/whoami',  // 自动循环打字机效果文字
     },
 
     // 自定义二级菜单（可选）
@@ -120,7 +120,7 @@ nav: {
 | 配置 | 说明 |
 |------|------|
 | `brand.showPrompt` | 是否显示 `$` 符号 |
-| `brand.hoverText` | 鼠标悬停时打字机效果显示的文字 |
+| `brand.hoverText` | 自动循环打字机效果显示的文字（与名字交替显示） |
 | `menus` | 自定义二级菜单数组 |
 
 **主题切换**：点击循环切换 (auto → light → dark)，图标动态变化：🖥️ / ☀️ / 🌙

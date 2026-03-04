@@ -67,13 +67,12 @@ function initNavbarScroll() {
     checkScroll(); // 初始检查
 }
 
-// 品牌区打字机效果
+// 品牌区自动循环打字机效果
 function initNavbarBrandEffect() {
     const brand = document.getElementById('navbar-brand');
     if (!brand) return;
 
     const nameEl = brand.querySelector('.brand-name');
-    const promptEl = brand.querySelector('.prompt');
     if (!nameEl) return;
 
     const config = window.HOMEPAGE_CONFIG;
@@ -81,46 +80,89 @@ function initNavbarBrandEffect() {
     const hoverText = config?.nav?.brand?.hoverText || '~/whoami';
 
     let typingInterval = null;
-    let isHovering = false;
+    let isTyping = false;
+    let showOriginal = true; // 当前显示的是名字还是路径
 
-    const startTypewriter = () => {
-        if (isHovering) return;
-        isHovering = true;
+    const typingSpeed = 80;
+    const displayTime = 3000; // 显示时间 3秒
 
-        // 打字机效果
+    // 打字效果
+    const typeText = (text, callback) => {
+        isTyping = true;
         let i = 0;
         nameEl.textContent = '';
 
-        // 清除之前的定时器
         if (typingInterval) {
             clearInterval(typingInterval);
-            typingInterval = null;
         }
 
         typingInterval = setInterval(() => {
-            if (i < hoverText.length) {
-                nameEl.textContent += hoverText.charAt(i);
+            if (i < text.length) {
+                nameEl.textContent += text.charAt(i);
                 i++;
             } else {
                 clearInterval(typingInterval);
                 typingInterval = null;
+                isTyping = false;
+                if (callback) callback();
             }
-        }, 80);
+        }, typingSpeed);
     };
 
-    const stopTypewriter = () => {
-        isHovering = false;
+    // 删除效果
+    const deleteText = (callback) => {
+        isTyping = true;
+        let text = nameEl.textContent;
 
-        if (typingInterval) {
-            clearInterval(typingInterval);
-            typingInterval = null;
-        }
+        typingInterval = setInterval(() => {
+            if (text.length > 0) {
+                text = text.slice(0, -1);
+                nameEl.textContent = text;
+            } else {
+                clearInterval(typingInterval);
+                typingInterval = null;
+                isTyping = false;
+                if (callback) callback();
+            }
+        }, typingSpeed / 2); // 删除速度快一点
+    };
+
+    // 循环切换
+    const cycle = () => {
+        if (isTyping) return;
+
+        const nextText = showOriginal ? hoverText : originalName;
+        showOriginal = !showOriginal;
+
+        // 先删除当前文字
+        deleteText(() => {
+            // 短暂停顿后打新文字
+            setTimeout(() => {
+                typeText(nextText);
+            }, 200);
+        });
+    };
+
+    // 启动自动循环
+    const startCycle = () => {
+        // 初始显示名字
         nameEl.textContent = originalName;
+        // 每隔一段时间切换
+        setInterval(cycle, displayTime);
     };
 
-    // 为整个品牌区添加 hover 事件
-    brand.addEventListener('mouseenter', startTypewriter);
-    brand.addEventListener('mouseleave', stopTypewriter);
+    // 页面可见性变化时处理
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (typingInterval) {
+                clearInterval(typingInterval);
+                typingInterval = null;
+            }
+            isTyping = false;
+        }
+    });
+
+    startCycle();
 
     // 点击回到顶部
     brand.addEventListener('click', (e) => {

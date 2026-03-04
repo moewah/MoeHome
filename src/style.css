@@ -130,7 +130,8 @@ body {
     flex-shrink: 0;
 }
 
-.navbar-brand .prompt {
+.navbar-brand .prompt,
+.navbar-brand .brand-name {
     color: var(--accent);
 }
 
