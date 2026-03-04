@@ -23,11 +23,11 @@
         <!-- Page Title -->
         <title>{{TITLE}}</title>
 
-        <!-- Fonts: Noto Serif SC for Chinese, IBM Plex Mono for code -->
+        <!-- Fonts: 仅加载代码字体，中文使用系统字体回退 -->
         <link rel="preconnect" href="https://fonts.googleapis.cn" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
-            href="https://fonts.googleapis.cn/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap"
+            href="https://fonts.googleapis.cn/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
 
@@ -35,28 +35,226 @@
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+            integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
         />
 
         {{THEME_INITIAL}}
 
-        <!-- Critical CSS for skeleton screen (inline to prevent FOUC) -->
+        <!-- Critical CSS for First Paint (inline ~4KB) -->
         <style>
-            /* 实际内容初始隐藏 - 使用类选择器，方便后续覆盖 */
-            .content-initial-hidden {
-                opacity: 0 !important;
-                visibility: hidden !important;
-                pointer-events: none !important;
+            /* ========== Critical Base Styles ========== */
+            /* 颜色变量由上方 theme-initial 样式块动态生成 */
+            /* 以下为布局变量（固定值，不受主题配置影响） */
+            :root {
+                --navbar-height: 56px;
+                --navbar-bg: transparent;
+            }
+
+            /* ========== Reset & Base ========== */
+            *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+            html { scroll-behavior: smooth; height: 100%; -webkit-text-size-adjust: 100%; }
+            body {
+                font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+                background: var(--bg-primary);
+                color: var(--text-primary);
+                overflow-x: hidden;
+                overflow-y: auto;
+                min-height: 100%;
+                position: relative;
+            }
+
+            /* ========== Navigation Bar ========== */
+            .navbar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: var(--navbar-height);
+                background: var(--navbar-bg);
+                z-index: 1000;
+                transition: background 0.3s ease, backdrop-filter 0.3s ease;
+            }
+            .navbar.scrolled {
+                background: var(--navbar-bg-scrolled);
+                backdrop-filter: blur(24px) saturate(1.2);
+                -webkit-backdrop-filter: blur(24px) saturate(1.2);
+                border-bottom: 1px solid var(--border);
+            }
+            .navbar-inner {
+                max-width: 720px;
+                margin: 0 auto;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 24px;
+                gap: 24px;
+            }
+            .navbar-brand {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                text-decoration: none;
+                color: var(--text-primary);
+                font-size: 16px;
+                font-weight: 500;
+            }
+            .navbar-brand .prompt, .navbar-brand .brand-name { color: var(--accent); }
+            .navbar-menu { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; }
+            .nav-link {
+                position: relative;
+                padding: 8px 16px;
+                color: var(--text-secondary);
+                text-decoration: none;
+                font-size: 14px;
+                font-weight: 500;
+                transition: color 0.2s ease;
+                white-space: nowrap;
+            }
+            .nav-link.active, .nav-link:hover { color: var(--accent); }
+            .navbar-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+            .nav-theme-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                background: none;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                color: var(--text-secondary);
+                cursor: pointer;
+            }
+            .nav-theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+            .navbar-toggle { display: none; width: 36px; height: 36px; background: none; border: 1px solid var(--border); border-radius: 8px; color: var(--text-secondary); cursor: pointer; }
+
+            /* ========== Main Container ========== */
+            .container {
+                position: relative;
+                z-index: 10;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                padding: 40px 20px;
+                padding-top: calc(var(--navbar-height) + 40px);
+                padding-bottom: 88px;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            /* ========== Profile Section ========== */
+            .profile {
+                text-align: center;
+                width: 100%;
+                max-width: 600px;
+                opacity: 0;
+                animation: fadeIn 1s ease forwards;
+            }
+            @keyframes fadeIn { to { opacity: 1; } }
+
+            /* ========== Avatar ========== */
+            .avatar-wrapper {
+                position: relative;
+                width: 140px;
+                height: 140px;
+                margin: 0 auto 40px;
+                contain: layout;
+                flex-shrink: 0;
+            }
+            .avatar {
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                position: relative;
+                overflow: hidden;
+                border: 3px solid var(--accent);
+                box-shadow: 0 0 0 4px var(--bg-primary), 0 0 40px var(--accent-dim), 0 20px 60px rgba(0, 0, 0, 0.5);
+            }
+            .avatar img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 1; }
+
+            /* ========== Name & Tagline ========== */
+            .name {
+                font-family: "IBM Plex Mono", "SF Mono", "Monaco", monospace;
+                font-size: clamp(2rem, 6vw, 3.5rem);
+                font-weight: 700;
+                margin-bottom: 10px;
+                background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            .tagline {
+                font-size: clamp(0.9rem, 2vw, 1.1rem);
+                color: var(--text-secondary);
+                margin-bottom: 40px;
+                font-weight: 300;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+            .tagline .highlight { color: var(--accent); font-weight: 500; }
+
+            /* ========== Skeleton Screen ========== */
+            .skeleton-container {
+                transition: opacity 0.3s ease;
+                position: absolute;
+                /* 匹配 .container 的 padding-top */
+                top: calc(var(--navbar-height) + 40px);
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 10;
+                pointer-events: none;
+                width: 100%;
+                max-width: 600px;
+                text-align: center;
+            }
+            #actual-content { position: relative; z-index: 5; }
+            .skeleton {
+                background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--border) 50%, var(--bg-secondary) 75%);
+                background-size: 200% 100%;
+                animation: skeleton-loading 1.5s ease-in-out infinite;
+            }
+            @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+            .skeleton-avatar { width: 140px; height: 140px; border-radius: 50%; margin: 0 auto 40px; flex-shrink: 0; }
+            .skeleton-name { width: clamp(150px, 30vw, 250px); height: clamp(32px, 5vw, 48px); border-radius: 8px; margin: 0 auto 20px; }
+            .skeleton-tagline { width: clamp(180px, 40vw, 300px); height: clamp(16px, 2vw, 24px); border-radius: 6px; margin: 0 auto 40px; }
+            .skeleton-terminal { width: 100%; max-width: 600px; min-height: 140px; border-radius: 12px; margin: 0 auto 40px; }
+            .skeleton-divider { width: 100%; height: 1px; margin: 48px 0; }
+            .skeleton-footer { width: clamp(150px, 25vw, 220px); height: 16px; border-radius: 6px; margin: 20px auto; }
+
+            /* Content hidden state */
+            .content-initial-hidden { opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
+            .content-visible { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; transition: opacity 0.3s ease; }
+
+            /* ========== Responsive - Mobile ========== */
+            @media (max-width: 768px) {
+                .navbar-menu { display: none; }
+                .nav-theme-toggle { display: none; }
+                .navbar-toggle { display: flex; }
+                .navbar-inner { padding: 0 16px; }
+                .container { padding-top: calc(var(--navbar-height) + 32px); }
+                /* 移动端骨架屏位置同步调整 */
+                .skeleton-container { top: calc(var(--navbar-height) + 32px); }
+            }
+            @media (min-width: 769px) {
+                .navbar-menu { display: flex; }
+                .nav-theme-toggle { display: flex; }
+                .navbar-toggle { display: none; }
             }
         </style>
 
-        <!-- Stylesheet -->
-        <link rel="stylesheet" href="style.css" />
+        <!-- Main Stylesheet: async load via preload -->
+        <link rel="preload" href="style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="style.css"></noscript>
 
-        <!-- Configuration -->
-        <script src="config.js"></script>
-
-        <!-- Theme Utils -->
-        <script src="theme-utils.js"></script>
+        <!-- JS Files: defer for non-blocking parallel download, ordered execution -->
+        <script src="config.js" defer></script>
+        <script src="theme-utils.js" defer></script>
 
         <!-- Analytics Scripts (由 build.js 从 config.js 注入) -->
         {{ANALYTICS}}
@@ -147,29 +345,29 @@
 
             <!-- Actual Content (hidden initially via class for FOUC prevention) -->
             <div class="profile content-initial-hidden" id="actual-content" aria-busy="true">
-                <!-- Avatar -->
-                <div class="avatar-wrapper lazy-load">
+                <!-- Avatar - 首屏关键内容，不使用 lazy-load -->
+                <div class="avatar-wrapper">
                     <div class="avatar image-placeholder" id="avatar-placeholder">
-                        <img id="avatar-img" src="{{AVATAR}}" alt="{{NAME}} Avatar" data-blur />
+                        <img id="avatar-img" src="{{AVATAR}}" alt="{{NAME}} Avatar" width="140" height="140" data-blur />
                     </div>
                     <div class="status"></div>
                 </div>
 
-                <!-- Name -->
-                <h1 class="name lazy-load" id="profile-name" data-delay="1">{{NAME}}</h1>
+                <!-- Name - 首屏关键内容 -->
+                <h1 class="name" id="profile-name">{{NAME}}</h1>
 
-                <!-- Tagline -->
-                <p class="tagline lazy-load" id="profile-tagline" data-delay="2">
+                <!-- Tagline - 首屏关键内容 -->
+                <p class="tagline" id="profile-tagline">
                     <span class="paw-icon">{{TAGLINE_PREFIX}}</span>
                     <span class="meow">{{TAGLINE_TEXT}}</span>
                     <span class="highlight">{{TAGLINE_HIGHLIGHT}}</span>
                 </p>
 
                 <!-- Divider -->
-                <div class="divider lazy-load" data-delay="3"></div>
+                <div class="divider lazy-load" data-delay="1"></div>
 
                 <!-- Terminal -->
-                <div class="terminal lazy-load" id="terminal" data-delay="3">
+                <div class="terminal lazy-load" id="terminal" data-delay="2">
                     <div class="terminal-header">
                         <div class="traffic-lights">
                             <span class="close"></span>
@@ -217,7 +415,7 @@
             </div>
         </div>
 
-        <!-- Main Application Script -->
-        <script src="app.js"></script>
+        <!-- Main Application Script: defer for non-blocking -->
+        <script src="app.js" defer></script>
     </body>
 </html>

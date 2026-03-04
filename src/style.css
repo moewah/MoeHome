@@ -19,13 +19,28 @@
     --navbar-bg: transparent;
     --navbar-bg-scrolled: rgba(10, 10, 10, 0.85);
 
-    --font-sans: "Noto Sans SC", "IBM Plex Mono",
-        -apple-system, BlinkMacSystemFont,
-        "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-        "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
-    --font-mono: "IBM Plex Mono",
-        "SF Mono", "Monaco", "Inconsolata", "Fira Mono",
-        "Droid Sans Mono", "Source Code Pro", monospace;
+    --font-sans:
+        "PingFang SC",
+        "Hiragino Sans GB",
+        "Microsoft YaHei",
+        "Noto Sans SC",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Roboto",
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    --font-mono:
+        "IBM Plex Mono",
+        "SF Mono",
+        "Monaco",
+        "Inconsolata",
+        "Fira Mono",
+        "Consolas",
+        "Droid Sans Mono",
+        "Source Code Pro",
+        monospace;
 
     /* 动态视口高度 - 解决移动端 100vh 问题 */
     --vh: 1vh;
@@ -583,6 +598,11 @@ body {
     .container {
         padding-top: calc(var(--navbar-height) + 32px);
     }
+
+    /* 骨架屏位置同步调整 */
+    .skeleton-container {
+        top: calc(var(--navbar-height) + 32px);
+    }
 }
 
 /* Scroll margin for anchor links */
@@ -702,6 +722,9 @@ body {
     width: 140px;
     height: 140px;
     margin: 0 auto 40px;
+    /* CLS 优化：固定尺寸，防止布局偏移 */
+    contain: layout;
+    flex-shrink: 0;
 }
 
 .avatar {
@@ -723,6 +746,8 @@ body {
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
+    /* CLS 优化：预留空间 */
+    aspect-ratio: 1;
 }
 
 .avatar:hover img {
@@ -2739,6 +2764,24 @@ body {
 /* 骨架屏容器过渡效果 */
 .skeleton-container {
     transition: opacity 0.3s ease;
+    /* CLS 优化：绝对定位，避免与实际内容布局竞争 */
+    position: absolute;
+    /* 匹配 .container 的 padding-top，确保与实际内容位置一致 */
+    top: calc(var(--navbar-height) + 40px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    pointer-events: none;
+    /* 与 .profile 保持一致的尺寸限制 */
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+}
+
+/* 实际内容容器 CLS 优化 */
+#actual-content {
+    position: relative;
+    z-index: 5;
 }
 
 /* 骨架屏激活状态 - 隐藏交互元素 */
@@ -2775,6 +2818,8 @@ body.skeleton-active .cursor {
     height: 140px;
     border-radius: 50%;
     margin: 0 auto 40px;
+    /* CLS 优化：与实际 avatar 尺寸一致 */
+    flex-shrink: 0;
 }
 
 .skeleton-name {
