@@ -130,6 +130,204 @@ function extractLinksConfig() {
     };
 }
 
+// ========== 主题配色提取 ==========
+
+/**
+ * Hex 转 RGB 字符串
+ * @param {string} hex - #00ff9f 或 #fff
+ * @returns {string} - "0, 255, 159"
+ */
+function hexToRgb(hex) {
+    // 标准 6 位格式
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) {
+        return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
+    }
+    // 短格式 #fff
+    const shortResult = /^#?([a-f\d])([a-f\d])([a-f\d])$/i.exec(hex);
+    if (shortResult) {
+        return `${parseInt(shortResult[1] + shortResult[1], 16)}, ${parseInt(shortResult[2] + shortResult[2], 16)}, ${parseInt(shortResult[3] + shortResult[3], 16)}`;
+    }
+    return '0, 255, 159'; // fallback
+}
+
+/**
+ * 将 hex 颜色加深指定比例
+ * @param {string} hex - #00ff9f 或 #fff
+ * @param {number} amount - 加深比例 (0-1)
+ * @returns {string} - 加深后的 hex 颜色
+ */
+function darkenColor(hex, amount) {
+    const rgb = hexToRgb(hex).split(', ').map(Number);
+    const darkened = rgb.map(channel => Math.max(0, Math.round(channel * (1 - amount))));
+    return `#${darkened.map(c => c.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/**
+ * 从 theme 配置块中提取单个颜色值
+ */
+function extractThemeColor(themeBlock, key, fallback) {
+    if (!themeBlock) return fallback;
+    const pattern = new RegExp(key + ':\\s*[\'"`]([^\'"`]+)[\'"`]');
+    const match = themeBlock.match(pattern);
+    return match && match[1] ? match[1].trim() : fallback;
+}
+
+/**
+ * 提取主题配置
+ */
+function extractThemeConfig() {
+    // 匹配 theme 对象
+    const themeMatch = configContent.match(/theme:\s*\{([\s\S]*?)\n\s*\},?\s*\n\s*\/\/ =/);
+    if (!themeMatch) {
+        return null;
+    }
+
+    const themeBlock = themeMatch[1];
+
+    // 提取 default
+    const defaultMatch = themeBlock.match(/default:\s*['"`](light|dark|auto)['"`]/);
+    const defaultMode = defaultMatch ? defaultMatch[1] : 'auto';
+
+    // 匹配 light 子对象
+    const lightMatch = themeBlock.match(/light:\s*\{([^}]+)\}/);
+    const lightBlock = lightMatch ? lightMatch[1] : null;
+
+    // 匹配 dark 子对象
+    const darkMatch = themeBlock.match(/dark:\s*\{([^}]+)\}/);
+    const darkBlock = darkMatch ? darkMatch[1] : null;
+
+    // 默认值
+    const lightDefaults = {
+        accent: '#00cc7a',
+        bgPrimary: '#ffffff',
+        bgSecondary: '#f5f5f5',
+        textPrimary: '#1a1a1a',
+        textSecondary: '#666666',
+        border: '#e0e0e0',
+    };
+
+    const darkDefaults = {
+        accent: '#00ff9f',
+        bgPrimary: '#0a0a0a',
+        bgSecondary: '#111111',
+        textPrimary: '#e8e8e8',
+        textSecondary: '#888888',
+        border: '#222222',
+    };
+
+    return {
+        default: defaultMode,
+        light: {
+            accent: extractThemeColor(lightBlock, 'accent', lightDefaults.accent),
+            bgPrimary: extractThemeColor(lightBlock, 'bgPrimary', lightDefaults.bgPrimary),
+            bgSecondary: extractThemeColor(lightBlock, 'bgSecondary', lightDefaults.bgSecondary),
+            textPrimary: extractThemeColor(lightBlock, 'textPrimary', lightDefaults.textPrimary),
+            textSecondary: extractThemeColor(lightBlock, 'textSecondary', lightDefaults.textSecondary),
+            border: extractThemeColor(lightBlock, 'border', lightDefaults.border),
+        },
+        dark: {
+            accent: extractThemeColor(darkBlock, 'accent', darkDefaults.accent),
+            bgPrimary: extractThemeColor(darkBlock, 'bgPrimary', darkDefaults.bgPrimary),
+            bgSecondary: extractThemeColor(darkBlock, 'bgSecondary', darkDefaults.bgSecondary),
+            textPrimary: extractThemeColor(darkBlock, 'textPrimary', darkDefaults.textPrimary),
+            textSecondary: extractThemeColor(darkBlock, 'textSecondary', darkDefaults.textSecondary),
+            border: extractThemeColor(darkBlock, 'border', darkDefaults.border),
+        },
+    };
+}
+
+/**
+ * 生成首屏主题 CSS
+ * 在 JS 加载前应用正确的主题颜色，避免闪烁
+ */
+function generateInitialThemeCSS() {
+    const theme = extractThemeConfig();
+    if (!theme) return '';
+
+    // 确定默认主题
+    let defaultMode = theme.default;
+    if (defaultMode === 'auto') {
+        defaultMode = 'dark'; // auto 时使用 dark 作为首屏默认
+    }
+
+    const colors = theme[defaultMode];
+    if (!colors) return '';
+
+    const accentRgb = hexToRgb(colors.accent);
+    const bgPrimaryRgb = hexToRgb(colors.bgPrimary);
+    const isLight = defaultMode === 'light';
+
+    // 衍生色透明度配置
+    const derive = isLight ? {
+        accentDim: 0.1,
+        gridColor: 0.05,
+        notice: 0.08,
+        hover: 0.08,
+        active: 0.15,
+        shadowSm: 0.05,
+        shadowMd: 0.1,
+        glow: 0.2,
+        navbarScrolled: 0.85,
+    } : {
+        accentDim: 0.1,
+        gridColor: 0.03,
+        notice: 0.05,
+        hover: 0.1,
+        active: 0.2,
+        shadowSm: 0.3,
+        shadowMd: 0.5,
+        glow: 0.3,
+        navbarScrolled: 0.85,
+    };
+
+    return `<style id="theme-initial">
+      :root {
+        /* 核心 */
+        --bg-primary: ${colors.bgPrimary};
+        --bg-secondary: ${colors.bgSecondary};
+        --text-primary: ${colors.textPrimary};
+        --text-secondary: ${colors.textSecondary};
+        --accent: ${colors.accent};
+        --accent-deep: ${darkenColor(colors.accent, 0.2)};
+        --border: ${colors.border};
+
+        /* 衍生 */
+        --accent-dim: rgba(${accentRgb}, ${derive.accentDim});
+        --grid-color: rgba(${accentRgb}, ${derive.gridColor});
+        --notice-bg-warning: rgba(255, 149, 0, ${derive.notice});
+        --notice-bg-info: rgba(0, 161, 255, ${derive.notice});
+        --notice-bg-success: rgba(39, 201, 63, ${derive.notice});
+
+        /* P0 交互状态 */
+        --hover-bg: rgba(${accentRgb}, ${derive.hover});
+        --active-bg: rgba(${accentRgb}, ${derive.active});
+        --focus-ring: ${colors.accent};
+
+        /* P1 阴影深度 */
+        --shadow-sm: rgba(0, 0, 0, ${derive.shadowSm});
+        --shadow-md: rgba(0, 0, 0, ${derive.shadowMd});
+        --glow: rgba(${accentRgb}, ${derive.glow});
+        --navbar-bg-scrolled: rgba(${bgPrimaryRgb}, ${derive.navbarScrolled});
+
+        /* P3 贡献图格子 */
+        --contribution-1: rgba(${accentRgb}, 0.2);
+        --contribution-2: rgba(${accentRgb}, 0.4);
+        --contribution-3: rgba(${accentRgb}, 0.6);
+        --contribution-4: ${colors.accent};
+
+        /* P4 分割线 */
+        --divider-glow: rgba(${accentRgb}, 0.4);
+
+        /* P2 终端（默认跟随主主题） */
+        --terminal-bg: ${colors.bgSecondary};
+        --terminal-text: ${colors.textSecondary};
+        --terminal-prompt: ${colors.accent};
+        --terminal-cursor: ${colors.accent};
+      }
+    </style>`;
+}
+
 // 提取 analytics 子配置值
 function extractAnalyticsValue(key, subKey) {
     const pattern = new RegExp(key + ':\\s*\\{([^}]+)\\}', 's');
@@ -1183,6 +1381,9 @@ async function build() {
 
     // 替换所有占位符
     let html = template
+        // Theme Initial CSS (首屏主题，避免闪烁)
+        .replace(/{{THEME_INITIAL}}/g, generateInitialThemeCSS())
+
         // SEO
         .replace(/{{TITLE}}/g, config.title)
         .replace(/{{DESCRIPTION}}/g, config.description)

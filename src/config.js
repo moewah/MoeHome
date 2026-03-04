@@ -218,13 +218,28 @@ window.HOMEPAGE_CONFIG = {
 
   // ========== 主题配色 ==========
   theme: {
-    accent: "#00ff9f",
-    accentSecondary: "#00cc7a",
-    bgPrimary: "#0a0a0a",
-    bgSecondary: "#111111",
-    textPrimary: "#e8e8e8",
-    textSecondary: "#888888",
-    border: "#222222",
+    // 默认主题模式（'auto' 时构建使用 dark 作为首屏默认）
+    default: 'auto', // 'light' | 'dark' | 'auto'
+
+    // 浅色主题（Claude 暖灰风格示例）
+    light: {
+      accent: "#D97706",        // 琥珀橙（Claude 品牌色）
+      bgPrimary: "#FBF8F3",     // 暖白（米白带暖调）
+      bgSecondary: "#F5F2ED",   // 暖灰（卡片背景）
+      textPrimary: "#1C1917",   // 深炭灰（Stone 900）
+      textSecondary: "#78716C", // 暖中灰（Stone 500）
+      border: "#E7E5E4",        // 暖浅灰边框（Stone 200）
+    },
+
+    // 深色主题
+    dark: {
+      accent: "#00ff9f",
+      bgPrimary: "#0a0a0a",
+      bgSecondary: "#111111",
+      textPrimary: "#e8e8e8",
+      textSecondary: "#888888",
+      border: "#222222",
+    },
   },
 
   // ========== 主题切换配置 ==========
