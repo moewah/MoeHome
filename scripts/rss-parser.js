@@ -144,7 +144,5 @@ async function getRSSArticles(url, count) {
 }
 
 module.exports = {
-    fetchRSS: fetchRSS,
-    parseRSS: parseRSS,
-    getRSSArticles: getRSSArticles,
+    getRSSArticles
 };

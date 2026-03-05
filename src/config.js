@@ -57,13 +57,6 @@ window.HOMEPAGE_CONFIG = {
     },
   },
 
-  // ========== 主题切换配置 ==========
-  themeSwitcher: {
-    enabled: true,
-    defaultMode: "auto",
-    showToggle: true,
-  },
-
   // ========== 导航栏配置 ==========
   nav: {
     enabled: true,

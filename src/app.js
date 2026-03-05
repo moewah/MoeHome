@@ -762,61 +762,6 @@ function initTheme() {
     if (typeof ThemeManager !== 'undefined') {
         ThemeManager.init();
     }
-    
-    const config = window.HOMEPAGE_CONFIG;
-    if (config?.themeSwitcher?.enabled && config.themeSwitcher.showToggle) {
-        initThemeSwitcher();
-    }
-}
-
-// ========== 主题切换器初始化 ==========
-function initThemeSwitcher() {
-    const toggle = document.querySelector('.theme-toggle');
-    const menu = document.querySelector('.theme-menu');
-    
-    if (!toggle || !menu) return;
-    
-    toggle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        menu.classList.toggle('open');
-    });
-    
-    document.addEventListener('click', (e) => {
-        if (!menu.contains(e.target) && !toggle.contains(e.target)) {
-            menu.classList.remove('open');
-        }
-    });
-    
-    const items = menu.querySelectorAll('.theme-menu-item');
-    items.forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const theme = item.dataset.theme;
-            if (typeof ThemeManager !== 'undefined' && theme) {
-                ThemeManager.setSavedTheme(theme);
-                updateThemeMenuActive(theme);
-                menu.classList.remove('open');
-            }
-        });
-    });
-    
-    updateThemeMenuActive(ThemeManager?.getSavedTheme?.() || 'auto');
-}
-
-// ========== 更新主题菜单激活状态 ==========
-function updateThemeMenuActive(theme) {
-    const items = document.querySelectorAll('.theme-menu-item');
-    items.forEach(item => {
-        item.classList.toggle('active', item.dataset.theme === theme);
-    });
-    
-    const toggle = document.querySelector('.theme-toggle');
-    if (toggle) {
-        const icon = toggle.querySelector('i');
-        if (icon) {
-            icon.className = 'fa-solid fa-circle-half-stroke';
-        }
-    }
 }
 
 // ========== 自定义光标 ==========

@@ -180,7 +180,5 @@ function formatNumber(num) {
 module.exports = {
   fetchUserRepos,
   parseGitHubUser,
-  getLanguageColor,
   formatNumber,
-  LANGUAGE_COLORS,
 };

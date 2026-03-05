@@ -152,19 +152,6 @@ function generateRandomContributions() {
     };
 }
 
-/**
- * 解析 GitHub 用户 URL 获取用户名
- * @param {string} url - GitHub 用户主页 URL
- * @returns {string|null} 用户名
- */
-function parseGitHubUser(url) {
-    if (!url) return null;
-    const match = url.match(/github\.com\/([^/]+)/);
-    return match ? match[1] : null;
-}
-
 module.exports = {
-    fetchUserContributions,
-    parseGitHubUser,
-    generateRandomContributions
+    fetchUserContributions
 };

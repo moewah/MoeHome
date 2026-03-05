@@ -359,8 +359,6 @@ const ThemeManager = {
         Object.entries(theme.colors).forEach(([property, value]) => {
             document.documentElement.style.setProperty(property, value);
         });
-
-        this.updateThemeToggleIcon(theme.icon);
     },
 
     /**
@@ -379,16 +377,6 @@ const ThemeManager = {
             mediaQuery.addEventListener('change', handleChange);
         } else if (mediaQuery.addListener) {
             mediaQuery.addListener(handleChange);
-        }
-    },
-
-    /**
-     * 更新主题切换按钮图标
-     */
-    updateThemeToggleIcon(themeName) {
-        const toggleIcon = document.querySelector('.theme-toggle i');
-        if (toggleIcon) {
-            toggleIcon.className = 'fa-solid fa-circle-half-stroke';
         }
     },
 
