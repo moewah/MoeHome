@@ -251,6 +251,24 @@ links: [
 | `color` | 按钮主题颜色 |
 | `enabled` | 是否显示 |
 
+### 滚动进度按钮
+
+右下角固定按钮，集成滚动进度环和返回顶部功能：
+
+```javascript
+scrollProgress: {
+    enabled: true,       // 是否启用
+    showThreshold: 30,   // 显示阈值（px），滚动超过此距离即显示
+    smoothScroll: true,  // 点击是否平滑滚动返回顶部
+}
+```
+
+| 配置 | 说明 |
+|------|------|
+| `enabled` | 是否启用滚动进度按钮 |
+| `showThreshold` | 显示阈值，滚动超过此距离后按钮出现 |
+| `smoothScroll` | 点击时是否使用平滑滚动 |
+
 ### 页脚
 
 ```javascript

@@ -288,6 +288,13 @@ window.HOMEPAGE_CONFIG = {
     },
   ],
 
+  // ========== 滚动进度按钮配置 ==========
+  scrollProgress: {
+    enabled: true, // 是否启用滚动进度按钮
+    showThreshold: 30, // 显示阈值（px），滚动超过此距离即显示
+    smoothScroll: true, // 点击是否平滑滚动返回顶部
+  },
+
   // ========== 页脚配置 ==========
   footer: {
     text: "Powered by",

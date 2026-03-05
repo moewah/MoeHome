@@ -2367,6 +2367,79 @@ body {
     opacity: 0.7;
 }
 
+/* ========== Scroll Progress Button ========== */
+.scroll-progress-btn {
+    position: fixed;
+    right: 24px;
+    bottom: 80px;
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    cursor: pointer;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px) scale(0.8);
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+    z-index: 999;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border);
+}
+
+.scroll-progress-btn.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+/* Progress Ring SVG */
+.scroll-progress-btn__ring {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg); /* 从顶部开始 */
+}
+
+.scroll-progress-btn__ring-bg {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 2;
+}
+
+.scroll-progress-btn__ring-progress {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 138.23; /* 2 * PI * 22 (radius) */
+    stroke-dashoffset: 138.23; /* 初始隐藏 */
+    transition: stroke-dashoffset 0.1s ease-out;
+}
+
+/* Icon */
+.scroll-progress-btn__icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-secondary);
+    font-size: 18px;
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+    .scroll-progress-btn {
+        transition: opacity 0.01ms, visibility 0.01ms;
+    }
+    .scroll-progress-btn__ring-progress {
+        transition: stroke-dashoffset 0.01ms;
+    }
+}
+
 /* ========== Responsive ========== */
 @media (max-width: 600px) {
     .profile {
@@ -2738,6 +2811,23 @@ body {
 @media (max-width: 768px) {
     .cursor {
         display: none;
+    }
+
+    /* Scroll progress button - mobile */
+    .scroll-progress-btn {
+        width: 44px;
+        height: 44px;
+        right: 16px;
+        bottom: 72px;
+    }
+
+    .scroll-progress-btn__ring-progress {
+        stroke-dasharray: 126.92; /* 2 * PI * 20.2 (radius for 44px button) */
+        stroke-dashoffset: 126.92;
+    }
+
+    .scroll-progress-btn__icon {
+        font-size: 16px;
     }
 }
 

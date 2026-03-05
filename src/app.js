@@ -38,6 +38,9 @@ function initPage() {
 
     // 初始化项目轮播
     initProjectsCarousel();
+
+    // 初始化滚动进度按钮
+    initScrollProgressButton();
 }
 
 // ========== 导航栏初始化 ==========
@@ -1344,6 +1347,152 @@ function initProjectsCarousel() {
 function initRssFlipCarousel() {
     // RSS卡片已简化为静态布局，无需复杂的翻转逻辑
     // 鼠标跟踪光晕效果已在initInteractions中处理
+}
+
+// ========== 滚动进度按钮 ==========
+/**
+ * ScrollProgressButton - 滚动进度按钮组件
+ * 集成进度环与返回顶部功能
+ */
+function initScrollProgressButton() {
+    const config = window.HOMEPAGE_CONFIG;
+
+    // 检查配置是否启用
+    if (!config?.scrollProgress?.enabled) return;
+
+    // 创建按钮元素
+    const button = document.createElement('button');
+    button.className = 'scroll-progress-btn';
+    button.setAttribute('aria-label', '返回顶部');
+    button.setAttribute('title', '返回顶部');
+
+    // 计算尺寸
+    const buttonSize = window.innerWidth <= 768 ? 44 : 48;
+    const ringRadius = buttonSize <= 44 ? 20.2 : 22;
+    const circumference = 2 * Math.PI * ringRadius;
+
+    // 创建 SVG
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'scroll-progress-btn__ring');
+    svg.setAttribute('viewBox', `0 0 ${buttonSize} ${buttonSize}`);
+
+    // 背景圆环
+    const ringBg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    ringBg.setAttribute('class', 'scroll-progress-btn__ring-bg');
+    ringBg.setAttribute('cx', buttonSize / 2);
+    ringBg.setAttribute('cy', buttonSize / 2);
+    ringBg.setAttribute('r', ringRadius);
+
+    // 进度圆环
+    const ringProgress = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    ringProgress.setAttribute('class', 'scroll-progress-btn__ring-progress');
+    ringProgress.setAttribute('cx', buttonSize / 2);
+    ringProgress.setAttribute('cy', buttonSize / 2);
+    ringProgress.setAttribute('r', ringRadius);
+    ringProgress.style.strokeDasharray = circumference;
+    ringProgress.style.strokeDashoffset = circumference;
+
+    svg.appendChild(ringBg);
+    svg.appendChild(ringProgress);
+
+    // 创建图标
+    const icon = document.createElement('i');
+    icon.className = 'scroll-progress-btn__icon fa-solid fa-chevron-up';
+
+    // 组装按钮
+    button.appendChild(svg);
+    button.appendChild(icon);
+
+    // 插入到 body
+    document.body.appendChild(button);
+
+    const showThreshold = config.scrollProgress.showThreshold || 30;
+
+    // 计算滚动进度（已查看内容比例）
+    function calculateProgress() {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight;
+        const winHeight = window.innerHeight;
+
+        // 已查看内容 = 滚动距离 + 视口高度
+        // 总内容 = 文档总高度
+        const viewedContent = scrollTop + winHeight;
+        return Math.min(viewedContent / docHeight, 1);
+    }
+
+    // 更新进度环
+    function updateProgressRing(progress) {
+        const offset = circumference * (1 - progress);
+        ringProgress.style.strokeDashoffset = offset;
+    }
+
+    // 更新按钮可见性
+    function updateButtonVisibility() {
+        const scrollTop = window.scrollY;
+
+        if (scrollTop > showThreshold) {
+            button.classList.add('is-visible');
+        } else {
+            button.classList.remove('is-visible');
+        }
+    }
+
+    // 滚动事件处理
+    let ticking = false;
+    function handleScroll() {
+        if (!ticking) {
+            requestAnimationFrame(() => {
+                const progress = calculateProgress();
+                updateProgressRing(progress);
+                updateButtonVisibility();
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }
+
+    // 点击返回顶部
+    button.addEventListener('click', () => {
+        if (config.scrollProgress.smoothScroll !== false) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            window.scrollTo(0, 0);
+        }
+    });
+
+    // 监听滚动
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // 监听窗口大小变化
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            const newSize = window.innerWidth <= 768 ? 44 : 48;
+            const newRadius = newSize <= 44 ? 20.2 : 22;
+            const newCircumference = 2 * Math.PI * newRadius;
+
+            // 更新 SVG viewBox
+            svg.setAttribute('viewBox', `0 0 ${newSize} ${newSize}`);
+
+            // 更新圆心
+            [ringBg, ringProgress].forEach(circle => {
+                circle.setAttribute('cx', newSize / 2);
+                circle.setAttribute('cy', newSize / 2);
+                circle.setAttribute('r', newRadius);
+            });
+
+            // 更新进度环样式
+            ringProgress.style.strokeDasharray = newCircumference;
+
+            // 重新计算进度
+            const progress = calculateProgress();
+            updateProgressRing(progress);
+        }, 150);
+    });
+
+    // 初始化时执行一次
+    handleScroll();
 }
 
 // ========== 页面加载完成后初始化 ==========
