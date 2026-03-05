@@ -8,6 +8,19 @@ const path = require('path');
 const { getRSSArticles } = require('./rss-parser');
 const { fetchUserRepos, parseGitHubUser, formatNumber } = require('./github-fetcher');
 const { fetchUserContributions } = require('./contribution-fetcher');
+const {
+    getMinifyConfig,
+    processJSFile,
+    processCSSFile,
+    processHTML,
+    processImageFile,
+    isImage,
+    formatSize,
+    calcReduction
+} = require('./minify');
+
+// 压缩配置
+const minifyConfig = getMinifyConfig();
 
 // 定义路径
 const rootDir = path.join(__dirname, '..');
@@ -1408,6 +1421,19 @@ const template = fs.readFileSync(templatePath, 'utf8');
 
 // 主构建函数（异步）
 async function build() {
+    console.log('🏗️  开始构建...');
+
+    // 显示压缩配置
+    if (minifyConfig.minify) {
+        console.log('📦 压缩配置:');
+        console.log('   JS: ' + (minifyConfig.minifyJS ? '✓' : '✗'));
+        console.log('   CSS: ' + (minifyConfig.minifyCSS ? '✓' : '✗'));
+        console.log('   HTML: ' + (minifyConfig.minifyHTML ? '✓' : '✗'));
+        console.log('   图片: ' + (minifyConfig.compressImages ? '✓ (质量: ' + minifyConfig.imageQuality + '%)' : '✗'));
+    } else {
+        console.log('📦 压缩: 已禁用');
+    }
+
     // 获取 RSS 文章
     let rssArticles = [];
     if (config.rss.enabled && config.rss.url) {
@@ -1519,29 +1545,97 @@ async function build() {
     // 清理并创建 dist 目录
     cleanDist();
 
-    // 写入 HTML
-    fs.writeFileSync(path.join(distDir, 'index.html'), html, 'utf8');
+    // 压缩并写入 HTML
+    const processedHTML = await processHTML(html, minifyConfig);
+    const htmlSize = {
+        original: Buffer.byteLength(html, 'utf8'),
+        minified: Buffer.byteLength(processedHTML, 'utf8')
+    };
+    fs.writeFileSync(path.join(distDir, 'index.html'), processedHTML, 'utf8');
+    console.log('📄 HTML: ' + formatSize(htmlSize.original) + ' → ' + formatSize(htmlSize.minified) + ' (节省 ' + calcReduction(htmlSize.original, htmlSize.minified) + ')');
 
-    // 复制静态资源
-    const copyFile = (srcFile, destFile) => {
-        const srcPath = path.join(rootDir, srcFile);
-        const destPath = path.join(distDir, destFile);
-        if (fs.existsSync(srcPath)) {
-            const destDir = path.dirname(destPath);
-            if (!fs.existsSync(destDir)) {
-                fs.mkdirSync(destDir, { recursive: true });
-            }
-            fs.copyFileSync(srcPath, destPath);
-            console.log('📋 复制: ' + destFile);
-        }
+    // 压缩统计
+    const stats = {
+        js: { count: 0, totalOriginal: 0, totalMinified: 0 },
+        css: { count: 0, totalOriginal: 0, totalMinified: 0 },
+        images: { count: 0, totalOriginal: 0, totalMinified: 0 }
     };
 
-    copyFile('src/app.js', 'app.js');
-    copyFile('src/style.css', 'style.css');
-    copyFile('src/config.js', 'config.js');
-    copyFile('src/theme-utils.js', 'theme-utils.js');
-    copyFile('src/images/avatar.webp', 'images/avatar.webp');
+    // 处理静态资源（带压缩）
+    async function processFile(srcFile, destFile) {
+        const srcPath = path.join(rootDir, srcFile);
+        const destPath = path.join(distDir, destFile);
 
+        if (!fs.existsSync(srcPath)) return;
+
+        // 确保目标目录存在
+        const destDir = path.dirname(destPath);
+        if (!fs.existsSync(destDir)) {
+            fs.mkdirSync(destDir, { recursive: true });
+        }
+
+        const ext = path.extname(srcFile).toLowerCase();
+
+        // JS 文件
+        if (ext === '.js') {
+            const result = await processJSFile(srcPath, destPath, minifyConfig);
+            stats.js.count++;
+            stats.js.totalOriginal += result.original;
+            stats.js.totalMinified += result.minified;
+            console.log('📜 ' + destFile + ': ' + formatSize(result.original) + ' → ' + formatSize(result.minified) + ' (节省 ' + calcReduction(result.original, result.minified) + ')');
+            return;
+        }
+
+        // CSS 文件
+        if (ext === '.css') {
+            const result = processCSSFile(srcPath, destPath, minifyConfig);
+            stats.css.count++;
+            stats.css.totalOriginal += result.original;
+            stats.css.totalMinified += result.minified;
+            console.log('🎨 ' + destFile + ': ' + formatSize(result.original) + ' → ' + formatSize(result.minified) + ' (节省 ' + calcReduction(result.original, result.minified) + ')');
+            return;
+        }
+
+        // 图片文件
+        if (isImage(srcFile)) {
+            const result = await processImageFile(srcPath, destPath, minifyConfig);
+            stats.images.count++;
+            stats.images.totalOriginal += result.original;
+            stats.images.totalMinified += result.minified;
+            console.log('🖼️  ' + destFile + ': ' + formatSize(result.original) + ' → ' + formatSize(result.minified) + ' (节省 ' + calcReduction(result.original, result.minified) + ')');
+            return;
+        }
+
+        // 其他文件直接复制
+        fs.copyFileSync(srcPath, destPath);
+        console.log('📋 ' + destFile + ' (已复制)');
+    }
+
+    // 处理所有静态资源
+    await processFile('src/app.js', 'app.js');
+    await processFile('src/style.css', 'style.css');
+    await processFile('src/config.js', 'config.js');
+    await processFile('src/theme-utils.js', 'theme-utils.js');
+    await processFile('src/images/avatar.webp', 'images/avatar.webp');
+
+    // 输出压缩统计
+    console.log('');
+    console.log('📊 压缩统计:');
+    if (stats.js.count > 0) {
+        console.log('   JS: ' + formatSize(stats.js.totalOriginal) + ' → ' + formatSize(stats.js.totalMinified) + ' (节省 ' + calcReduction(stats.js.totalOriginal, stats.js.totalMinified) + ')');
+    }
+    if (stats.css.count > 0) {
+        console.log('   CSS: ' + formatSize(stats.css.totalOriginal) + ' → ' + formatSize(stats.css.totalMinified) + ' (节省 ' + calcReduction(stats.css.totalOriginal, stats.css.totalMinified) + ')');
+    }
+    if (stats.images.count > 0) {
+        console.log('   图片: ' + formatSize(stats.images.totalOriginal) + ' → ' + formatSize(stats.images.totalMinified) + ' (节省 ' + calcReduction(stats.images.totalOriginal, stats.images.totalMinified) + ')');
+    }
+
+    const totalOriginal = htmlSize.original + stats.js.totalOriginal + stats.css.totalOriginal + stats.images.totalOriginal;
+    const totalMinified = htmlSize.minified + stats.js.totalMinified + stats.css.totalMinified + stats.images.totalMinified;
+    console.log('   总计: ' + formatSize(totalOriginal) + ' → ' + formatSize(totalMinified) + ' (节省 ' + calcReduction(totalOriginal, totalMinified) + ')');
+
+    console.log('');
     console.log('✅ 构建成功！');
     console.log('📄 生成了: ' + path.join(distDir, 'index.html'));
     console.log('📋 标题: ' + config.title);

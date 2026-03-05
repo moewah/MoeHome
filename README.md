@@ -19,7 +19,7 @@
 - ✨ **动态效果** - 粒子背景、发光分割线、自定义光标、终端打字机
 - 🌓 **双主题** - 明暗主题一键切换，支持 7 种配色变量自定义
 - 📱 **响应式设计** - 完美适配移动端和桌面端
-- 🚀 **零依赖** - 仅一个 Node.js 构建脚本，无需框架
+- 🚀 **零运行时依赖** - 前端无框架，构建时自动压缩优化
 - 📦 **易部署** - 构建输出即插即用，支持任意静态托管
 - 🐙 **GitHub 集成** - 自动展示项目和贡献图（支持真实/随机数据）
 - 📰 **RSS 聚合** - 构建时预获取博客文章，无运行时延迟
@@ -32,6 +32,7 @@
 ```bash
 git clone https://github.com/moewah/MoeHome.git
 cd MoeHome
+npm install  # 安装开发依赖
 ```
 
 ### 开发
@@ -360,10 +361,39 @@ npm run build
 
 ## 技术栈
 
+### 运行时
+
 - HTML5 + CSS3 + Vanilla JavaScript
 - Font Awesome 6 图标
-- Google Fonts（Noto Sans SC + IBM Plex Mono）
-- 零外部依赖
+- Google Fonts（IBM Plex Mono 等宽字体）
+- 中文字体使用系统回退（PingFang SC / Microsoft YaHei 等）
+
+### 开发依赖（仅构建时）
+
+| 依赖 | 用途 |
+|------|------|
+| terser | JavaScript 压缩 |
+| lightningcss | CSS 压缩 |
+| html-minifier-terser | HTML 压缩 |
+| sharp | 图片压缩（WebP/PNG/JPEG） |
+
+### 环境变量配置
+
+构建时支持环境变量控制压缩行为：
+
+```bash
+# 启用/禁用压缩（默认启用）
+MINIFY=true npm run build
+
+# 单独控制各类资源
+MINIFY_JS=true MINIFY_CSS=true MINIFY_HTML=true npm run build
+
+# 图片压缩质量 (1-100)
+IMAGE_QUALITY=80 npm run build
+
+# 禁用图片压缩
+COMPRESS_IMAGES=false npm run build
+```
 
 ## 赞赏/捐赠
 
