@@ -140,6 +140,20 @@ profile: {
 }
 ```
 
+### Favicon 配置
+
+```javascript
+favicon: {
+    path: '',    // 自定义 favicon 路径（如 'images/favicon.ico'），留空则从头像自动生成
+}
+```
+
+| 配置 | 说明 |
+|------|------|
+| `path` | 自定义 favicon 文件路径，留空则从头像自动生成 |
+
+**自动生成尺寸**：16×16、32×32（ICO 文件）、180×180（Apple Touch Icon）
+
 ### 终端内容
 
 ```javascript

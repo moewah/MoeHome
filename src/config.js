@@ -91,6 +91,11 @@ window.HOMEPAGE_CONFIG = {
     avatar: "images/avatar.webp",
   },
 
+  // ========== Favicon 配置 ==========
+  favicon: {
+    path: "",                        // 自定义 favicon 路径（如 "images/favicon.ico"），留空则从头像自动生成
+  },
+
   // ========== 身份标签 ==========
   identity: ["开源爱好者", "AI探索者", "自动化实践者", "技术博主"],
 

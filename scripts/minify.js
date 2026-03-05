@@ -346,6 +346,117 @@ async function processImageFile(srcPath, destPath, config) {
     };
 }
 
+// ========== Favicon 生成 ==========
+
+/**
+ * 从图片生成多尺寸 favicon
+ * @param {Buffer} sourceBuffer - 源图片 Buffer
+ * @param {string} destPath - 输出路径（.ico 文件）
+ * @returns {Promise<{success: boolean, sizes: number[]}>}
+ */
+async function generateFavicon(sourceBuffer, destPath) {
+    try {
+        const sharp = require('sharp');
+
+        // 生成多种尺寸：16x16, 32x32, 180x180 (Apple Touch Icon)
+        const sizes = [16, 32, 180];
+        const pngBuffers = [];
+
+        for (const size of sizes) {
+            const pngBuffer = await sharp(sourceBuffer)
+                .resize(size, size, {
+                    fit: 'contain',
+                    background: { r: 0, g: 0, b: 0, alpha: 0 }
+                })
+                .png()
+                .toBuffer();
+            pngBuffers.push({ size, buffer: pngBuffer });
+        }
+
+        // 生成 ICO 文件（包含 16x16 和 32x32）
+        const icoBuffer = await createICO(pngBuffers.filter(p => p.size <= 32).map(p => p.buffer));
+        fs.writeFileSync(destPath, icoBuffer);
+
+        // 生成 Apple Touch Icon (180x180)
+        const appleTouchPath = destPath.replace('.ico', '-apple-touch.png');
+        const appleTouchBuffer = pngBuffers.find(p => p.size === 180).buffer;
+        fs.writeFileSync(appleTouchPath, appleTouchBuffer);
+
+        return {
+            success: true,
+            sizes,
+            icoPath: destPath,
+            appleTouchPath
+        };
+    } catch (error) {
+        console.error('  ⚠️ Favicon 生成失败:', error.message);
+        return { success: false, sizes: [] };
+    }
+}
+
+/**
+ * 创建 ICO 格式文件
+ * @param {Buffer[]} pngBuffers - PNG Buffer 数组
+ * @returns {Buffer}
+ */
+async function createICO(pngBuffers) {
+    // ICO 文件格式：
+    // - ICONDIR header (6 bytes)
+    // - ICONDIRENTRY for each image (16 bytes each)
+    // - Image data (PNG)
+
+    const numImages = pngBuffers.length;
+    const headerSize = 6;
+    const entrySize = 16;
+
+    // 计算数据偏移量
+    let dataOffset = headerSize + (numImages * entrySize);
+
+    // 收集图片数据
+    const images = [];
+    for (const pngBuffer of pngBuffers) {
+        const img = await require('sharp')(pngBuffer).metadata();
+        images.push({
+            width: img.width,
+            height: img.height,
+            data: pngBuffer
+        });
+    }
+
+    // 构建 ICO 文件
+    const parts = [];
+
+    // ICONDIR header
+    const iconDir = Buffer.alloc(6);
+    iconDir.writeUInt16LE(0, 0);      // Reserved
+    iconDir.writeUInt16LE(1, 2);      // Type (1 = ICO)
+    iconDir.writeUInt16LE(numImages, 4);  // Number of images
+    parts.push(iconDir);
+
+    // ICONDIRENTRY for each image
+    let currentOffset = dataOffset;
+    for (const img of images) {
+        const entry = Buffer.alloc(16);
+        entry.writeUInt8(img.width === 256 ? 0 : img.width, 0);   // Width
+        entry.writeUInt8(img.height === 256 ? 0 : img.height, 1); // Height
+        entry.writeUInt8(0, 2);        // Color palette
+        entry.writeUInt8(0, 3);        // Reserved
+        entry.writeUInt16LE(1, 4);     // Color planes
+        entry.writeUInt16LE(32, 6);    // Bits per pixel
+        entry.writeUInt32LE(img.data.length, 8);  // Size of image data
+        entry.writeUInt32LE(currentOffset, 12);   // Offset to image data
+        parts.push(entry);
+        currentOffset += img.data.length;
+    }
+
+    // Image data
+    for (const img of images) {
+        parts.push(img.data);
+    }
+
+    return Buffer.concat(parts);
+}
+
 // ========== 导出 ==========
 
 module.exports = {
@@ -361,5 +472,6 @@ module.exports = {
     isImage,
     getImageFormat,
     formatSize,
-    calcReduction
+    calcReduction,
+    generateFavicon
 };

@@ -16,7 +16,8 @@ const {
     processImageFile,
     isImage,
     formatSize,
-    calcReduction
+    calcReduction,
+    generateFavicon
 } = require('./minify');
 
 // 压缩配置
@@ -947,6 +948,21 @@ function extractContributionConfig() {
     };
 }
 
+// 提取 Favicon 配置
+function extractFaviconConfig() {
+    const faviconMatch = configContent.match(/favicon:\s*\{([\s\S]*?)\n\s*\}/);
+    if (!faviconMatch) {
+        return { path: '' };
+    }
+
+    const faviconContent = faviconMatch[1];
+    const pathMatch = faviconContent.match(/path:\s*['"`]([^'"`]*)['"`]/);
+
+    return {
+        path: pathMatch ? pathMatch[1].trim() : '',
+    };
+}
+
 // 提取 Nav 配置
 function extractNavConfig() {
     // 使用更精确的模式匹配 nav 配置块
@@ -1371,6 +1387,9 @@ const config = {
     identity: extractArray(/identity:\s*\[([\s\S]*?)\]/, ['开源爱好者', 'Astro爱好者', 'AI探索者']),
     interests: extractArray(/interests:\s*\[([\s\S]*?)\]/, ['Astro & 前端开发', 'Docker & 容器技术']),
 
+    // Favicon
+    favicon: extractFaviconConfig(),
+
     // Terminal
     terminalTitle: extractNestedString(/terminal:\s*\{([\s\S]*?)\}/, 'title', '🐾 meow@tribe:~|'),
 
@@ -1544,6 +1563,67 @@ async function build() {
 
     // 清理并创建 dist 目录
     cleanDist();
+
+    // ========== Favicon 处理（必须） ==========
+    console.log('🔘 处理 Favicon...');
+
+    // 确保 images 目录存在
+    const distImagesDir = path.join(distDir, 'images');
+    if (!fs.existsSync(distImagesDir)) {
+        fs.mkdirSync(distImagesDir, { recursive: true });
+    }
+
+    let faviconPath = '';
+    let appleTouchPath = '';
+
+    // 优先使用自定义 favicon（path 有值且文件存在）
+    if (config.favicon.path) {
+        const customFaviconSrc = path.join(rootDir, 'src', config.favicon.path);
+        const customFaviconDest = path.join(distDir, 'images/favicon.ico');
+
+        if (fs.existsSync(customFaviconSrc)) {
+            fs.copyFileSync(customFaviconSrc, customFaviconDest);
+            console.log('   ✓ 使用自定义 favicon: ' + config.favicon.path);
+            faviconPath = 'images/favicon.ico';
+        } else {
+            console.log('   ⚠️ 自定义 favicon 文件不存在: src/' + config.favicon.path);
+        }
+    }
+
+    // 没有自定义 favicon 时，从头像自动生成（默认行为）
+    if (!faviconPath) {
+        const avatarSrc = path.join(rootDir, 'src', config.avatar);
+        const faviconDest = path.join(distDir, 'images/favicon.ico');
+
+        if (fs.existsSync(avatarSrc)) {
+            const avatarBuffer = fs.readFileSync(avatarSrc);
+            const result = await generateFavicon(avatarBuffer, faviconDest);
+
+            if (result.success) {
+                console.log('   ✓ 从头像生成 favicon (尺寸: ' + result.sizes.join(', ') + ')');
+                faviconPath = 'images/favicon.ico';
+                appleTouchPath = 'images/favicon-apple-touch.png';
+            } else {
+                console.log('   ⚠️ favicon 生成失败');
+            }
+        } else {
+            console.log('   ⚠️ 头像文件不存在: src/' + config.avatar);
+        }
+    }
+
+    // 生成 favicon HTML 链接（必须）
+    let faviconLinks = '';
+    if (faviconPath) {
+        if (appleTouchPath) {
+            faviconLinks = `<link rel="icon" type="image/x-icon" href="${faviconPath}" />
+        <link rel="apple-touch-icon" href="${appleTouchPath}" />`;
+        } else {
+            faviconLinks = `<link rel="icon" type="image/x-icon" href="${faviconPath}" />`;
+        }
+    }
+
+    // 将 favicon 链接注入 HTML
+    html = html.replace(/{{FAVICON_LINKS}}/g, faviconLinks);
 
     // 压缩并写入 HTML
     const processedHTML = await processHTML(html, minifyConfig);
