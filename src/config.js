@@ -323,6 +323,13 @@ window.HOMEPAGE_CONFIG = {
         url: 'https://paypal.me/yourname',  // 外链支付方式
         enabled: true,
       },
+      {
+        name: '爱发电',
+        key: 'afdian',
+        icon: 'fa-solid fa-heart',
+        url: 'https://afdian.net/a/yourname',  // 外链支付方式
+        enabled: true,
+      },
     ],
   },
 

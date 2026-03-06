@@ -1699,11 +1699,11 @@ async function build() {
         .replace(/{{NAV_POSTS_LINK}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-link" data-section="rss-section">Posts</a>' : '')
         .replace(/{{NAV_PROJECTS_LINK}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-link" data-section="projects-section">Projects</a>' : '')
         .replace(/{{NAV_LINKS_LINK}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-link" data-section="links-container">Links</a>' : '')
-        .replace(/{{NAV_DONATION_LINK}}/g, (config.donation.enabled && config.donation.methods.some(m => m.enabled)) ? '<a href="#donation-section" class="nav-link" data-section="donation-section">Donate</a>' : '')
+        .replace(/{{NAV_DONATION_LINK}}/g, '')
         .replace(/{{NAV_POSTS_LINK_MOBILE}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-sidebar-link" data-section="rss-section">Posts</a>' : '')
         .replace(/{{NAV_PROJECTS_LINK_MOBILE}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-sidebar-link" data-section="projects-section">Projects</a>' : '')
         .replace(/{{NAV_LINKS_LINK_MOBILE}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-sidebar-link" data-section="links-container">Links</a>' : '')
-        .replace(/{{NAV_DONATION_LINK_MOBILE}}/g, (config.donation.enabled && config.donation.methods.some(m => m.enabled)) ? '<a href="#donation-section" class="nav-sidebar-link" data-section="donation-section">Donate</a>' : '')
+        .replace(/{{NAV_DONATION_LINK_MOBILE}}/g, '')
         .replace(/{{NAV_CUSTOM_MENUS}}/g, generateCustomMenusHTML(config.nav?.menus))
         .replace(/{{NAV_CUSTOM_MENUS_MOBILE}}/g, generateCustomMenusMobileHTML(config.nav?.menus))
 

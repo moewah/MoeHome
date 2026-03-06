@@ -1476,7 +1476,7 @@ body {
 
 .donation__terminal {
     background: var(--bg-secondary);
-    border: 1px solid var(--border);
+    border: 1px solid var(--accent);
     border-radius: 10px;
     padding: 16px 18px;
     font-family: var(--font-mono);
@@ -1521,43 +1521,16 @@ body {
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
     font-family: var(--font-sans);
     position: relative;
     overflow: hidden;
 }
 
-/* 按钮鼠标追踪光晕 */
-.donation__btn::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(
-        circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        var(--glow-subtle),
-        transparent 60%
-    );
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    z-index: 0;
-}
-
-.donation__btn:hover::before {
-    opacity: 1;
-}
-
-.donation__btn > * {
-    position: relative;
-    z-index: 1;
-}
-
+/* 按钮悬停通用样式 - 背景变品牌色，文字变白色 */
 .donation__btn:hover {
-    border-color: var(--accent);
+    color: var(--bg-primary);
     box-shadow:
         0 8px 24px -8px var(--glow),
         0 0 0 1px var(--hover-bg);
@@ -1570,22 +1543,45 @@ body {
 
 .donation__btn-icon {
     font-size: 1rem;
+    color: var(--accent);
+    transition: color 0.3s ease;
 }
 
-/* Button Modifiers - 品牌色仅用于悬停边框和文字 */
+/* Button Modifiers - 悬停时背景变品牌色，图标和文字变白色 */
 .donation__btn--wechat:hover {
+    background: #07C160;
     border-color: #07C160;
-    color: #07C160;
+}
+
+.donation__btn--wechat:hover .donation__btn-icon {
+    color: var(--bg-primary);
 }
 
 .donation__btn--alipay:hover {
+    background: #1677FF;
     border-color: #1677FF;
-    color: #1677FF;
+}
+
+.donation__btn--alipay:hover .donation__btn-icon {
+    color: var(--bg-primary);
 }
 
 .donation__btn--paypal:hover {
+    background: #003087;
     border-color: #003087;
-    color: #003087;
+}
+
+.donation__btn--paypal:hover .donation__btn-icon {
+    color: var(--bg-primary);
+}
+
+.donation__btn--afdian:hover {
+    background: #946CE6;
+    border-color: #946CE6;
+}
+
+.donation__btn--afdian:hover .donation__btn-icon {
+    color: var(--bg-primary);
 }
 
 /* Modal Overlay */

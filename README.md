@@ -268,51 +268,27 @@ links: [
 
 ### 赞赏支持
 
-支持多种捐赠方式，二维码方式弹窗显示，外链方式跳转支付：
+支持二维码扫码和外链跳转两种支付方式：
 
 ```javascript
 donation: {
     enabled: true,
-    title: {
-        text: '赞赏支持',
-        icon: 'fa-solid fa-mug-hot',
-    },
     message: '如果我的内容对你有帮助，欢迎请我喝杯咖啡~',
     methods: [
-        {
-            name: '微信支付',
-            key: 'wechat',
-            icon: 'fa-brands fa-weixin',
-            qrImage: 'images/wechat.png',  // 二维码图片路径
-            enabled: true,
-        },
-        {
-            name: '支付宝',
-            key: 'alipay',
-            icon: 'fa-brands fa-alipay',
-            qrImage: 'images/alipay.png',
-            enabled: true,
-        },
-        {
-            name: 'PayPal',
-            key: 'paypal',
-            icon: 'fa-brands fa-paypal',
-            url: 'https://paypal.me/yourname',  // 外链方式
-            enabled: true,
-        },
+        { name: '微信支付', key: 'wechat', icon: 'fa-brands fa-weixin', qrImage: 'images/wechat.png', enabled: true },
+        { name: '支付宝', key: 'alipay', icon: 'fa-brands fa-alipay', qrImage: 'images/alipay.png', enabled: true },
+        { name: '爱发电', key: 'afdian', icon: 'fa-solid fa-heart', url: 'https://afdian.net/a/yourname', enabled: true },
+        { name: 'PayPal', key: 'paypal', icon: 'fa-brands fa-paypal', url: 'https://paypal.me/yourname', enabled: false },
     ],
 },
 ```
 
 | 配置 | 说明 |
 |------|------|
-| `enabled` | 模块总开关 |
-| `message` | 终端风格提示语 |
-| `methods[].qrImage` | 二维码图片路径（相对于 `src/` 目录） |
-| `methods[].url` | 外链支付地址（PayPal 等） |
-| `methods[].enabled` | 单个支付方式开关 |
+| `qrImage` | 二维码图片路径（扫码支付） |
+| `url` | 外链支付地址（跳转支付） |
 
-**支付方式**：`qrImage` 用于扫码支付（微信、支付宝），`url` 用于跳转支付（PayPal）。
+**图标颜色**：默认使用主题 `accent` 配色，悬停时背景变品牌色、图标变白色。
 
 ### 滚动进度按钮
 

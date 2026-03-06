@@ -182,7 +182,7 @@ function initNavbarActiveSection() {
     const navLinks = document.querySelectorAll('.nav-link, .nav-sidebar-link');
     if (navLinks.length === 0) return;
 
-    const sections = document.querySelectorAll('#actual-content, #rss-section, #projects-section, #links-container, #donation-section');
+    const sections = document.querySelectorAll('#actual-content, #rss-section, #projects-section, #links-container');
     if (sections.length === 0) return;
 
     // 更新导航高亮状态
