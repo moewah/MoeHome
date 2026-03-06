@@ -1712,6 +1712,15 @@ body {
         width: 180px;
         height: 180px;
     }
+
+    /* 赞赏模块骨架屏移动端适配 */
+    .skeleton-donation-methods {
+        flex-direction: column;
+    }
+
+    .skeleton-donation-btn {
+        min-width: 100%;
+    }
 }
 
 /* ========== RSS Section ========== */
@@ -2126,6 +2135,67 @@ body {
     grid-row: 1 / 3;
     aspect-ratio: 1 / 1;
     min-height: 240px;
+}
+
+/* ========== Donation Section Skeleton - 与实际布局一致 ========== */
+.skeleton-donation {
+    width: 100%;
+    margin: 20px 0;
+}
+
+.skeleton-donation-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding: 0 4px;
+}
+
+.skeleton-donation-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.skeleton-donation-title {
+    width: 80px;
+    height: 18px;
+    border-radius: 6px;
+}
+
+.skeleton-donation-terminal {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+
+.skeleton-donation-prompt {
+    width: 140px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.skeleton-donation-output {
+    width: 100%;
+    max-width: 280px;
+    height: 14px;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.skeleton-donation-methods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+    justify-content: center;
+}
+
+.skeleton-donation-btn {
+    min-width: 120px;
+    height: 44px;
+    border-radius: 8px;
 }
 
 /* ========== Projects Section - Dashboard Style ========== */

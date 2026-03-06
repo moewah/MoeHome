@@ -301,6 +301,7 @@ window.HOMEPAGE_CONFIG = {
       icon: 'fa-solid fa-mug-hot',
     },
     message: '如果我的内容对你有帮助，欢迎请我喝杯咖啡~',
+    // 支付方式配置（建议启用2-3个，骨架屏最多显示3个按钮）
     methods: [
       {
         name: '微信支付',

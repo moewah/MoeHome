@@ -838,7 +838,7 @@ function generateDonationHTML(donation) {
                 </section>`;
 }
 
-// 生成骨架屏 Donation 占位 HTML
+// 生成骨架屏 Donation 占位 HTML - 与实际布局结构一致
 function generateSkeletonDonationHTML(donation) {
     if (!donation.enabled) {
         return '';
@@ -849,10 +849,25 @@ function generateSkeletonDonationHTML(donation) {
         return '';
     }
 
+    // 生成支付按钮骨架（最多显示3个，与实际布局一致）
+    const btnCount = Math.min(enabledMethods.length, 3);
+    const buttonsHTML = Array(btnCount).fill(0).map(() =>
+        `<div class="skeleton-donation-btn skeleton"></div>`
+    ).join('\n                        ');
+
     return `                <div class="skeleton-divider skeleton"></div>
                 <div class="skeleton-donation">
-                    <div class="skeleton-donation-header skeleton"></div>
-                    <div class="skeleton-donation-content skeleton"></div>
+                    <div class="skeleton-donation-header">
+                        <div class="skeleton-donation-icon skeleton"></div>
+                        <div class="skeleton-donation-title skeleton"></div>
+                    </div>
+                    <div class="skeleton-donation-terminal">
+                        <div class="skeleton-donation-prompt skeleton"></div>
+                        <div class="skeleton-donation-output skeleton"></div>
+                        <div class="skeleton-donation-methods">
+                        ${buttonsHTML}
+                        </div>
+                    </div>
                 </div>`;
 }
 
