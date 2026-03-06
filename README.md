@@ -266,6 +266,54 @@ links: [
 | `color` | 按钮主题颜色 |
 | `enabled` | 是否显示 |
 
+### 赞赏支持
+
+支持多种捐赠方式，二维码方式弹窗显示，外链方式跳转支付：
+
+```javascript
+donation: {
+    enabled: true,
+    title: {
+        text: '赞赏支持',
+        icon: 'fa-solid fa-mug-hot',
+    },
+    message: '如果我的内容对你有帮助，欢迎请我喝杯咖啡~',
+    methods: [
+        {
+            name: '微信支付',
+            key: 'wechat',
+            icon: 'fa-brands fa-weixin',
+            qrImage: 'images/wechat.png',  // 二维码图片路径
+            enabled: true,
+        },
+        {
+            name: '支付宝',
+            key: 'alipay',
+            icon: 'fa-brands fa-alipay',
+            qrImage: 'images/alipay.png',
+            enabled: true,
+        },
+        {
+            name: 'PayPal',
+            key: 'paypal',
+            icon: 'fa-brands fa-paypal',
+            url: 'https://paypal.me/yourname',  // 外链方式
+            enabled: true,
+        },
+    ],
+},
+```
+
+| 配置 | 说明 |
+|------|------|
+| `enabled` | 模块总开关 |
+| `message` | 终端风格提示语 |
+| `methods[].qrImage` | 二维码图片路径（相对于 `src/` 目录） |
+| `methods[].url` | 外链支付地址（PayPal 等） |
+| `methods[].enabled` | 单个支付方式开关 |
+
+**支付方式**：`qrImage` 用于扫码支付（微信、支付宝），`url` 用于跳转支付（PayPal）。
+
 ### 滚动进度按钮
 
 右下角固定按钮，集成滚动进度环和返回顶部功能：

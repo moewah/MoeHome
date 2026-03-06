@@ -215,6 +215,77 @@ function extractLinksConfig() {
     };
 }
 
+// 提取 Donation 配置
+function extractDonationConfig() {
+    const configMatch = configContent.match(/donation:\s*\{([\s\S]*?)\n\s*\},?\s*\n\s*\/\/ =/);
+    if (!configMatch) {
+        return {
+            enabled: false,
+            titleText: '赞赏支持',
+            titleIcon: 'fa-solid fa-mug-hot',
+            message: '如果我的内容对你有帮助，欢迎请我喝杯咖啡~',
+            methods: [],
+        };
+    }
+
+    const configStr = configMatch[1];
+
+    const enabledMatch = configStr.match(/enabled:\s*(true|false)/);
+    const titleTextMatch = configStr.match(/text:\s*['"`]([^'"`]+)['"`]/);
+    const titleIconMatch = configStr.match(/icon:\s*['"`]([^'"`]+)['"`]/);
+    const messageMatch = configStr.match(/message:\s*['"`]([^'"`]+)['"`]/);
+
+    // 提取 methods 数组 - 使用更健壮的对象解析
+    const methodsMatch = configStr.match(/methods:\s*\[([\s\S]*?)\n\s*\]/);
+    const methods = [];
+
+    if (methodsMatch) {
+        const methodsStr = methodsMatch[1];
+
+        // 匹配每个 method 对象 {...}
+        const objectPattern = /\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g;
+
+        let objectMatch;
+        while ((objectMatch = objectPattern.exec(methodsStr)) !== null) {
+            const objContent = objectMatch[1];
+
+            const name = extractStringValue(objContent, 'name');
+            const key = extractStringValue(objContent, 'key');
+            const icon = extractStringValue(objContent, 'icon');
+            const qrImage = extractStringValue(objContent, 'qrImage');
+            const url = extractStringValue(objContent, 'url');
+
+            const enabledMethodMatch = objContent.match(/enabled:\s*(true|false)/);
+            const methodEnabled = enabledMethodMatch ? enabledMethodMatch[1] === 'true' : true;
+
+            if (name && key && icon) {
+                const method = {
+                    name,
+                    key,
+                    icon,
+                    enabled: methodEnabled,
+                };
+
+                if (qrImage) {
+                    method.qrImage = qrImage;
+                } else if (url) {
+                    method.url = url;
+                }
+
+                methods.push(method);
+            }
+        }
+    }
+
+    return {
+        enabled: enabledMatch ? enabledMatch[1] === 'true' : false,
+        titleText: titleTextMatch ? titleTextMatch[1].trim() : '赞赏支持',
+        titleIcon: titleIconMatch ? titleIconMatch[1].trim() : 'fa-solid fa-mug-hot',
+        message: messageMatch ? messageMatch[1].trim() : '如果我的内容对你有帮助，欢迎请我喝杯咖啡~',
+        methods,
+    };
+}
+
 // ========== 主题配色提取 ==========
 
 /**
@@ -393,6 +464,7 @@ function generateInitialThemeCSS() {
         --shadow-sm: rgba(0, 0, 0, ${derive.shadowSm});
         --shadow-md: rgba(0, 0, 0, ${derive.shadowMd});
         --glow: rgba(${accentRgb}, ${derive.glow});
+        --glow-subtle: rgba(${accentRgb}, 0.08);
         --navbar-bg-scrolled: rgba(${bgPrimaryRgb}, ${derive.navbarScrolled});
 
         /* P3 贡献图格子 */
@@ -714,6 +786,74 @@ function generateSkeletonNoticeHTML(notice) {
     }
 
     return '<div class="skeleton-notice skeleton"></div>';
+}
+
+// 生成 Donation HTML
+function generateDonationHTML(donation) {
+    if (!donation.enabled) {
+        return '';
+    }
+
+    // 过滤启用的支付方式
+    const enabledMethods = donation.methods.filter(method => method.enabled);
+    if (enabledMethods.length === 0) {
+        return '';
+    }
+
+    // 生成支付按钮（使用 BEM 类名）
+    const buttonsHTML = enabledMethods.map(method => {
+        // BEM modifier class
+        const modifierClass = `donation__btn--${method.key}`;
+
+        if (method.qrImage) {
+            // 二维码方式（微信、支付宝）
+            return `<button class="donation__btn ${modifierClass}" data-method="${method.key}" data-qr="${method.qrImage}" data-name="${method.name}" aria-label="${method.name}扫码支付">
+                    <i class="${method.icon} donation__btn-icon" aria-hidden="true"></i>
+                    <span>${method.name}</span>
+                </button>`;
+        } else {
+            // 外链方式（PayPal等）
+            return `<a href="${method.url}" class="donation__btn ${modifierClass}" data-method="${method.key}" target="_blank" rel="noopener noreferrer" aria-label="前往${method.name}支付页面">
+                    <i class="${method.icon} donation__btn-icon" aria-hidden="true"></i>
+                    <span>${method.name}</span>
+                </a>`;
+        }
+    }).join('\n                ');
+
+    return `<div class="divider divider-compact lazy-load" data-delay="4"></div>
+
+                <!-- Donation Section -->
+                <section class="donation lazy-load" id="donation-section" data-delay="4" aria-labelledby="donation-title">
+                    <div class="donation__header">
+                        <i class="${escapeHTML(donation.titleIcon)} donation__icon" aria-hidden="true"></i>
+                        <span class="donation__title" id="donation-title">${escapeHTML(donation.titleText)}</span>
+                    </div>
+                    <div class="donation__terminal">
+                        <div class="donation__prompt">$ <span class="donation__command">cat support.txt</span></div>
+                        <div class="donation__output">${escapeHTML(donation.message)}</div>
+                        <div class="donation__methods">
+                ${buttonsHTML}
+                        </div>
+                    </div>
+                </section>`;
+}
+
+// 生成骨架屏 Donation 占位 HTML
+function generateSkeletonDonationHTML(donation) {
+    if (!donation.enabled) {
+        return '';
+    }
+
+    const enabledMethods = donation.methods.filter(method => method.enabled);
+    if (enabledMethods.length === 0) {
+        return '';
+    }
+
+    return `                <div class="skeleton-divider skeleton"></div>
+                <div class="skeleton-donation">
+                    <div class="skeleton-donation-header skeleton"></div>
+                    <div class="skeleton-donation-content skeleton"></div>
+                </div>`;
 }
 
 // 生成 RSS 文章列表 HTML（支持3D翻转Masonry布局）
@@ -1397,6 +1537,9 @@ const config = {
     links: extractLinks(),
     linksConfig: extractLinksConfig(),
 
+    // Donation
+    donation: extractDonationConfig(),
+
     // Footer
     footerText: extractNestedString(/footer:\s*\{([\s\S]*?)\}/, 'text', 'Powered by'),
     footerLinkText: extractNestedString(/link:\s*\{([\s\S]*?)\}/, 'text', 'MoeWah'),
@@ -1524,6 +1667,10 @@ async function build() {
         .replace(/{{LINKS_SECTION}}/g, generateLinksSectionHTML(config.links, config.linksConfig))
         .replace(/{{SKELETON_LINKS_SECTION}}/g, generateSkeletonLinksSectionHTML(config.links, config.linksConfig))
 
+        // Donation
+        .replace(/{{DONATION}}/g, generateDonationHTML(config.donation))
+        .replace(/{{SKELETON_DONATION}}/g, generateSkeletonDonationHTML(config.donation))
+
         // Notice
         .replace(/{{NOTICE}}/g, generateNoticeHTML({
             enabled: config.noticeEnabled,
@@ -1552,9 +1699,11 @@ async function build() {
         .replace(/{{NAV_POSTS_LINK}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-link" data-section="rss-section">Posts</a>' : '')
         .replace(/{{NAV_PROJECTS_LINK}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-link" data-section="projects-section">Projects</a>' : '')
         .replace(/{{NAV_LINKS_LINK}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-link" data-section="links-container">Links</a>' : '')
+        .replace(/{{NAV_DONATION_LINK}}/g, (config.donation.enabled && config.donation.methods.some(m => m.enabled)) ? '<a href="#donation-section" class="nav-link" data-section="donation-section">Donate</a>' : '')
         .replace(/{{NAV_POSTS_LINK_MOBILE}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-sidebar-link" data-section="rss-section">Posts</a>' : '')
         .replace(/{{NAV_PROJECTS_LINK_MOBILE}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-sidebar-link" data-section="projects-section">Projects</a>' : '')
         .replace(/{{NAV_LINKS_LINK_MOBILE}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-sidebar-link" data-section="links-container">Links</a>' : '')
+        .replace(/{{NAV_DONATION_LINK_MOBILE}}/g, (config.donation.enabled && config.donation.methods.some(m => m.enabled)) ? '<a href="#donation-section" class="nav-sidebar-link" data-section="donation-section">Donate</a>' : '')
         .replace(/{{NAV_CUSTOM_MENUS}}/g, generateCustomMenusHTML(config.nav?.menus))
         .replace(/{{NAV_CUSTOM_MENUS_MOBILE}}/g, generateCustomMenusMobileHTML(config.nav?.menus))
 
@@ -1697,6 +1846,16 @@ async function build() {
     await processFile('src/config.js', 'config.js');
     await processFile('src/theme-utils.js', 'theme-utils.js');
     await processFile('src/images/avatar.webp', 'images/avatar.webp');
+
+    // 处理捐赠二维码图片
+    if (config.donation.enabled && config.donation.methods) {
+        const enabledMethods = config.donation.methods.filter(m => m.enabled && m.qrImage);
+        for (const method of enabledMethods) {
+            const srcPath = 'src/' + method.qrImage;
+            const destPath = method.qrImage;
+            await processFile(srcPath, destPath);
+        }
+    }
 
     // 输出压缩统计
     console.log('');

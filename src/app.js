@@ -33,6 +33,9 @@ function initPage() {
     // 初始化交互效果
     initInteractions();
 
+    // 初始化捐赠模态框
+    initDonation();
+
     // 初始化 RSS 翻转轮播
     initRssFlipCarousel();
 
@@ -179,7 +182,7 @@ function initNavbarActiveSection() {
     const navLinks = document.querySelectorAll('.nav-link, .nav-sidebar-link');
     if (navLinks.length === 0) return;
 
-    const sections = document.querySelectorAll('#actual-content, #rss-section, #projects-section, #links-container');
+    const sections = document.querySelectorAll('#actual-content, #rss-section, #projects-section, #links-container, #donation-section');
     if (sections.length === 0) return;
 
     // 更新导航高亮状态
@@ -368,6 +371,103 @@ function initMobileSidebar() {
 function initCustomMenus() {
     // 桌面端 hover 展开已在 CSS 中处理
     // 移动端点击展开在 initMobileSidebar 中处理
+}
+
+// ========== 捐赠模态框 ==========
+function initDonation() {
+    const donationBtns = document.querySelectorAll('.donation__btn[data-qr]');
+    if (donationBtns.length === 0) return;
+
+    // 创建模态框容器
+    let modalOverlay = document.querySelector('.donation__modal-overlay');
+    if (!modalOverlay) {
+        modalOverlay = document.createElement('div');
+        modalOverlay.className = 'donation__modal-overlay';
+        modalOverlay.setAttribute('role', 'dialog');
+        modalOverlay.setAttribute('aria-modal', 'true');
+        modalOverlay.setAttribute('aria-labelledby', 'donation-modal-title');
+
+        const modal = document.createElement('div');
+        modal.className = 'donation__modal';
+
+        // 标题区域
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'donation__modal-title';
+        const titleIcon = document.createElement('i');
+        titleIcon.className = 'fa-solid fa-qrcode donation__modal-title-icon';
+        titleIcon.setAttribute('aria-hidden', 'true');
+        const titleName = document.createElement('span');
+        titleName.className = 'donation__modal-name';
+        titleName.id = 'donation-modal-title';
+        titleDiv.appendChild(titleIcon);
+        titleDiv.appendChild(titleName);
+
+        // 二维码区域
+        const qrWrapper = document.createElement('div');
+        qrWrapper.className = 'donation__qr-wrapper';
+        const qrImg = document.createElement('img');
+        qrImg.className = 'donation__qr-image';
+        qrImg.alt = '支付二维码';
+        qrWrapper.appendChild(qrImg);
+
+        // 关闭按钮
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'donation__modal-close';
+        closeBtn.textContent = '关闭';
+        closeBtn.setAttribute('aria-label', '关闭支付二维码弹窗');
+
+        modal.appendChild(titleDiv);
+        modal.appendChild(qrWrapper);
+        modal.appendChild(closeBtn);
+        modalOverlay.appendChild(modal);
+        document.body.appendChild(modalOverlay);
+    }
+
+    const modalName = modalOverlay.querySelector('.donation__modal-name');
+    const modalImg = modalOverlay.querySelector('.donation__qr-image');
+    const closeBtn = modalOverlay.querySelector('.donation__modal-close');
+
+    // 打开模态框
+    function openModal(name, qr) {
+        modalName.textContent = name;
+        modalImg.src = qr;
+        modalImg.alt = name + '支付二维码';
+        modalOverlay.classList.add('is-active');
+        document.body.style.overflow = 'hidden';
+        // 焦点管理
+        closeBtn.focus();
+    }
+
+    // 关闭模态框
+    function closeModal() {
+        modalOverlay.classList.remove('is-active');
+        document.body.style.overflow = '';
+    }
+
+    // 点击支付按钮打开模态框
+    donationBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal(btn.dataset.name, btn.dataset.qr);
+        });
+    });
+
+    // 点击关闭按钮
+    closeBtn.addEventListener('click', closeModal);
+
+    // 点击遮罩层关闭
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            closeModal();
+        }
+    });
+
+    // ESC 键关闭
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalOverlay.classList.contains('is-active')) {
+            closeModal();
+        }
+    });
 }
 
 // ========== 动态视口高度（解决移动端地址栏问题）==========
@@ -893,6 +993,17 @@ function initInteractions() {
         });
     });
 
+    // 捐赠按钮鼠标位置跟踪（用于光晕效果）
+    document.querySelectorAll('.donation__btn').forEach(btnElement => {
+        btnElement.addEventListener("mousemove", (e) => {
+            const rect = btnElement.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            btnElement.style.setProperty("--mouse-x", `${x}%`);
+            btnElement.style.setProperty("--mouse-y", `${y}%`);
+        });
+    });
+
     // 初始化RSS卡片自动翻转功能
     initRSSCardAutoFlip();
 }
@@ -1406,7 +1517,7 @@ function initScrollProgressButton() {
     // 插入到 body
     document.body.appendChild(button);
 
-    const showThreshold = config.scrollProgress.showThreshold || 30;
+    const showThreshold = config.scrollProgress.showThreshold || 100;
 
     // 计算滚动进度（已查看内容比例）
     function calculateProgress() {

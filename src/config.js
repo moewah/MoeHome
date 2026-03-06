@@ -293,6 +293,39 @@ window.HOMEPAGE_CONFIG = {
     },
   ],
 
+  // ========== 赞赏支持配置 ==========
+  donation: {
+    enabled: false,  // 设置为 true 启用
+    title: {
+      text: '赞赏支持',
+      icon: 'fa-solid fa-mug-hot',
+    },
+    message: '如果我的内容对你有帮助，欢迎请我喝杯咖啡~',
+    methods: [
+      {
+        name: '微信支付',
+        key: 'wechat',
+        icon: 'fa-brands fa-weixin',
+        qrImage: 'images/wechat.png',  // 图片路径相对于 src/ 目录
+        enabled: true,
+      },
+      {
+        name: '支付宝',
+        key: 'alipay',
+        icon: 'fa-brands fa-alipay',
+        qrImage: 'images/alipay.png',
+        enabled: true,
+      },
+      {
+        name: 'PayPal',
+        key: 'paypal',
+        icon: 'fa-brands fa-paypal',
+        url: 'https://paypal.me/yourname',  // 外链支付方式
+        enabled: true,
+      },
+    ],
+  },
+
   // ========== 滚动进度按钮配置 ==========
   scrollProgress: {
     enabled: true, // 是否启用滚动进度按钮
