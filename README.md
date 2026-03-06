@@ -277,8 +277,8 @@ donation: {
     methods: [
         { name: '微信支付', key: 'wechat', icon: 'fa-brands fa-weixin', qrImage: 'images/wechat.png', enabled: true },
         { name: '支付宝', key: 'alipay', icon: 'fa-brands fa-alipay', qrImage: 'images/alipay.png', enabled: true },
-        { name: '爱发电', key: 'afdian', icon: 'fa-solid fa-heart', url: 'https://afdian.net/a/yourname', enabled: true },
-        { name: 'PayPal', key: 'paypal', icon: 'fa-brands fa-paypal', url: 'https://paypal.me/yourname', enabled: false },
+        { name: '爱发电', key: 'afdian', icon: 'fa-solid fa-heart', url: 'https://afdian.com/a/yourname', enabled: true },
+        { name: 'PayPal', key: 'paypal', icon: 'fa-brands fa-paypal', url: 'https://www.paypal.com/paypalme/yourname', enabled: false },
     ],
 },
 ```

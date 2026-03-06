@@ -320,14 +320,14 @@ window.HOMEPAGE_CONFIG = {
         name: 'PayPal',
         key: 'paypal',
         icon: 'fa-brands fa-paypal',
-        url: 'https://paypal.me/yourname',  // 外链支付方式
+        url: 'https://www.paypal.com/paypalme/yourname',
         enabled: true,
       },
       {
         name: '爱发电',
         key: 'afdian',
         icon: 'fa-solid fa-heart',
-        url: 'https://afdian.net/a/yourname',  // 外链支付方式
+        url: 'https://afdian.com/a/yourname',
         enabled: true,
       },
     ],
