@@ -28,7 +28,7 @@
 
         <!-- Fonts: 仅加载代码字体，中文使用系统字体回退 -->
         <link rel="preconnect" href="https://fonts.googleapis.cn" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin />
         <link
             href="https://fonts.googleapis.cn/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap"
             rel="stylesheet"
@@ -235,6 +235,48 @@
             .content-initial-hidden { opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }
             .content-visible { opacity: 1 !important; visibility: visible !important; pointer-events: auto !important; transition: opacity 0.3s ease; }
 
+            /* ========== Donation Modal (Critical - 防止 CSS 加载延迟闪烁) ========== */
+            .donation__modal-overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 2000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .donation__modal-overlay.is-active {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+
+            /* ========== Mobile Sidebar (Critical - 防止 CSS 加载延迟闪烁) ========== */
+            .nav-sidebar {
+                position: fixed;
+                top: 0;
+                right: 0;
+                height: 100vh;
+                transform: translateX(100%);
+                z-index: 1002;
+            }
+            .nav-sidebar.open {
+                transform: translateX(0);
+            }
+            .nav-overlay {
+                position: fixed;
+                inset: 0;
+                opacity: 0;
+                visibility: hidden;
+                z-index: 1001;
+            }
+            .nav-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
             /* ========== Responsive - Mobile ========== */
             @media (max-width: 768px) {
                 .navbar-menu { display: none; }
@@ -264,6 +306,9 @@
         {{ANALYTICS}}
     </head>
     <body>
+        <!-- Skip Link - 键盘用户快速跳转到主内容 -->
+        <a href="#actual-content" class="skip-link">跳到主要内容</a>
+
         <!-- Navigation Bar -->
         <nav class="navbar" id="navbar">
             <div class="navbar-inner">
@@ -396,7 +441,7 @@
                             <span class="prompt">$ </span>
                             <span class="command">./wisdom.sh</span>
                         </div>
-                        <div class="output" id="quote-output"><span class="cursor-blink"></span></div>
+                        <div class="output" id="quote-output" aria-live="polite" aria-label="名人语录"><span class="cursor-blink" aria-hidden="true"></span></div>
                     </div>
                 </div>
 
@@ -421,6 +466,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- Donation Modal (静态存在，避免 JS 动态创建时闪烁) -->
+        {{DONATION_MODAL}}
 
         <!-- Main Application Script: defer for non-blocking -->
         <script src="app.js" defer></script>

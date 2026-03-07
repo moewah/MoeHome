@@ -276,6 +276,7 @@ function initNavbarThemeSwitcher() {
             if (typeof ThemeManager !== 'undefined') {
                 const newTheme = ThemeManager.toggle();
                 updateThemeToggleIcon(newTheme);
+                updateThemeToggleAria(newTheme);
             }
         });
     }
@@ -286,13 +287,16 @@ function initNavbarThemeSwitcher() {
             if (typeof ThemeManager !== 'undefined') {
                 const newTheme = ThemeManager.toggle();
                 updateThemeToggleIcon(newTheme);
+                updateThemeToggleAria(newTheme);
             }
         });
     }
 
-    // 初始化图标状态
+    // 初始化图标和 ARIA 状态
     if (typeof ThemeManager !== 'undefined') {
-        updateThemeToggleIcon(ThemeManager.getSavedTheme());
+        const savedTheme = ThemeManager.getSavedTheme();
+        updateThemeToggleIcon(savedTheme);
+        updateThemeToggleAria(savedTheme);
     }
 }
 
@@ -326,6 +330,32 @@ function updateThemeToggleIcon(theme) {
     }
 }
 
+// 更新主题切换按钮 ARIA 状态
+function updateThemeToggleAria(theme) {
+    const toggle = document.getElementById('nav-theme-toggle');
+    const mobileToggle = document.getElementById('nav-sidebar-theme');
+
+    const labelMap = {
+        auto: '当前：跟随系统，点击切换到浅色主题',
+        light: '当前：浅色主题，点击切换到深色主题',
+        dark: '当前：深色主题，点击切换到跟随系统'
+    };
+
+    const ariaLabel = labelMap[theme] || labelMap.auto;
+
+    // PC 端 ARIA
+    if (toggle) {
+        toggle.setAttribute('aria-label', ariaLabel);
+        toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+    }
+
+    // 移动端 ARIA
+    if (mobileToggle) {
+        mobileToggle.setAttribute('aria-label', ariaLabel);
+        mobileToggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+    }
+}
+
 // 移动端侧边栏
 function initMobileSidebar() {
     const toggle = document.getElementById('navbar-toggle');
@@ -343,8 +373,13 @@ function initMobileSidebar() {
 
     const close = () => {
         sidebar.classList.remove('open');
+        sidebar.style.transform = '';
         overlay.classList.remove('active');
         document.body.style.overflow = '';
+        // 重置滑动状态
+        isSwiping = false;
+        swipeStartX = 0;
+        currentSwipeX = 0;
     };
 
     toggle.addEventListener('click', open);
@@ -365,6 +400,102 @@ function initMobileSidebar() {
             }
         });
     });
+
+    // ========== 滑动关闭手势 ==========
+    let isSwiping = false;
+    let swipeStartX = 0;
+    let currentSwipeX = 0;
+    const SWIPE_THRESHOLD = 80; // 触发关闭的最小滑动距离
+    const sidebarWidth = 280; // 侧边栏宽度
+
+    // 触摸开始
+    sidebar.addEventListener('touchstart', (e) => {
+        if (!sidebar.classList.contains('open')) return;
+        isSwiping = true;
+        swipeStartX = e.touches[0].clientX;
+        sidebar.style.transition = 'none';
+    }, { passive: true });
+
+    // 触摸移动
+    sidebar.addEventListener('touchmove', (e) => {
+        if (!isSwiping || !sidebar.classList.contains('open')) return;
+
+        currentSwipeX = e.touches[0].clientX;
+        const deltaX = currentSwipeX - swipeStartX;
+
+        // 只允许向右滑动（关闭方向）
+        if (deltaX > 0) {
+            const translateX = Math.min(deltaX, sidebarWidth);
+            sidebar.style.transform = `translateX(${translateX}px)`;
+        }
+    }, { passive: true });
+
+    // 触摸结束
+    sidebar.addEventListener('touchend', () => {
+        if (!isSwiping) return;
+
+        const deltaX = currentSwipeX - swipeStartX;
+        sidebar.style.transition = '';
+
+        // 滑动距离超过阈值则关闭，否则回弹
+        if (deltaX > SWIPE_THRESHOLD) {
+            close();
+        } else {
+            sidebar.style.transform = '';
+        }
+
+        isSwiping = false;
+    }, { passive: true });
+
+    // 边缘滑动打开侧边栏
+    let edgeSwipeStartX = 0;
+    let isEdgeSwipe = false;
+
+    document.addEventListener('touchstart', (e) => {
+        // 从左边缘 20px 内开始滑动
+        if (e.touches[0].clientX < 20 && !sidebar.classList.contains('open')) {
+            isEdgeSwipe = true;
+            edgeSwipeStartX = e.touches[0].clientX;
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isEdgeSwipe) return;
+
+        const currentX = e.touches[0].clientX;
+        const deltaX = currentX - edgeSwipeStartX;
+
+        // 向右滑动打开
+        if (deltaX > 0 && deltaX < sidebarWidth) {
+            e.preventDefault();
+            sidebar.style.transition = 'none';
+            sidebar.classList.add('open');
+            overlay.classList.add('active');
+            // 从左侧滑出
+            sidebar.style.transform = `translateX(${-sidebarWidth + deltaX}px)`;
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchend', () => {
+        if (!isEdgeSwipe) return;
+
+        sidebar.style.transition = '';
+
+        const currentX = sidebar.style.transform;
+        const match = currentX.match(/translateX\(([-\d.]+)px\)/);
+
+        if (match) {
+            const translateX = parseFloat(match[1]);
+            // 滑动超过一半则完全打开，否则关闭
+            if (translateX > -sidebarWidth / 2) {
+                sidebar.style.transform = '';
+            } else {
+                close();
+            }
+        }
+
+        isEdgeSwipe = false;
+    }, { passive: true });
 }
 
 // 自定义菜单交互
@@ -386,20 +517,101 @@ function initDonation() {
     const modalImg = modalOverlay.querySelector('.donation__qr-image');
     const closeBtn = modalOverlay.querySelector('.donation__modal-close');
 
+    // 焦点陷阱相关变量
+    let focusableElements = [];
+    let firstFocusable = null;
+    let lastFocusable = null;
+    let previousActiveElement = null;
+
+    // 更新可聚焦元素列表
+    function updateFocusableElements() {
+        focusableElements = modalOverlay.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        firstFocusable = focusableElements[0];
+        lastFocusable = focusableElements[focusableElements.length - 1];
+    }
+
+    // 焦点陷阱处理
+    function trapFocus(e) {
+        if (e.key !== 'Tab') return;
+
+        if (e.shiftKey) {
+            // Shift + Tab: 向后导航
+            if (document.activeElement === firstFocusable) {
+                e.preventDefault();
+                lastFocusable.focus();
+            }
+        } else {
+            // Tab: 向前导航
+            if (document.activeElement === lastFocusable) {
+                e.preventDefault();
+                firstFocusable.focus();
+            }
+        }
+    }
+
     // 打开模态框
     function openModal(name, qr) {
+        // 保存当前焦点元素，以便关闭时恢复
+        previousActiveElement = document.activeElement;
+
         modalName.textContent = name;
         modalImg.src = qr;
         modalImg.alt = name + '支付二维码';
         modalOverlay.classList.add('is-active');
         document.body.style.overflow = 'hidden';
+
+        // 二维码加载错误处理
+        modalImg.onerror = function() {
+            this.style.display = 'none';
+            // 显示错误提示
+            const errorMsg = modalOverlay.querySelector('.donation__qr-error') ||
+                document.createElement('p');
+            errorMsg.className = 'donation__qr-error';
+            errorMsg.textContent = '二维码加载失败，请稍后重试';
+            errorMsg.style.cssText = 'color: var(--text-secondary); text-align: center; padding: 20px;';
+            if (!modalOverlay.querySelector('.donation__qr-error')) {
+                this.parentElement.appendChild(errorMsg);
+            }
+        };
+        modalImg.onload = function() {
+            this.style.display = 'block';
+            const errorMsg = modalOverlay.querySelector('.donation__qr-error');
+            if (errorMsg) errorMsg.remove();
+        };
+
+        // 更新可聚焦元素列表并设置焦点陷阱
+        updateFocusableElements();
+
+        // 添加焦点陷阱事件监听
+        modalOverlay.addEventListener('keydown', trapFocus);
+
+        // 聚焦到关闭按钮
         closeBtn.focus();
+
+        // 设置 ARIA 属性
+        modalOverlay.setAttribute('aria-hidden', 'false');
+        modalOverlay.setAttribute('role', 'dialog');
+        modalOverlay.setAttribute('aria-modal', 'true');
+        modalOverlay.setAttribute('aria-labelledby', 'donation-modal-title');
     }
 
     // 关闭模态框
     function closeModal() {
         modalOverlay.classList.remove('is-active');
         document.body.style.overflow = '';
+
+        // 移除焦点陷阱事件监听
+        modalOverlay.removeEventListener('keydown', trapFocus);
+
+        // 恢复之前的焦点
+        if (previousActiveElement && typeof previousActiveElement.focus === 'function') {
+            previousActiveElement.focus();
+        }
+
+        // 更新 ARIA 属性
+        modalOverlay.setAttribute('aria-hidden', 'true');
     }
 
     // 点击支付按钮打开模态框
@@ -426,6 +638,9 @@ function initDonation() {
             closeModal();
         }
     });
+
+    // 初始化 ARIA 属性
+    modalOverlay.setAttribute('aria-hidden', 'true');
 }
 
 // ========== 动态视口高度（解决移动端地址栏问题）==========
@@ -566,6 +781,9 @@ function initProgressiveImage() {
     avatarImg.addEventListener('error', () => {
         avatarPlaceholder.classList.add('loaded');
         avatarImg.removeAttribute('data-blur');
+        // 添加 fallback 类显示占位样式
+        avatarPlaceholder.classList.add('fallback');
+        avatarImg.classList.add('error');
     });
 }
 

@@ -42,7 +42,7 @@ window.HOMEPAGE_CONFIG = {
       bgPrimary: "#FBF8F3",     // 暖白（米白带暖调）
       bgSecondary: "#F5F2ED",   // 暖灰（卡片背景）
       textPrimary: "#1C1917",   // 深炭灰（Stone 900）
-      textSecondary: "#78716C", // 暖中灰（Stone 500）
+      textSecondary: "#57534E", // 暖中灰（Stone 600）- WCAG AA 对比度 5.2:1
       border: "#E7E5E4",        // 暖浅灰边框（Stone 200）
     },
 

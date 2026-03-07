@@ -660,7 +660,7 @@ function generateLinksHTML(links) {
 
     return enabledLinks.map(link => {
         const externalAttrs = link.external
-            ? 'target="_blank" rel="noopener"'
+            ? 'target="_blank" rel="noopener noreferrer"'
             : '';
 
         return `                    <a href="${link.url}" class="link" data-brand="${link.brand}" style="--brand-color: ${link.color}" ${externalAttrs}>
@@ -695,7 +695,7 @@ function generateLinksSectionHTML(links, linksConfig) {
 
     const linksHTML = enabledLinks.map(link => {
         const externalAttrs = link.external
-            ? 'target="_blank" rel="noopener"'
+            ? 'target="_blank" rel="noopener noreferrer"'
             : '';
 
         return `                    <a href="${link.url}" class="link" data-brand="${link.brand}" style="--brand-color: ${link.color}" ${externalAttrs}>
@@ -839,34 +839,7 @@ function generateDonationHTML(donation) {
                 </section>`;
 }
 
-// 生成捐赠模态框 HTML（静态存在，避免 JS 动态创建时闪烁）
-// 关键：隐藏样式在 Critical CSS 中定义，确保 CSS 加载前就生效
-function generateDonationModalHTML(donation) {
-    if (!donation.enabled) {
-        return '';
-    }
-
-    const enabledMethods = donation.methods.filter(method => method.enabled && method.qrImage);
-    if (enabledMethods.length === 0) {
-        return '';
-    }
-
-    // 模态框静态 HTML
-    // 隐藏由 Critical CSS 控制，不需要内联样式或 hidden 属性
-    return `<div class="donation__modal-overlay" id="donation-modal" role="dialog" aria-modal="true" aria-labelledby="donation-modal-title">
-            <div class="donation__modal">
-                <div class="donation__modal-title">
-                    <i class="fa-solid fa-qrcode donation__modal-title-icon" aria-hidden="true"></i>
-                    <span class="donation__modal-name" id="donation-modal-title"></span>
-                </div>
-                <div class="donation__qr-wrapper">
-                    <img class="donation__qr-image" alt="支付二维码" />
-                </div>
-                <button class="donation__modal-close" aria-label="关闭支付二维码弹窗">关闭</button>
-            </div>
-        </div>`;
-}
-
+// 生成骨架屏 Donation 占位 HTML
 // 生成骨架屏 Donation 占位 HTML - 与实际布局结构一致
 function generateSkeletonDonationHTML(donation) {
     if (!donation.enabled) {
@@ -900,6 +873,34 @@ function generateSkeletonDonationHTML(donation) {
                 </div>`;
 }
 
+// 生成捐赠模态框 HTML（静态存在，避免 JS 动态创建时闪烁）
+// 关键：隐藏样式在 Critical CSS 中定义，确保 CSS 加载前就生效
+function generateDonationModalHTML(donation) {
+    if (!donation.enabled) {
+        return '';
+    }
+
+    const enabledMethods = donation.methods.filter(method => method.enabled && method.qrImage);
+    if (enabledMethods.length === 0) {
+        return '';
+    }
+
+    // 模态框静态 HTML
+    // 隐藏由 Critical CSS 控制，不需要内联样式或 hidden 属性
+    return `<div class="donation__modal-overlay" id="donation-modal" role="dialog" aria-modal="true" aria-labelledby="donation-modal-title" aria-hidden="true">
+            <div class="donation__modal">
+                <div class="donation__modal-title">
+                    <i class="fa-solid fa-qrcode donation__modal-title-icon" aria-hidden="true"></i>
+                    <span class="donation__modal-name" id="donation-modal-title"></span>
+                </div>
+                <div class="donation__qr-wrapper">
+                    <img class="donation__qr-image" alt="支付二维码" />
+                </div>
+                <button class="donation__modal-close" aria-label="关闭支付二维码弹窗">关闭</button>
+            </div>
+        </div>`;
+}
+
 // 生成 RSS 文章列表 HTML（支持3D翻转Masonry布局）
 function generateRSSHTML(articles, rssConfig) {
     if (!rssConfig.enabled) {
@@ -927,7 +928,7 @@ function generateRSSHTML(articles, rssConfig) {
         return result;
     }
 
-    const targetAttr = rssConfig.openInNewTab ? ' target="_blank" rel="noopener"' : '';
+    const targetAttr = rssConfig.openInNewTab ? ' target="_blank" rel="noopener noreferrer"' : '';
 
     // 生成单张卡片HTML
     function generateCardHTML(article, index, isBack) {
@@ -1334,7 +1335,7 @@ function generateCustomMenusHTML(menus) {
 
     return menus.map(menu => {
         const itemsHTML = menu.items.map(item => {
-            const externalAttrs = item.external ? 'target="_blank" rel="noopener"' : '';
+            const externalAttrs = item.external ? 'target="_blank" rel="noopener noreferrer"' : '';
             return `                    <a href="${escapeHTML(item.url)}" ${externalAttrs}>${escapeHTML(item.name)}</a>`;
         }).join('\n                    ');
 
@@ -1357,7 +1358,7 @@ function generateCustomMenusMobileHTML(menus) {
 
     return menus.map(menu => {
         const itemsHTML = menu.items.map(item => {
-            const externalAttrs = item.external ? 'target="_blank" rel="noopener"' : '';
+            const externalAttrs = item.external ? 'target="_blank" rel="noopener noreferrer"' : '';
             return `                <a href="${escapeHTML(item.url)}" ${externalAttrs}>${escapeHTML(item.name)}</a>`;
         }).join('\n                ');
 
@@ -1400,12 +1401,18 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
 
     // 生成贡献图格子
     let contributionCells = '';
-    
+
     if (contributionConfig && contributionConfig.enabled) {
         const levels = contributionData?.levels || [];
+        const counts = contributionData?.counts || [];
+        const dates = contributionData?.dates || [];
+
         for (let i = 0; i < 78; i++) {
             const level = levels[i] ?? 0;
-            contributionCells += `<div class="contribution-cell" data-level="${level}"></div>`;
+            const count = counts[i] ?? 0;
+            const date = dates[i] || '';
+            const title = count > 0 ? `${count} 次贡献于 ${date}` : `无贡献于 ${date}`;
+            contributionCells += `<div class="contribution-cell" data-level="${level}" title="${title}"></div>`;
         }
     } else {
         // 禁用时显示空格子
@@ -1423,7 +1430,7 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
     const maxStars = Math.max(...repos.map(r => r.stars), 1); // 确保最小值为1避免除零
     const progressWidth = Math.max(Math.min((mainRepo.stars / maxStars) * 100, 100), 10);
 
-    const mainCardHTML = `                    <a href="${escapeHTML(mainRepo.url)}" class="project-card project-card-main" target="_blank" rel="noopener">
+    const mainCardHTML = `                    <a href="${escapeHTML(mainRepo.url)}" class="project-card project-card-main" target="_blank" rel="noopener noreferrer">
                         <div class="project-tab">
                             <i class="fa-solid fa-file-code"></i>
                             <span class="project-name">${escapeHTML(mainRepo.name)}</span>
@@ -1454,7 +1461,7 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
     // 生成迷你卡片
     const miniCardsHTML = repos.slice(1).map((repo, index) => {
         const starsText = repo.stars >= 1000 ? formatNumber(repo.stars) : repo.stars.toString();
-        return `                        <a href="${escapeHTML(repo.url)}" class="project-card project-card-mini" target="_blank" rel="noopener" data-index="${index}">
+        return `                        <a href="${escapeHTML(repo.url)}" class="project-card project-card-mini" target="_blank" rel="noopener noreferrer" data-index="${index}">
                             <div class="project-mini-header">
                                 <i class="fa-solid fa-file-code"></i>
                                 <span class="project-mini-stars"><i class="fa-solid fa-star"></i> ${starsText}</span>

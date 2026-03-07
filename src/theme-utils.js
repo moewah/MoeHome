@@ -18,7 +18,7 @@ const ThemeManager = {
             bgPrimary: '#ffffff',
             bgSecondary: '#f5f5f5',
             textPrimary: '#1a1a1a',
-            textSecondary: '#666666',
+            textSecondary: '#525252', // WCAG AA 对比度 7:1
             border: '#e0e0e0',
         },
         dark: {

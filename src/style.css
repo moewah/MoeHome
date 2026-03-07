@@ -5,6 +5,7 @@
 
 /* ========== CSS Variables ========== */
 :root {
+    /* === 核心颜色（由 ThemeManager 动态更新，以下为 dark 主题默认值）=== */
     --bg-primary: #0a0a0a;
     --bg-secondary: #111111;
     --text-primary: #e8e8e8;
@@ -14,16 +15,57 @@
     --border: #222222;
     --grid-color: rgba(0, 255, 159, 0.03);
 
-    /* 圆角系统 */
+    /* === 圆角系统 === */
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
+
+    /* === Z-Index 层级系统 === */
+    /* 使用语义化命名，确保层级关系清晰 */
+    --z-base: 1;
+    --z-dropdown: 100;
+    --z-sticky: 500;
+    --z-navbar: 1000;
+    --z-overlay: 1001;
+    --z-sidebar: 1002;
+    --z-modal-backdrop: 1050;
+    --z-modal: 1100;
+    --z-popover: 1200;
+    --z-tooltip: 1300;
+    --z-cursor: 9999;
+    --z-skip-link: 10000;
+
+    /* === 过渡时间系统 === */
+    /* 使用语义化命名，保持动画一致性 */
+    --duration-instant: 0ms;      /* 即时响应 */
+    --duration-fast: 150ms;       /* 快速反馈（微交互） */
+    --duration-normal: 250ms;     /* 标准过渡（按钮、链接） */
+    --duration-slow: 400ms;       /* 慢速过渡（面板展开） */
+    --duration-slower: 600ms;     /* 更慢过渡（页面切换） */
+    --duration-slowest: 800ms;    /* 最慢过渡（复杂动画） */
+
+    /* === 缓动函数 === */
+    --ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* === 间距系统 === */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --space-12: 48px;
 
     /* Navbar variables */
     --navbar-height: 56px;
     --navbar-bg: transparent;
     --navbar-bg-scrolled: rgba(10, 10, 10, 0.85);
 
+    /* === 字体系统 === */
     --font-sans:
         "PingFang SC",
         "Hiragino Sans GB",
@@ -60,6 +102,28 @@
     box-sizing: border-box;
 }
 
+/* ========== Skip Link - 键盘导航跳过链接 ========== */
+.skip-link {
+    position: absolute;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    background: var(--accent);
+    color: var(--bg-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0 0 8px 8px;
+    z-index: var(--z-skip-link);
+    transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+    top: 0;
+    outline: none;
+}
+
 html {
     scroll-behavior: smooth;
     /* 关键：不设置 height，让内容自然决定 */
@@ -92,7 +156,7 @@ body {
     top: 0;
     left: 0;
     pointer-events: none;
-    z-index: 9999;
+    z-index: var(--z-cursor);
     transition:
         transform 0.15s ease,
         opacity 0.15s ease;
@@ -113,7 +177,7 @@ body {
     right: 0;
     height: var(--navbar-height);
     background: var(--navbar-bg);
-    z-index: 1000;
+    z-index: var(--z-navbar);
     transition: background 0.3s ease, backdrop-filter 0.3s ease;
 }
 
@@ -283,7 +347,7 @@ body {
     padding: 8px 0;
     opacity: 0;
     visibility: hidden;
-    z-index: 1010;
+    z-index: var(--z-dropdown);
     transition: opacity 0.2s ease, transform 0.2s ease;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
@@ -379,7 +443,7 @@ body {
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
-    z-index: 1001;
+    z-index: var(--z-overlay);
 }
 
 .nav-overlay.active {
@@ -399,7 +463,7 @@ body {
     background: var(--bg-secondary);
     transform: translateX(100%);
     transition: transform 0.3s ease;
-    z-index: 1002;
+    z-index: var(--z-sidebar);
     display: flex;
     flex-direction: column;
     border-left: 1px solid var(--border);
@@ -756,6 +820,31 @@ body {
     aspect-ratio: 1;
 }
 
+/* 头像加载失败时的回退样式 */
+.avatar img.error,
+.avatar img:not([src]),
+.avatar img[src=""] {
+    opacity: 0;
+}
+
+/* 使用 CSS 背景作为回退 */
+.avatar.fallback {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-deep) 100%);
+}
+
+.avatar.fallback::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50%;
+    height: 50%;
+    background: var(--bg-primary);
+    border-radius: 50%;
+    opacity: 0.3;
+}
+
 .avatar:hover img {
     transform: scale(1.1);
 }
@@ -843,6 +932,11 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    /* 长名字溢出处理 */
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ========== Tagline ========== */
@@ -856,6 +950,11 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    /* 长标语溢出处理 */
+    max-width: 100%;
+    flex-wrap: wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .tagline .paw-icon {
@@ -1599,7 +1698,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2000;
+    z-index: var(--z-modal-backdrop);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -1650,6 +1749,9 @@ body {
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .donation__qr-image {
@@ -1684,10 +1786,7 @@ body {
 
 /* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
-    .donation {
-        animation: none;
-        opacity: 1;
-    }
+    /* donation 不再需要 animation 覆盖，已移除独立动画 */
 
     .donation__btn,
     .donation__modal-overlay,
@@ -1788,6 +1887,8 @@ body {
     transform-style: preserve-3d;
     -webkit-transform-style: preserve-3d;
     transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 性能优化：提示浏览器准备 transform 变化 */
+    will-change: transform;
 }
 
 /* 主卡片位置 - 左侧正方形，占据两行 */
@@ -2318,6 +2419,7 @@ body {
 }
 
 .carousel-indicator {
+    position: relative;
     width: 6px;
     height: 6px;
     border-radius: 50%;
@@ -2326,6 +2428,17 @@ body {
     padding: 0;
     cursor: pointer;
     transition: all 0.25s ease;
+}
+
+/* 扩展触摸目标到 44x44px (WCAG 2.5.5) */
+.carousel-indicator::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
 }
 
 .carousel-indicator:hover {
@@ -2730,7 +2843,7 @@ body {
     visibility: hidden;
     transform: translateY(20px) scale(0.8);
     transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
-    z-index: 999;
+    z-index: var(--z-sticky);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border);
 }
 
@@ -2814,7 +2927,7 @@ body {
     }
 
     .terminal {
-        font-size: 0.75rem;
+        font-size: 0.85rem;
     }
 
     .link-indicator {
@@ -3159,6 +3272,51 @@ body {
         display: none;
     }
 
+    /* ========== 移动端触摸反馈替代光标效果 ========== */
+    /* 为可交互元素添加触摸高亮 */
+    a, button, [role="button"], [tabindex]:not([tabindex="-1"]) {
+        -webkit-tap-highlight-color: var(--accent-dim);
+    }
+
+    /* 卡片触摸反馈 */
+    .rss-card-container:active .rss-article,
+    .project-card:active {
+        transform: scale(0.98);
+        border-color: var(--accent);
+    }
+
+    /* 链接触摸反馈 */
+    .link:active {
+        transform: scale(0.98);
+        background: var(--hover-bg);
+    }
+
+    /* ========== 移动端触摸目标扩展 ========== */
+    /* 导航按钮扩展到 44x44px */
+    .navbar-toggle,
+    .nav-theme-toggle {
+        width: 44px;
+        height: 44px;
+    }
+
+    /* 侧边栏关闭按钮扩展 */
+    .nav-sidebar-close {
+        width: 44px;
+        height: 44px;
+    }
+
+    /* 侧边栏主题按钮扩展 */
+    .nav-sidebar-theme {
+        min-height: 44px;
+        padding: 12px 20px;
+    }
+
+    /* 侧边栏链接扩展触摸区域 */
+    .nav-sidebar-link {
+        padding: 14px 20px;
+        min-height: 44px;
+    }
+
     /* Scroll progress button - mobile */
     .scroll-progress-btn {
         width: 44px;
@@ -3235,8 +3393,8 @@ body.skeleton-active .cursor {
     );
     background-size: 200% 100%;
     animation: skeleton-loading 1.5s ease-in-out infinite;
-    will-change: background-position;
-    transform: translateZ(0);
+    /* 使用 contain 替代 will-change，更安全且性能更好 */
+    contain: layout style;
 }
 
 @keyframes skeleton-loading {
@@ -3428,4 +3586,203 @@ body.skeleton-active .cursor {
 
 .image-placeholder img.loaded {
     filter: blur(0);
+}
+
+/* ========== Focus Visible - 键盘焦点指示器 ========== */
+/* 全局焦点样式 - 为所有可交互元素提供清晰的焦点指示器 */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* 移除鼠标点击时的默认 outline，保留键盘导航时的焦点样式 */
+:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* 按钮焦点样式增强 */
+button:focus-visible,
+.nav-theme-toggle:focus-visible,
+.navbar-toggle:focus-visible,
+.nav-sidebar-close:focus-visible,
+.nav-sidebar-theme:focus-visible,
+.nav-dropdown-toggle:focus-visible,
+.donation__btn:focus-visible,
+.donation__modal-close:focus-visible,
+.scroll-progress-btn:focus-visible,
+.carousel-indicator:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* 链接焦点样式 */
+a:focus-visible,
+.nav-link:focus-visible,
+.navbar-brand:focus-visible,
+.nav-sidebar-link:focus-visible,
+.nav-dropdown-menu a:focus-visible,
+.project-card:focus-visible,
+.rss-article:focus-visible,
+.link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* 下拉菜单焦点样式 */
+.nav-dropdown-menu a:focus-visible {
+    background: var(--hover-bg);
+    color: var(--accent);
+}
+
+/* ========== 全局 Reduced Motion 支持 ========== */
+/* 为前庭障碍用户禁用所有动画 */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    /* 骨架屏动画 */
+    .skeleton {
+        animation: none;
+        background: var(--bg-secondary);
+    }
+
+    /* 懒加载动画 */
+    .lazy-load {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    /* 头像发光效果 */
+    .avatar {
+        box-shadow: 0 0 0 4px var(--bg-primary), 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    /* 新文章脉冲动画 */
+    .rss-article.is-new::before {
+        animation: none;
+    }
+
+    /* 光标跟随效果 */
+    .cursor {
+        transition: none;
+    }
+
+    /* 导航栏过渡 */
+    .navbar {
+        transition: none;
+    }
+
+    /* 模态框过渡 */
+    .donation__modal-overlay,
+    .donation__modal {
+        transition: none;
+    }
+
+    .donation__modal {
+        transform: scale(1);
+    }
+
+    /* 移动端侧边栏 */
+    .nav-sidebar {
+        transition: none;
+    }
+
+    /* 轮播过渡 */
+    .carousel-track {
+        transition: none;
+    }
+
+    /* RSS 卡片翻转 */
+    .rss-card-container {
+        transition: none;
+    }
+
+    /* 项目卡片悬停效果 */
+    .project-card {
+        transition: none;
+    }
+
+    .project-card:hover {
+        transform: none;
+    }
+
+    /* 自定义光标悬停 */
+    .cursor.hover {
+        transform: none;
+    }
+}
+
+/* ========== Print Styles ========== */
+@media print {
+    /* 打印时使用浅色主题，节省墨水 */
+    :root {
+        --bg-primary: #ffffff !important;
+        --bg-secondary: #f5f5f5 !important;
+        --text-primary: #1a1a1a !important;
+        --text-secondary: #525252 !important;
+        --accent: #00875a !important;
+        --border: #e0e0e0 !important;
+    }
+
+    /* 隐藏非必要元素 */
+    .navbar,
+    .cursor,
+    .particles,
+    .grid-bg,
+    .scroll-progress-btn,
+    .nav-overlay,
+    .nav-sidebar,
+    .donation__modal-overlay,
+    .skip-link {
+        display: none !important;
+    }
+
+    /* 重置布局 */
+    body {
+        background: #ffffff !important;
+        color: #1a1a1a !important;
+    }
+
+    .container {
+        padding-top: 0 !important;
+        min-height: auto !important;
+    }
+
+    .profile {
+        opacity: 1 !important;
+        animation: none !important;
+    }
+
+    /* 移除阴影和发光效果 */
+    .avatar,
+    .project-card,
+    .rss-article {
+        box-shadow: none !important;
+    }
+
+    /* 确保链接可见 */
+    a {
+        text-decoration: underline;
+    }
+
+    /* 显示链接 URL */
+    a[href]::after {
+        content: " (" attr(href) ")";
+        font-size: 0.8em;
+        color: #666;
+    }
+
+    /* 避免分页 */
+    .project-card,
+    .rss-article,
+    .terminal {
+        break-inside: avoid;
+    }
 }
