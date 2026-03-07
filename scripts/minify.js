@@ -141,6 +141,28 @@ async function minifyHTML(html) {
     }
 }
 
+/**
+ * 压缩 HTML 中的内联 CSS（<style> 标签内的 CSS）
+ * @param {string} html - HTML 代码
+ * @param {object} config - 压缩配置
+ * @returns {string} 处理后的 HTML
+ */
+function processInlineCSS(html, config) {
+    if (!config.minifyCSS || !config.minify) {
+        return html;
+    }
+
+    // 匹配所有 <style> 标签并压缩其内容
+    return html.replace(/<style([^>]*)>([\s\S]*?)<\/style>/gi, (match, attrs, css) => {
+        // 跳过已压缩的（没有换行符的内容）
+        if (!css.includes('\n')) {
+            return match;
+        }
+        const minifiedCSS = minifyCSS(css.trim());
+        return `<style${attrs}>${minifiedCSS}</style>`;
+    });
+}
+
 // ========== 图片压缩 ==========
 
 /**
@@ -464,6 +486,7 @@ module.exports = {
     minifyJS,
     minifyCSS,
     minifyHTML,
+    processInlineCSS,
     compressImage,
     processJSFile,
     processCSSFile,

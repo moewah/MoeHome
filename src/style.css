@@ -1455,8 +1455,7 @@ body {
     width: 100%;
     max-width: 600px;
     margin: 0;
-    opacity: 0;
-    animation: fadeIn 1s ease 1s forwards;
+    /* 注意：不单独设置 opacity 和 animation，依赖 .lazy-load 的过渡效果 */
 }
 
 /* Elements */
@@ -1603,6 +1602,7 @@ body {
     z-index: 2000;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
@@ -1610,6 +1610,7 @@ body {
 .donation__modal-overlay.is-active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 /* Modal */
@@ -1734,8 +1735,7 @@ body {
     width: 100%;
     max-width: 600px;
     margin: 0;
-    opacity: 0;
-    animation: fadeIn 1s ease 1s forwards;
+    /* 注意：不单独设置 opacity 和 animation，依赖 .lazy-load 的过渡效果 */
 }
 
 .rss-header {
@@ -2209,8 +2209,7 @@ body {
     width: 100%;
     max-width: 600px;
     margin: 0;
-    opacity: 0;
-    animation: fadeIn 1s ease 1s forwards;
+    /* 注意：不单独设置 opacity 和 animation，依赖 .lazy-load 的过渡效果 */
 }
 
 .projects-header {

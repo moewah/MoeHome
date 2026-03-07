@@ -13,6 +13,7 @@ const {
     processJSFile,
     processCSSFile,
     processHTML,
+    processInlineCSS,
     processImageFile,
     isImage,
     formatSize,
@@ -836,6 +837,34 @@ function generateDonationHTML(donation) {
                         </div>
                     </div>
                 </section>`;
+}
+
+// 生成捐赠模态框 HTML（静态存在，避免 JS 动态创建时闪烁）
+// 关键：隐藏样式在 Critical CSS 中定义，确保 CSS 加载前就生效
+function generateDonationModalHTML(donation) {
+    if (!donation.enabled) {
+        return '';
+    }
+
+    const enabledMethods = donation.methods.filter(method => method.enabled && method.qrImage);
+    if (enabledMethods.length === 0) {
+        return '';
+    }
+
+    // 模态框静态 HTML
+    // 隐藏由 Critical CSS 控制，不需要内联样式或 hidden 属性
+    return `<div class="donation__modal-overlay" id="donation-modal" role="dialog" aria-modal="true" aria-labelledby="donation-modal-title">
+            <div class="donation__modal">
+                <div class="donation__modal-title">
+                    <i class="fa-solid fa-qrcode donation__modal-title-icon" aria-hidden="true"></i>
+                    <span class="donation__modal-name" id="donation-modal-title"></span>
+                </div>
+                <div class="donation__qr-wrapper">
+                    <img class="donation__qr-image" alt="支付二维码" />
+                </div>
+                <button class="donation__modal-close" aria-label="关闭支付二维码弹窗">关闭</button>
+            </div>
+        </div>`;
 }
 
 // 生成骨架屏 Donation 占位 HTML - 与实际布局结构一致
@@ -1685,6 +1714,7 @@ async function build() {
         // Donation
         .replace(/{{DONATION}}/g, generateDonationHTML(config.donation))
         .replace(/{{SKELETON_DONATION}}/g, generateSkeletonDonationHTML(config.donation))
+        .replace(/{{DONATION_MODAL}}/g, generateDonationModalHTML(config.donation))
 
         // Notice
         .replace(/{{NOTICE}}/g, generateNoticeHTML({
@@ -1788,6 +1818,14 @@ async function build() {
 
     // 将 favicon 链接注入 HTML
     html = html.replace(/{{FAVICON_LINKS}}/g, faviconLinks);
+
+    // 压缩内联 CSS（<style> 标签内的 CSS，包括 theme-initial 和 Critical CSS）
+    const htmlBeforeInlineCSS = Buffer.byteLength(html, 'utf8');
+    html = processInlineCSS(html, minifyConfig);
+    const htmlAfterInlineCSS = Buffer.byteLength(html, 'utf8');
+    if (minifyConfig.minifyCSS && minifyConfig.minify) {
+        console.log('📋 内联 CSS: ' + formatSize(htmlBeforeInlineCSS) + ' → ' + formatSize(htmlAfterInlineCSS) + ' (节省 ' + calcReduction(htmlBeforeInlineCSS, htmlAfterInlineCSS) + ')');
+    }
 
     // 压缩并写入 HTML
     const processedHTML = await processHTML(html, minifyConfig);

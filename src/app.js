@@ -378,50 +378,9 @@ function initDonation() {
     const donationBtns = document.querySelectorAll('.donation__btn[data-qr]');
     if (donationBtns.length === 0) return;
 
-    // 创建模态框容器
-    let modalOverlay = document.querySelector('.donation__modal-overlay');
-    if (!modalOverlay) {
-        modalOverlay = document.createElement('div');
-        modalOverlay.className = 'donation__modal-overlay';
-        modalOverlay.setAttribute('role', 'dialog');
-        modalOverlay.setAttribute('aria-modal', 'true');
-        modalOverlay.setAttribute('aria-labelledby', 'donation-modal-title');
-
-        const modal = document.createElement('div');
-        modal.className = 'donation__modal';
-
-        // 标题区域
-        const titleDiv = document.createElement('div');
-        titleDiv.className = 'donation__modal-title';
-        const titleIcon = document.createElement('i');
-        titleIcon.className = 'fa-solid fa-qrcode donation__modal-title-icon';
-        titleIcon.setAttribute('aria-hidden', 'true');
-        const titleName = document.createElement('span');
-        titleName.className = 'donation__modal-name';
-        titleName.id = 'donation-modal-title';
-        titleDiv.appendChild(titleIcon);
-        titleDiv.appendChild(titleName);
-
-        // 二维码区域
-        const qrWrapper = document.createElement('div');
-        qrWrapper.className = 'donation__qr-wrapper';
-        const qrImg = document.createElement('img');
-        qrImg.className = 'donation__qr-image';
-        qrImg.alt = '支付二维码';
-        qrWrapper.appendChild(qrImg);
-
-        // 关闭按钮
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'donation__modal-close';
-        closeBtn.textContent = '关闭';
-        closeBtn.setAttribute('aria-label', '关闭支付二维码弹窗');
-
-        modal.appendChild(titleDiv);
-        modal.appendChild(qrWrapper);
-        modal.appendChild(closeBtn);
-        modalOverlay.appendChild(modal);
-        document.body.appendChild(modalOverlay);
-    }
+    // 使用静态存在的模态框（已在 HTML 中定义）
+    const modalOverlay = document.getElementById('donation-modal');
+    if (!modalOverlay) return;
 
     const modalName = modalOverlay.querySelector('.donation__modal-name');
     const modalImg = modalOverlay.querySelector('.donation__qr-image');
@@ -434,7 +393,6 @@ function initDonation() {
         modalImg.alt = name + '支付二维码';
         modalOverlay.classList.add('is-active');
         document.body.style.overflow = 'hidden';
-        // 焦点管理
         closeBtn.focus();
     }
 
