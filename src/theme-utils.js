@@ -210,6 +210,25 @@ const ThemeManager = {
             '--card-border-strong': `rgba(${accentRgb}, ${derive.cardBorderStrong})`,
             '--card-border-muted': `rgba(${accentRgb}, ${derive.cardBorderMuted})`,
 
+            // === 玻璃光泽系统 ===
+            // 深色模式：顶部高光 + 底部阴影
+            // 浅色模式：微暗边框 + 投射阴影（白色高光在浅色背景上不可见）
+            '--glass-border-top': mode === 'light'
+                ? `rgba(0, 0, 0, 0.04)`
+                : `rgba(255, 255, 255, 0.08)`,
+            '--glass-border-bottom': mode === 'light'
+                ? `rgba(0, 0, 0, 0.08)`
+                : `rgba(0, 0, 0, 0.5)`,
+            '--glass-border-side': mode === 'light'
+                ? `rgba(0, 0, 0, 0.03)`
+                : `rgba(255, 255, 255, 0.03)`,
+            '--glass-outer-shadow': mode === 'light'
+                ? `rgba(0, 0, 0, 0.1)`
+                : `rgba(0, 0, 0, 0.4)`,
+            '--glass-inner-glow': `rgba(${accentRgb}, 0.03)`,
+            '--glass-hover-border': `rgba(${accentRgb}, ${mode === 'light' ? 0.25 : 0.15})`,
+            '--glass-hover-glow': `rgba(${accentRgb}, 0.05)`,
+
             // === P2 终端配色 ===
             '--terminal-bg': terminalColors.bg,
             '--terminal-text': terminalColors.text,
