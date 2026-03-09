@@ -48,7 +48,8 @@ const ThemeManager = {
             shadowMdOpacity: 0.1,
             glowOpacity: 0.2,
             glowSubtleOpacity: 0.08,
-            navbarScrolledOpacity: 0.72,
+            // 减弱玻璃质感：提高不透明度
+            navbarScrolledOpacity: 0.92,
             // 卡片边框层次
             cardBorderStrong: 0.5,
             cardBorderMuted: 0.25,
@@ -66,7 +67,8 @@ const ThemeManager = {
             shadowMdOpacity: 0.5,
             glowOpacity: 0.3,
             glowSubtleOpacity: 0.08,
-            navbarScrolledOpacity: 0.72,
+            // 减弱玻璃质感：提高不透明度
+            navbarScrolledOpacity: 0.92,
             // 卡片边框层次
             cardBorderStrong: 0.4,
             cardBorderMuted: 0.2,

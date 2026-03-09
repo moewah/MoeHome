@@ -1104,17 +1104,6 @@ function initInteractions() {
         }
     });
 
-    // 生成粒子
-    const particlesContainer = document.getElementById("particles");
-    for (let i = 0; i < 30; i++) {
-        const particle = document.createElement("div");
-        particle.className = "particle";
-        particle.style.left = Math.random() * 100 + "%";
-        particle.style.animationDelay = Math.random() * 15 + "s";
-        particle.style.animationDuration = 15 + Math.random() * 10 + "s";
-        particlesContainer.appendChild(particle);
-    }
-
     // 视差效果
     document.addEventListener("mousemove", (e) => {
         const moveX = (e.clientX - window.innerWidth / 2) * 0.01;

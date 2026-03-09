@@ -9,7 +9,7 @@ const https = require('https');
  * 获取 GitHub 用户贡献数据
  * @param {string} username - GitHub 用户名
  * @param {boolean} useRealData - 是否使用真实数据
- * @returns {Promise<{levels: number[], total: number}>} 贡献级别数组 (0-4) 和总贡献数
+ * @returns {Promise<{levels: number[], counts: number[], dates: string[], total: number}>} 贡献数据
  */
 async function fetchUserContributions(username, useRealData = true) {
     if (!useRealData) {
@@ -87,15 +87,15 @@ function fetchPublicEvents(username) {
  * 将事件数据转换为贡献级别数组
  * @param {Array} events - GitHub 事件数组
  * @param {number} days - 天数（默认 78 天 = 13 周）
- * @returns {{levels: number[], total: number}}
+ * @returns {{levels: number[], counts: number[], dates: string[], total: number}}
  */
 function buildContributionLevels(events, days = 78) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // 初始化每天的贡献数
     const dailyCounts = {};
-    
+
     // 统计每个日期的事件数
     events.forEach(event => {
         if (event.created_at) {
@@ -103,24 +103,28 @@ function buildContributionLevels(events, days = 78) {
             dailyCounts[date] = (dailyCounts[date] || 0) + 1;
         }
     });
-    
+
     // 生成最近 N 天的级别数组
     const levels = [];
+    const counts = [];
+    const dates = [];
     let total = 0;
-    
+
     for (let i = days - 1; i >= 0; i--) {
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
-        
+
         const count = dailyCounts[dateStr] || 0;
         const level = countToLevel(count);
-        
+
         levels.push(level);
+        counts.push(count);
+        dates.push(dateStr);
         if (count > 0) total += count;
     }
-    
-    return { levels, total };
+
+    return { levels, counts, dates, total };
 }
 
 /**
@@ -138,16 +142,35 @@ function countToLevel(count) {
 
 /**
  * 生成随机贡献数据（备用方案）
- * @returns {{levels: number[], total: number}}
+ * @returns {{levels: number[], counts: number[], dates: string[], total: number}}
  */
 function generateRandomContributions() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const levels = [];
-    for (let i = 0; i < 78; i++) {
-        const level = Math.random() > 0.3 ? Math.floor(Math.random() * 5) : 0;
+    const counts = [];
+    const dates = [];
+    let total = 0;
+
+    for (let i = 77; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+
+        const count = Math.random() > 0.3 ? Math.floor(Math.random() * 8) : 0;
+        const level = countToLevel(count);
+
         levels.push(level);
+        counts.push(count);
+        dates.push(dateStr);
+        if (count > 0) total += count;
     }
+
     return {
         levels,
+        counts,
+        dates,
         total: Math.floor(Math.random() * 100) + 10
     };
 }
