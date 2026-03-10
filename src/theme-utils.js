@@ -41,7 +41,7 @@ const ThemeManager = {
         // === 系统默认方案 ===
         amberOrange: {
             id: 'amberOrange',
-            name: 'Amber Orange (Default)',
+            name: '琥珀橙 (默认)',
             icon: 'fa-palette',
             isDefault: true, // 标记为系统默认
             modes: ['light'],
@@ -56,7 +56,7 @@ const ThemeManager = {
         },
         cyberGreen: {
             id: 'cyberGreen',
-            name: 'Cyber Green (Default)',
+            name: '赛博绿 (默认)',
             icon: 'fa-bolt',
             isDefault: true, // 标记为系统默认
             modes: ['dark'],
@@ -72,7 +72,7 @@ const ThemeManager = {
         // === 社区配色方案 ===
         catppuccinMocha: {
             id: 'catppuccinMocha',
-            name: 'Catppuccin Mocha',
+            name: '摩卡色',
             icon: 'fa-mug-hot',
             modes: ['dark'],
             colors: {
@@ -86,7 +86,7 @@ const ThemeManager = {
         },
         kanagawaDragon: {
             id: 'kanagawaDragon',
-            name: 'Kanagawa Dragon',
+            name: '浮世绘',
             icon: 'fa-dragon',
             modes: ['dark'],
             colors: {
@@ -100,7 +100,7 @@ const ThemeManager = {
         },
         rosePineMoon: {
             id: 'rosePineMoon',
-            name: 'Rose Pine Moon',
+            name: '鸢尾紫',
             icon: 'fa-moon',
             modes: ['dark'],
             colors: {
@@ -114,7 +114,7 @@ const ThemeManager = {
         },
         nordSnowStorm: {
             id: 'nordSnowStorm',
-            name: 'Nord Snow Storm',
+            name: '北极冰川',
             icon: 'fa-snowflake',
             modes: ['light'],
             colors: {
@@ -128,7 +128,7 @@ const ThemeManager = {
         },
         gruvboxLight: {
             id: 'gruvboxLight',
-            name: 'Gruvbox Light',
+            name: '复古风',
             icon: 'fa-compact-disc',
             modes: ['light'],
             colors: {
@@ -142,7 +142,7 @@ const ThemeManager = {
         },
         ayuLight: {
             id: 'ayuLight',
-            name: 'Ayu Light',
+            name: '简约风',
             icon: 'fa-feather',
             modes: ['light'],
             colors: {
@@ -614,7 +614,7 @@ const ThemeManager = {
      * 获取主题标签
      */
     getThemeLabel(theme) {
-        const labels = { auto: 'Auto', light: 'Light', dark: 'Dark' };
+        const labels = { auto: '跟随系统', light: '浅色', dark: '暗色' };
         return labels[theme] || theme;
     },
 

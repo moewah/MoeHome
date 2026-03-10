@@ -1478,12 +1478,12 @@ function generateNavLinksHTML(rssConfig, projectsConfig) {
 
     // Posts 链接
     if (rssConfig.enabled) {
-        html += '\n                    <a href="#rss-section" class="nav-link" data-section="rss-section">Posts</a>';
+        html += '\n                    <a href="#rss-section" class="nav-link" data-section="rss-section">文章</a>';
     }
 
     // Projects 链接
     if (projectsConfig.enabled) {
-        html += '\n                    <a href="#projects-section" class="nav-link" data-section="projects-section">Projects</a>';
+        html += '\n                    <a href="#projects-section" class="nav-link" data-section="projects-section">项目</a>';
     }
 
     return html;
@@ -1495,12 +1495,12 @@ function generateNavLinksMobileHTML(rssConfig, projectsConfig) {
 
     // Posts 链接
     if (rssConfig.enabled) {
-        html += '\n                <a href="#rss-section" class="nav-sidebar-link" data-section="rss-section">Posts</a>';
+        html += '\n                <a href="#rss-section" class="nav-sidebar-link" data-section="rss-section">文章</a>';
     }
 
     // Projects 链接
     if (projectsConfig.enabled) {
-        html += '\n                <a href="#projects-section" class="nav-sidebar-link" data-section="projects-section">Projects</a>';
+        html += '\n                <a href="#projects-section" class="nav-sidebar-link" data-section="projects-section">项目</a>';
     }
 
     return html;
@@ -1925,13 +1925,13 @@ async function build() {
         .replace(/{{FOOTER_URL}}/g, config.footerLinkUrl)
 
         // Nav Links
-        .replace(/{{NAV_POSTS_LINK}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-link" data-section="rss-section">Posts</a>' : '')
-        .replace(/{{NAV_PROJECTS_LINK}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-link" data-section="projects-section">Projects</a>' : '')
-        .replace(/{{NAV_LINKS_LINK}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-link" data-section="links-container">Links</a>' : '')
+        .replace(/{{NAV_POSTS_LINK}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-link" data-section="rss-section">文章</a>' : '')
+        .replace(/{{NAV_PROJECTS_LINK}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-link" data-section="projects-section">项目</a>' : '')
+        .replace(/{{NAV_LINKS_LINK}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-link" data-section="links-container">链接</a>' : '')
         .replace(/{{NAV_DONATION_LINK}}/g, '')
-        .replace(/{{NAV_POSTS_LINK_MOBILE}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-sidebar-link" data-section="rss-section">Posts</a>' : '')
-        .replace(/{{NAV_PROJECTS_LINK_MOBILE}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-sidebar-link" data-section="projects-section">Projects</a>' : '')
-        .replace(/{{NAV_LINKS_LINK_MOBILE}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-sidebar-link" data-section="links-container">Links</a>' : '')
+        .replace(/{{NAV_POSTS_LINK_MOBILE}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-sidebar-link" data-section="rss-section">文章</a>' : '')
+        .replace(/{{NAV_PROJECTS_LINK_MOBILE}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-sidebar-link" data-section="projects-section">项目</a>' : '')
+        .replace(/{{NAV_LINKS_LINK_MOBILE}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-sidebar-link" data-section="links-container">链接</a>' : '')
         .replace(/{{NAV_DONATION_LINK_MOBILE}}/g, '')
         .replace(/{{NAV_CUSTOM_MENUS}}/g, generateCustomMenusHTML(config.nav?.menus))
         .replace(/{{NAV_CUSTOM_MENUS_MOBILE}}/g, generateCustomMenusMobileHTML(config.nav?.menus))

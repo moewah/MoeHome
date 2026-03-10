@@ -165,7 +165,7 @@ window.HOMEPAGE_CONFIG = {
     count: 4,
     openInNewTab: true,
     title: {
-      text: "Recent Posts",
+      text: "近期更新",
       icon: "fa-solid fa-newspaper",
     },
     display: {
@@ -179,7 +179,7 @@ window.HOMEPAGE_CONFIG = {
   projects: {
     enabled: false, // 设置为 false 可禁用此模块
     title: {
-      text: "Projects",
+      text: "我的项目",
       icon: "fa-solid fa-folder-open",
     },
     // GitHub 用户主页地址，构建时自动获取公开仓库
@@ -202,7 +202,7 @@ window.HOMEPAGE_CONFIG = {
   linksConfig: {
     enabled: true, // 改成 false 禁用整个链接导航模块
     title: {
-      text: "Quick Links",
+      text: "链接导航",
       icon: "fa-solid fa-link",
     },
   },
@@ -301,11 +301,11 @@ window.HOMEPAGE_CONFIG = {
     },
   ],
 
-  // ========== Donation Config ==========
+  // ========== 赞赏支持配置 ==========
   donation: {
     enabled: false, // 设置为 true 启用
     title: {
-      text: "Support Me",
+      text: "赞助支持",
       icon: "fa-solid fa-mug-hot",
     },
     message: "如果我的内容对你有帮助，欢迎请我喝杯咖啡~",
