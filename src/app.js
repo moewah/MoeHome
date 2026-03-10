@@ -423,14 +423,6 @@ function updateThemeSchemeList() {
     // 清空列表
     schemeList.textContent = '';
 
-    // 添加默认选项（使用兜底配色）
-    const defaultItem = createThemeSchemeItem(null, {
-        id: null,
-        name: 'System Scheme',
-        icon: 'fa-palette'
-    }, !currentScheme, false);
-    schemeList.appendChild(defaultItem);
-
     // 添加可用方案
     availableSchemes.forEach(scheme => {
         const isActive = currentScheme?.id === scheme.id;

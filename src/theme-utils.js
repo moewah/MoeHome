@@ -38,10 +38,42 @@ const ThemeManager = {
      * 内置预设配色方案
      */
     builtinSchemes: {
+        // === 系统默认方案 ===
+        amberOrange: {
+            id: 'amberOrange',
+            name: 'Amber Orange (Default)',
+            icon: 'fa-palette',
+            isDefault: true, // 标记为系统默认
+            modes: ['light'],
+            colors: {
+                accent: '#D97706',      // 琥珀橙
+                bgPrimary: '#FBF8F3',   // 暖白（米白带暖调）
+                bgSecondary: '#F5F2ED', // 暖灰（卡片背景）
+                textPrimary: '#1C1917', // 深炭灰（Stone 900）
+                textSecondary: '#57534E', // 暖中灰（Stone 600）
+                border: '#E7E5E4',      // 暖浅灰边框（Stone 200）
+            }
+        },
+        cyberGreen: {
+            id: 'cyberGreen',
+            name: 'Cyber Green (Default)',
+            icon: 'fa-bolt',
+            isDefault: true, // 标记为系统默认
+            modes: ['dark'],
+            colors: {
+                accent: '#00ff9f',      // 赛博绿
+                bgPrimary: '#0a0a0a',   // 纯黑
+                bgSecondary: '#111111', // 深灰
+                textPrimary: '#e8e8e8', // 亮白
+                textSecondary: '#888888', // 中灰
+                border: '#222222',      // 深灰边框
+            }
+        },
+        // === 社区配色方案 ===
         catppuccinMocha: {
             id: 'catppuccinMocha',
             name: 'Catppuccin Mocha',
-            icon: 'fa-palette',
+            icon: 'fa-mug-hot',
             modes: ['dark'],
             colors: {
                 accent: '#89b4fa',
@@ -55,7 +87,7 @@ const ThemeManager = {
         kanagawaDragon: {
             id: 'kanagawaDragon',
             name: 'Kanagawa Dragon',
-            icon: 'fa-palette',
+            icon: 'fa-dragon',
             modes: ['dark'],
             colors: {
                 accent: '#c4746e',
@@ -66,38 +98,38 @@ const ThemeManager = {
                 border: '#282727',
             }
         },
-        oneDarkPro: {
-            id: 'oneDarkPro',
-            name: 'One Dark Pro',
-            icon: 'fa-palette',
+        rosePineMoon: {
+            id: 'rosePineMoon',
+            name: 'Rose Pine Moon',
+            icon: 'fa-moon',
             modes: ['dark'],
             colors: {
-                accent: '#61afef',
-                bgPrimary: '#282c34',
-                bgSecondary: '#2c313c',
-                textPrimary: '#abb2bf',
-                textSecondary: '#5c6370',
-                border: '#3e4451',
+                accent: '#c4a7e7',      // iris - 鸢尾紫，Rose Pine 标志性色彩
+                bgPrimary: '#232136',   // base - 深邃夜空，主背景
+                bgSecondary: '#2a273f', // surface - 柔和表面，卡片背景
+                textPrimary: '#e0def4', // text - 柔光白，主文本
+                textSecondary: '#6e6a86', // muted - 静谧灰，次文本
+                border: '#393552',      // overlay - 悬浮边框
             }
         },
-        oneLight: {
-            id: 'oneLight',
-            name: 'One Light',
-            icon: 'fa-palette',
+        nordSnowStorm: {
+            id: 'nordSnowStorm',
+            name: 'Nord Snow Storm',
+            icon: 'fa-snowflake',
             modes: ['light'],
             colors: {
-                accent: '#4078f2',
-                bgPrimary: '#fafafa',
-                bgSecondary: '#f0f0f0',
-                textPrimary: '#383a42',
-                textSecondary: '#696c77',
-                border: '#e5e5e6',
+                accent: '#88C0D0',      // nord8 - Frost 青色，Nord 标志性色彩
+                bgPrimary: '#ECEFF4',   // nord6 - Snow Storm 最亮，纯净北极白
+                bgSecondary: '#E5E9F0', // nord5 - Snow Storm 次亮，柔和雪白
+                textPrimary: '#2E3440', // nord0 - Polar Night 最暗，深邃北极夜
+                textSecondary: '#4C566A', // nord3 - Polar Night 柔和，可读性极佳
+                border: '#D8DEE9',      // nord4 - Snow Storm 边框，淡雅分隔
             }
         },
         gruvboxLight: {
             id: 'gruvboxLight',
             name: 'Gruvbox Light',
-            icon: 'fa-palette',
+            icon: 'fa-compact-disc',
             modes: ['light'],
             colors: {
                 accent: '#af3a03',
@@ -111,7 +143,7 @@ const ThemeManager = {
         ayuLight: {
             id: 'ayuLight',
             name: 'Ayu Light',
-            icon: 'fa-palette',
+            icon: 'fa-feather',
             modes: ['light'],
             colors: {
                 accent: '#ff9940',

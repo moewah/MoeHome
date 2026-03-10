@@ -1,6 +1,6 @@
 # MoeHome 个人主页
 
-一个简约、酷炫的个人主页模板，配置驱动、静态优先，支持双主题、GitHub 集成、RSS 聚合，专注性能与视觉体验。
+一个简约、酷炫的个人主页模板，配置驱动、静态优先，支持多主题配色、GitHub 集成、RSS 聚合，专注性能与视觉体验。
 
 ![License](https://img.shields.io/badge/License-MIT-green)
 
@@ -17,7 +17,7 @@
 - 🎨 **配置驱动** - 所有内容在 config.js 中管理，无需修改代码
 - 🔍 **SEO 友好** - 构建生成纯静态 HTML，搜索引擎完美支持
 - ✨ **精致视觉** - 网格背景、玻璃光泽卡片、自定义光标、终端打字机
-- 🌓 **双主题** - 明暗主题一键切换，支持完整配色变量自定义
+- 🎨 **多主题配色** - 跟随系统、浅色、暗色三种模式，八种精选配色方案，通过 config.js 锁定心仪色彩，支持完整配色变量自定义
 - 📱 **响应式设计** - 完美适配移动端和桌面端，支持触摸手势
 - 🚀 **零运行时依赖** - 前端无框架，构建时自动压缩优化
 - 📦 **易部署** - 构建输出即插即用，支持任意静态托管
@@ -68,45 +68,35 @@ npm run serve
 
 #### 内置配色方案
 
-| 方案 | 类型 | 特色 |
-|------|------|------|
-| 默认配色 | 双模式 | 项目默认配色 |
-| Catppuccin Mocha | 暗色 | 柔和粉彩 |
-| Kanagawa Dragon | 暗色 | 浮世绘风格，秋红色调 |
-| One Dark Pro | 暗色 | Atom 经典，科技蓝 |
-| One Light | 亮色 | Atom 经典亮色版 |
-| Gruvbox Light | 亮色 | 复古暖色调 |
-| Ayu Light | 亮色 | 简约清爽 |
+| 方案 ID | 类型 | 说明 |
+|---------|------|------|
+| `amberOrange` | 亮色 | 琥珀橙暖色调（系统默认） |
+| `nordSnowStorm` | 亮色 | 北极冰川风格 |
+| `gruvboxLight` | 亮色 | 复古暖色调 |
+| `ayuLight` | 亮色 | 简约清爽 |
+| `cyberGreen` | 暗色 | 赛博绿霓虹风（系统默认） |
+| `catppuccinMocha` | 暗色 | 柔和粉彩 |
+| `kanagawaDragon` | 暗色 | 浮世绘风格 |
+| `rosePineMoon` | 暗色 | 优雅鸢尾紫 |
 
 #### 配置示例
 
 ```javascript
 theme: {
-    default: 'auto',  // 'light' | 'dark' | 'auto'
+    // 默认模式: 'light' | 'dark' | 'auto'
+    default: 'auto',
 
-    defaults: {
-        light: {
-            accent: "#D97706",
-            bgPrimary: "#FBF8F3",
-            bgSecondary: "#F5F2ED",
-            textPrimary: "#1C1917",
-            textSecondary: "#57534E",
-            border: "#E7E5E4",
-        },
-        dark: {
-            accent: "#00ff9f",
-            bgPrimary: "#0a0a0a",
-            bgSecondary: "#111111",
-            textPrimary: "#e8e8e8",
-            textSecondary: "#888888",
-            border: "#222222",
-        },
+    // 默认配色方案（刷新后恢复此配置）
+    // 设为 null 使用下方 defaults 兜底配色
+    defaultScheme: {
+        light: null,  // 亮色: null(使用amberOrange) | amberOrange | nordSnowStorm | gruvboxLight | ayuLight
+        dark: null    // 暗色: null(使用cyberGreen) | cyberGreen | catppuccinMocha | kanagawaDragon | rosePineMoon
     },
 
-    // 锁定配色方案（可选）
-    locked: {
-        light: null,  // 锁定亮色模式使用指定方案
-        dark: null,   // 锁定暗色模式使用指定方案
+    // 兜底配色（defaultScheme 为 null 时使用）
+    defaults: {
+        light: { accent: '#D97706', bgPrimary: '#FBF8F3', ... },
+        dark: { accent: '#00ff9f', bgPrimary: '#0a0a0a', ... }
     }
 }
 ```
@@ -114,8 +104,8 @@ theme: {
 | 配置 | 说明 |
 |------|------|
 | `default` | 首屏默认模式 |
-| `defaults.light/dark` | 默认配色（未选择方案时使用） |
-| `locked.light/dark` | 锁定配色方案，用户无法切换 |
+| `defaultScheme.light/dark` | 默认配色方案，`null` 使用 defaults |
+| `defaults.light/dark` | 兜底配色（defaultScheme 为 null 时使用） |
 
 **自定义配色方案**：
 

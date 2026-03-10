@@ -1227,7 +1227,7 @@ body {
     margin-bottom: var(--space-10);
     text-align: left;
     font-family: "IBM Plex Mono", monospace;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     overflow: hidden;
     position: relative;
     /* 玻璃光泽效果 */

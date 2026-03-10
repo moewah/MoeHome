@@ -38,10 +38,10 @@ window.HOMEPAGE_CONFIG = {
     default: "auto",
 
     // 默认配色方案（页面打开时的初始配色，用户仍可自由切换）
-    // 可选值: null(使用defaults) | 'catppuccinMocha' | 'kanagawaDragon' | 'oneDarkPro' | 'oneLight' | 'gruvboxLight' | 'ayuLight'
+    // 可选值: null(使用defaults) | 'amberOrange' | 'nordSnowStorm' | 'gruvboxLight' | 'ayuLight' | 'cyberGreen' | 'catppuccinMocha' | 'kanagawaDragon' | 'rosePineMoon'
     defaultScheme: {
-      light: null, // 亮色模式: null | oneLight | gruvboxLight | ayuLight
-      dark: null, // 暗色模式: null | catppuccinMocha | kanagawaDragon | oneDarkPro
+      light: null, // 亮色模式: null(使用amberOrange) | amberOrange | nordSnowStorm | gruvboxLight | ayuLight
+      dark: null, // 暗色模式: null(使用cyberGreen) | cyberGreen | catppuccinMocha | kanagawaDragon | rosePineMoon
     },
 
     // 兜底配色方案（当 defaultScheme 为 null 或不可用时使用）
