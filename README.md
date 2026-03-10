@@ -68,16 +68,16 @@ npm run serve
 
 #### 内置配色方案
 
-| 方案 ID | 类型 | 说明 |
-|---------|------|------|
-| `amberOrange` | 亮色 | 琥珀橙暖色调（系统默认） |
-| `nordSnowStorm` | 亮色 | 北极冰川风格 |
-| `gruvboxLight` | 亮色 | 复古暖色调 |
-| `ayuLight` | 亮色 | 简约清爽 |
-| `cyberGreen` | 暗色 | 赛博绿霓虹风（系统默认） |
-| `catppuccinMocha` | 暗色 | 柔和粉彩 |
-| `kanagawaDragon` | 暗色 | 浮世绘风格 |
-| `rosePineMoon` | 暗色 | 优雅鸢尾紫 |
+| 方案 ID | 名称 | 类型 | 说明 |
+|---------|------|------|------|
+| `coralOrange` | 珊瑚橙 | 亮色 | 系统默认 |
+| `nordSnowStorm` | 北极冰川 | 亮色 | 北极冰川风格 |
+| `gruvboxLight` | 复古风 | 亮色 | 复古暖色调 |
+| `ayuLight` | 简约风 | 亮色 | 简约清爽 |
+| `cyberGreen` | 赛博绿 | 暗色 | 系统默认 |
+| `catppuccinMocha` | 摩卡色 | 暗色 | 柔和粉彩 |
+| `kanagawaDragon` | 浮世绘 | 暗色 | 浮世绘风格 |
+| `rosePineMoon` | 鸢尾紫 | 暗色 | 优雅鸢尾紫 |
 
 #### 配置示例
 

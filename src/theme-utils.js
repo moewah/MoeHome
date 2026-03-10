@@ -17,12 +17,12 @@ const ThemeManager = {
      */
     defaults: {
         light: {
-            accent: '#D97706',
-            bgPrimary: '#FBF8F3',
-            bgSecondary: '#F5F2ED',
-            textPrimary: '#1C1917',
-            textSecondary: '#57534E',
-            border: '#E7E5E4',
+            accent: '#C6613F',
+            bgPrimary: '#FAF9F5',
+            bgSecondary: '#F0EEE6',
+            textPrimary: '#141413',
+            textSecondary: '#87867F',
+            border: '#E8E6DC',
         },
         dark: {
             accent: '#00ff9f',
@@ -39,19 +39,19 @@ const ThemeManager = {
      */
     builtinSchemes: {
         // === 系统默认方案 ===
-        amberOrange: {
-            id: 'amberOrange',
-            name: '琥珀橙 (默认)',
+        coralOrange: {
+            id: 'coralOrange',
+            name: '珊瑚橙 (默认)',
             icon: 'fa-palette',
             isDefault: true, // 标记为系统默认
             modes: ['light'],
             colors: {
-                accent: '#D97706',      // 琥珀橙
-                bgPrimary: '#FBF8F3',   // 暖白（米白带暖调）
-                bgSecondary: '#F5F2ED', // 暖灰（卡片背景）
-                textPrimary: '#1C1917', // 深炭灰（Stone 900）
-                textSecondary: '#57534E', // 暖中灰（Stone 600）
-                border: '#E7E5E4',      // 暖浅灰边框（Stone 200）
+                accent: '#C6613F',      // 珊瑚橙 - 温暖专业的品牌色
+                bgPrimary: '#FAF9F5',   // 暖白 - 主背景色
+                bgSecondary: '#F0EEE6', // 柔暖灰 - 卡片/次背景
+                textPrimary: '#141413', // 近黑 - 主文本
+                textSecondary: '#87867F', // 中性灰 - 次文本
+                border: '#E8E6DC',      // 淡边框
             }
         },
         cyberGreen: {

@@ -38,21 +38,21 @@ window.HOMEPAGE_CONFIG = {
     default: "auto",
 
     // 默认配色方案（页面打开时的初始配色，用户仍可自由切换）
-    // 可选值: null(使用defaults) | 'amberOrange' | 'nordSnowStorm' | 'gruvboxLight' | 'ayuLight' | 'cyberGreen' | 'catppuccinMocha' | 'kanagawaDragon' | 'rosePineMoon'
+    // 可选值: null(使用defaults) | 'coralOrange' | 'nordSnowStorm' | 'gruvboxLight' | 'ayuLight' | 'cyberGreen' | 'catppuccinMocha' | 'kanagawaDragon' | 'rosePineMoon'
     defaultScheme: {
-      light: null, // 亮色模式: null(使用amberOrange) | amberOrange | nordSnowStorm | gruvboxLight | ayuLight
+      light: null, // 亮色模式: null(使用coralOrange) | coralOrange | nordSnowStorm | gruvboxLight | ayuLight
       dark: null, // 暗色模式: null(使用cyberGreen) | cyberGreen | catppuccinMocha | kanagawaDragon | rosePineMoon
     },
 
     // 兜底配色方案（当 defaultScheme 为 null 或不可用时使用）
     defaults: {
       light: {
-        accent: "#D97706", // 琥珀橙（Claude 暖灰风格）
-        bgPrimary: "#FBF8F3", // 暖白（米白带暖调）
-        bgSecondary: "#F5F2ED", // 暖灰（卡片背景）
-        textPrimary: "#1C1917", // 深炭灰（Stone 900）
-        textSecondary: "#57534E", // 暖中灰（Stone 600）- WCAG AA 对比度 5.2:1
-        border: "#E7E5E4", // 暖浅灰边框（Stone 200）
+        accent: "#C6613F", // 珊瑚橙
+        bgPrimary: "#FAF9F5", // 暖白
+        bgSecondary: "#F0EEE6", // 柔暖灰
+        textPrimary: "#141413", // 近黑
+        textSecondary: "#87867F", // 中性灰
+        border: "#E8E6DC", // 淡边框
       },
       dark: {
         accent: "#00ff9f",
