@@ -34,27 +34,37 @@ window.HOMEPAGE_CONFIG = {
   // ========== 主题配色 ==========
   theme: {
     // 默认主题模式（'auto' 时构建使用 dark 作为首屏默认）
-    default: 'auto', // 'light' | 'dark' | 'auto'
+    default: "auto", // 'light' | 'dark' | 'auto'
 
-    // 浅色主题（Claude 暖灰风格示例）
-    light: {
-      accent: "#D97706",        // 琥珀橙（Claude 品牌色）
-      bgPrimary: "#FBF8F3",     // 暖白（米白带暖调）
-      bgSecondary: "#F5F2ED",   // 暖灰（卡片背景）
-      textPrimary: "#1C1917",   // 深炭灰（Stone 900）
-      textSecondary: "#57534E", // 暖中灰（Stone 600）- WCAG AA 对比度 5.2:1
-      border: "#E7E5E4",        // 暖浅灰边框（Stone 200）
+    // 锁定每个模式使用的配色方案（可选，null = 使用下方 defaults）
+    locked: {
+      light: null, // null = 使用下方 defaults.light
+      dark: null, // 可以设置为 'catppuccinMocha', 'oneDarkPro' 等
     },
 
-    // 深色主题
-    dark: {
-      accent: "#00ff9f",
-      bgPrimary: "#0a0a0a",
-      bgSecondary: "#111111",
-      textPrimary: "#e8e8e8",
-      textSecondary: "#888888",
-      border: "#222222",
+    // 默认配色（向后兼容，仍可自定义）
+    defaults: {
+      light: {
+        accent: "#D97706", // 琥珀橙（Claude 暖灰风格）
+        bgPrimary: "#FBF8F3", // 暖白（米白带暖调）
+        bgSecondary: "#F5F2ED", // 暖灰（卡片背景）
+        textPrimary: "#1C1917", // 深炭灰（Stone 900）
+        textSecondary: "#57534E", // 暖中灰（Stone 600）- WCAG AA 对比度 5.2:1
+        border: "#E7E5E4", // 暖浅灰边框（Stone 200）
+      },
+      dark: {
+        accent: "#00ff9f",
+        bgPrimary: "#0a0a0a",
+        bgSecondary: "#111111",
+        textPrimary: "#e8e8e8",
+        textSecondary: "#888888",
+        border: "#222222",
+      },
     },
+
+    // 预设配色方案库
+    // 用户可通过 schemes 覆盖或新增方案
+    schemes: {},
   },
 
   // ========== 导航栏配置 ==========

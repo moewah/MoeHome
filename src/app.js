@@ -51,7 +51,7 @@ function initNavbar() {
     initNavbarScroll();
     initNavbarBrandEffect();
     initNavbarActiveSection();
-    initNavbarThemeSwitcher();
+    initThemeDropdown();
     initMobileSidebar();
     initCustomMenus();
 }
@@ -265,45 +265,277 @@ function initNavbarActiveSection() {
     }
 }
 
-// 导航栏主题切换（点击循环切换）
-function initNavbarThemeSwitcher() {
+// ========== 统一主题下拉菜单 ==========
+function initThemeDropdown() {
     const toggle = document.getElementById('nav-theme-toggle');
+    const dropdown = document.getElementById('theme-dropdown');
     const mobileThemeBtn = document.getElementById('nav-sidebar-theme');
 
-    // PC 端主题循环切换
+    if (!dropdown) return;
+
+    // PC 端：点击按钮切换下拉菜单
     if (toggle) {
-        toggle.addEventListener('click', () => {
-            if (typeof ThemeManager !== 'undefined') {
-                const newTheme = ThemeManager.toggle();
-                updateThemeToggleIcon(newTheme);
-                updateThemeToggleAria(newTheme);
-            }
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleThemeDropdown();
         });
     }
 
-    // 移动端主题循环切换
+    // 移动端：点击按钮循环切换模式
     if (mobileThemeBtn) {
         mobileThemeBtn.addEventListener('click', () => {
-            if (typeof ThemeManager !== 'undefined') {
-                const newTheme = ThemeManager.toggle();
-                updateThemeToggleIcon(newTheme);
-                updateThemeToggleAria(newTheme);
-            }
+            openMobileThemeSelector();
         });
     }
 
-    // 初始化图标和 ARIA 状态
+    // 点击外部关闭下拉菜单
+    document.addEventListener('click', (e) => {
+        if (dropdown.classList.contains('is-active') &&
+            !dropdown.contains(e.target) &&
+            e.target !== toggle) {
+            closeThemeDropdown();
+        }
+    });
+
+    // ESC 键关闭下拉菜单
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && dropdown.classList.contains('is-active')) {
+            closeThemeDropdown();
+            toggle?.focus();
+        }
+    });
+
+    // 模式切换按钮事件
+    document.querySelectorAll('.theme-mode-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const mode = item.dataset.mode;
+            if (typeof ThemeManager !== 'undefined') {
+                ThemeManager.setSavedTheme(mode);
+                updateThemeDropdown();
+            }
+        });
+
+        // 键盘导航
+        item.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const mode = item.dataset.mode;
+                if (typeof ThemeManager !== 'undefined') {
+                    ThemeManager.setSavedTheme(mode);
+                    updateThemeDropdown();
+                }
+            }
+        });
+    });
+
+    // 监听主题变化，更新下拉菜单和移动端图标
+    document.addEventListener('themechange', (e) => {
+        updateThemeDropdown();
+        // 更新移动端图标
+        if (e.detail?.mode) {
+            updateMobileThemeIcon(e.detail.mode);
+        }
+    });
+
+    // 初始化下拉菜单内容
+    updateThemeDropdown();
+
+    // 初始化移动端图标
     if (typeof ThemeManager !== 'undefined') {
         const savedTheme = ThemeManager.getSavedTheme();
-        updateThemeToggleIcon(savedTheme);
-        updateThemeToggleAria(savedTheme);
+        updateMobileThemeIcon(savedTheme);
     }
 }
 
-// 更新主题切换按钮图标
-function updateThemeToggleIcon(theme) {
+// 切换主题下拉菜单显示状态
+function toggleThemeDropdown() {
+    const dropdown = document.getElementById('theme-dropdown');
+    if (!dropdown) return;
+
+    const isActive = dropdown.classList.contains('is-active');
+    if (isActive) {
+        closeThemeDropdown();
+    } else {
+        openThemeDropdown();
+    }
+}
+
+// 打开主题下拉菜单
+function openThemeDropdown() {
+    const dropdown = document.getElementById('theme-dropdown');
     const toggle = document.getElementById('nav-theme-toggle');
+    if (!dropdown) return;
+
+    // 动态定位：菜单右边缘与按钮右边缘对齐
+    if (toggle) {
+        const rect = toggle.getBoundingClientRect();
+        const dropdownWidth = dropdown.offsetWidth || 200;
+        dropdown.style.left = `${rect.right - dropdownWidth}px`;
+        dropdown.style.right = 'auto';
+    }
+
+    updateThemeDropdown();
+    dropdown.classList.add('is-active');
+    dropdown.setAttribute('aria-hidden', 'false');
+
+    // 聚焦到当前选中的模式
+    const activeMode = dropdown.querySelector('.theme-mode-item.is-active');
+    if (activeMode) {
+        activeMode.focus();
+    }
+}
+
+// 关闭主题下拉菜单
+function closeThemeDropdown() {
+    const dropdown = document.getElementById('theme-dropdown');
+    if (!dropdown) return;
+
+    dropdown.classList.remove('is-active');
+    dropdown.setAttribute('aria-hidden', 'true');
+}
+
+// 更新主题下拉菜单内容
+function updateThemeDropdown() {
+    if (typeof ThemeManager === 'undefined') return;
+
+    // 更新模式选中状态
+    const currentMode = ThemeManager.getSavedTheme();
+    document.querySelectorAll('.theme-mode-item').forEach(item => {
+        const isActive = item.dataset.mode === currentMode;
+        item.classList.toggle('is-active', isActive);
+        item.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    // 更新配色方案列表
+    updateThemeSchemeList();
+}
+
+// 更新配色方案列表
+function updateThemeSchemeList() {
+    const schemeList = document.getElementById('theme-scheme-list');
+    if (!schemeList || typeof ThemeManager === 'undefined') return;
+
+    const effectiveMode = ThemeManager.getEffectiveMode();
+    const currentScheme = ThemeManager.getActiveScheme(effectiveMode);
+    const availableSchemes = ThemeManager.getAvailableSchemes(effectiveMode);
+    const locked = ThemeManager.locked[effectiveMode];
+
+    // 清空列表
+    schemeList.textContent = '';
+
+    // 添加默认选项
+    const defaultItem = createThemeSchemeItem(null, {
+        id: null,
+        name: '默认配色',
+        icon: 'fa-palette'
+    }, !currentScheme, false); // 默认配色：isActive 取决于当前是否无配色，永不锁定
+    schemeList.appendChild(defaultItem);
+
+    // 添加可用方案
+    availableSchemes.forEach(scheme => {
+        const isActive = currentScheme?.id === scheme.id;
+        const isLocked = locked === scheme.id;
+        const item = createThemeSchemeItem(scheme.id, scheme, isActive, isLocked);
+        schemeList.appendChild(item);
+    });
+}
+
+// 创建配色方案列表项
+function createThemeSchemeItem(schemeId, scheme, isActive, isLocked) {
+    const item = document.createElement('div');
+    item.className = 'theme-scheme-item';
+    item.setAttribute('role', 'option');
+    item.setAttribute('tabindex', '0');
+
+    if (isActive) {
+        item.classList.add('is-active');
+        item.setAttribute('aria-selected', 'true');
+    }
+
+    if (isLocked) {
+        item.classList.add('is-locked');
+    }
+
+    // 图标容器
+    const iconContainer = document.createElement('div');
+    iconContainer.className = 'theme-scheme-item-icon';
+    const iconEl = document.createElement('i');
+    iconEl.className = 'fa-solid ' + (scheme.icon || 'fa-palette');
+    iconContainer.appendChild(iconEl);
+    item.appendChild(iconContainer);
+
+    // 名称
+    const nameEl = document.createElement('span');
+    nameEl.className = 'theme-scheme-item-name';
+    nameEl.textContent = scheme.name;
+    item.appendChild(nameEl);
+
+    // 选中标记
+    if (isActive) {
+        const checkEl = document.createElement('i');
+        checkEl.className = 'fa-solid fa-check theme-scheme-item-check';
+        item.appendChild(checkEl);
+    }
+
+    // 锁定标记
+    if (isLocked) {
+        const lockEl = document.createElement('i');
+        lockEl.className = 'fa-solid fa-lock theme-scheme-item-lock';
+        lockEl.title = '已锁定';
+        item.appendChild(lockEl);
+    }
+
+    // 点击事件
+    item.addEventListener('click', () => {
+        if (isLocked) return;
+        selectThemeScheme(schemeId);
+    });
+
+    // 键盘事件
+    item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (!isLocked) {
+                selectThemeScheme(schemeId);
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const next = item.nextElementSibling;
+            if (next) next.focus();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const prev = item.previousElementSibling;
+            if (prev) prev.focus();
+        }
+    });
+
+    return item;
+}
+
+// 选择配色方案
+function selectThemeScheme(schemeId) {
+    if (typeof ThemeManager === 'undefined') return;
+
+    const currentMode = ThemeManager.getEffectiveMode();
+    const success = ThemeManager.setScheme(schemeId, currentMode);
+
+    if (success) {
+        closeThemeDropdown();
+        updateThemeSchemeList();
+    }
+}
+
+// 移动端：循环切换模式并更新图标
+function openMobileThemeSelector() {
+    if (typeof ThemeManager === 'undefined') return;
+    const newTheme = ThemeManager.toggle();
+    updateMobileThemeIcon(newTheme);
+}
+
+// 更新移动端主题按钮图标
+function updateMobileThemeIcon(theme) {
     const mobileToggle = document.getElementById('nav-sidebar-theme');
+    if (!mobileToggle) return;
 
     const iconMap = {
         auto: 'fa-solid fa-desktop',
@@ -312,47 +544,9 @@ function updateThemeToggleIcon(theme) {
     };
 
     const iconClass = iconMap[theme] || 'fa-solid fa-desktop';
-
-    // PC 端图标
-    if (toggle) {
-        const icon = toggle.querySelector('i');
-        if (icon) {
-            icon.className = iconClass;
-        }
-    }
-
-    // 移动端侧边栏图标
-    if (mobileToggle) {
-        const icon = mobileToggle.querySelector('i');
-        if (icon) {
-            icon.className = iconClass;
-        }
-    }
-}
-
-// 更新主题切换按钮 ARIA 状态
-function updateThemeToggleAria(theme) {
-    const toggle = document.getElementById('nav-theme-toggle');
-    const mobileToggle = document.getElementById('nav-sidebar-theme');
-
-    const labelMap = {
-        auto: '当前：跟随系统，点击切换到浅色主题',
-        light: '当前：浅色主题，点击切换到深色主题',
-        dark: '当前：深色主题，点击切换到跟随系统'
-    };
-
-    const ariaLabel = labelMap[theme] || labelMap.auto;
-
-    // PC 端 ARIA
-    if (toggle) {
-        toggle.setAttribute('aria-label', ariaLabel);
-        toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
-    }
-
-    // 移动端 ARIA
-    if (mobileToggle) {
-        mobileToggle.setAttribute('aria-label', ariaLabel);
-        mobileToggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+    const icon = mobileToggle.querySelector('i');
+    if (icon) {
+        icon.className = iconClass;
     }
 }
 
@@ -447,13 +641,14 @@ function initMobileSidebar() {
         isSwiping = false;
     }, { passive: true });
 
-    // 边缘滑动打开侧边栏
+    // 边缘滑动打开侧边栏 - 从右侧边缘向左滑动
     let edgeSwipeStartX = 0;
     let isEdgeSwipe = false;
 
     document.addEventListener('touchstart', (e) => {
-        // 从左边缘 20px 内开始滑动
-        if (e.touches[0].clientX < 20 && !sidebar.classList.contains('open')) {
+        // 从右边缘 20px 内开始滑动
+        const windowWidth = window.innerWidth;
+        if (e.touches[0].clientX > windowWidth - 20 && !sidebar.classList.contains('open')) {
             isEdgeSwipe = true;
             edgeSwipeStartX = e.touches[0].clientX;
         }
@@ -465,14 +660,16 @@ function initMobileSidebar() {
         const currentX = e.touches[0].clientX;
         const deltaX = currentX - edgeSwipeStartX;
 
-        // 向右滑动打开
-        if (deltaX > 0 && deltaX < sidebarWidth) {
+        // 向左滑动打开（deltaX 为负值）
+        if (deltaX < 0 && Math.abs(deltaX) < sidebarWidth) {
             e.preventDefault();
             sidebar.style.transition = 'none';
             sidebar.classList.add('open');
             overlay.classList.add('active');
-            // 从左侧滑出
-            sidebar.style.transform = `translateX(${-sidebarWidth + deltaX}px)`;
+            // 从右侧滑出：translateX(100%) -> translateX(0)
+            // 向左滑动时，deltaX 为负，所以用 100% + deltaX/siderWidth * 100%
+            const offset = sidebarWidth + deltaX; // deltaX 为负
+            sidebar.style.transform = `translateX(${offset}px)`;
         }
     }, { passive: false });
 
@@ -487,7 +684,7 @@ function initMobileSidebar() {
         if (match) {
             const translateX = parseFloat(match[1]);
             // 滑动超过一半则完全打开，否则关闭
-            if (translateX > -sidebarWidth / 2) {
+            if (translateX < sidebarWidth / 2) {
                 sidebar.style.transform = '';
             } else {
                 close();

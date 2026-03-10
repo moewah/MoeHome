@@ -332,6 +332,7 @@ function extractThemeColor(themeBlock, key, fallback) {
 
 /**
  * 提取主题配置
+ * 支持新版格式（defaults, locked, schemes）和旧版格式（light, dark）
  */
 function extractThemeConfig() {
     // 匹配 theme 对象
@@ -346,22 +347,14 @@ function extractThemeConfig() {
     const defaultMatch = themeBlock.match(/default:\s*['"`](light|dark|auto)['"`]/);
     const defaultMode = defaultMatch ? defaultMatch[1] : 'auto';
 
-    // 匹配 light 子对象
-    const lightMatch = themeBlock.match(/light:\s*\{([^}]+)\}/);
-    const lightBlock = lightMatch ? lightMatch[1] : null;
-
-    // 匹配 dark 子对象
-    const darkMatch = themeBlock.match(/dark:\s*\{([^}]+)\}/);
-    const darkBlock = darkMatch ? darkMatch[1] : null;
-
     // 默认值
     const lightDefaults = {
-        accent: '#00cc7a',
-        bgPrimary: '#ffffff',
-        bgSecondary: '#f5f5f5',
-        textPrimary: '#1a1a1a',
-        textSecondary: '#666666',
-        border: '#e0e0e0',
+        accent: '#D97706',
+        bgPrimary: '#FBF8F3',
+        bgSecondary: '#F5F2ED',
+        textPrimary: '#1C1917',
+        textSecondary: '#57534E',
+        border: '#E7E5E4',
     };
 
     const darkDefaults = {
@@ -372,6 +365,62 @@ function extractThemeConfig() {
         textSecondary: '#888888',
         border: '#222222',
     };
+
+    // 检测新版格式（defaults 子对象）
+    const defaultsMatch = themeBlock.match(/defaults:\s*\{([\s\S]*?)\n\s*\},?\s*\n/);
+    if (defaultsMatch) {
+        // 新版格式
+        const defaultsBlock = defaultsMatch[1];
+
+        // 匹配 light 子对象
+        const lightMatch = defaultsBlock.match(/light:\s*\{([^}]+)\}/);
+        const lightBlock = lightMatch ? lightMatch[1] : null;
+
+        // 匹配 dark 子对象
+        const darkMatch = defaultsBlock.match(/dark:\s*\{([^}]+)\}/);
+        const darkBlock = darkMatch ? darkMatch[1] : null;
+
+        const result = {
+            default: defaultMode,
+            light: lightBlock ? {
+                accent: extractThemeColor(lightBlock, 'accent', lightDefaults.accent),
+                bgPrimary: extractThemeColor(lightBlock, 'bgPrimary', lightDefaults.bgPrimary),
+                bgSecondary: extractThemeColor(lightBlock, 'bgSecondary', lightDefaults.bgSecondary),
+                textPrimary: extractThemeColor(lightBlock, 'textPrimary', lightDefaults.textPrimary),
+                textSecondary: extractThemeColor(lightBlock, 'textSecondary', lightDefaults.textSecondary),
+                border: extractThemeColor(lightBlock, 'border', lightDefaults.border),
+            } : { ...lightDefaults },
+            dark: darkBlock ? {
+                accent: extractThemeColor(darkBlock, 'accent', darkDefaults.accent),
+                bgPrimary: extractThemeColor(darkBlock, 'bgPrimary', darkDefaults.bgPrimary),
+                bgSecondary: extractThemeColor(darkBlock, 'bgSecondary', darkDefaults.bgSecondary),
+                textPrimary: extractThemeColor(darkBlock, 'textPrimary', darkDefaults.textPrimary),
+                textSecondary: extractThemeColor(darkBlock, 'textSecondary', darkDefaults.textSecondary),
+                border: extractThemeColor(darkBlock, 'border', darkDefaults.border),
+            } : { ...darkDefaults },
+        };
+
+        // 提取 locked 配置
+        const lockedMatch = themeBlock.match(/locked:\s*\{([^}]+)\}/);
+        if (lockedMatch) {
+            const lockedBlock = lockedMatch[1];
+            const lightLockedMatch = lockedBlock.match(/light:\s*['"`]([^'"`]+)['"`]/);
+            const darkLockedMatch = lockedBlock.match(/dark:\s*['"`]([^'"`]+)['"`]/);
+            result.locked = {
+                light: lightLockedMatch ? lightLockedMatch[1] : null,
+                dark: darkLockedMatch ? darkLockedMatch[1] : null,
+            };
+        }
+
+        return result;
+    }
+
+    // 旧版格式（直接 light/dark）
+    const lightMatch = themeBlock.match(/light:\s*\{([^}]+)\}/);
+    const lightBlock = lightMatch ? lightMatch[1] : null;
+
+    const darkMatch = themeBlock.match(/dark:\s*\{([^}]+)\}/);
+    const darkBlock = darkMatch ? darkMatch[1] : null;
 
     return {
         default: defaultMode,
@@ -395,8 +444,110 @@ function extractThemeConfig() {
 }
 
 /**
+ * 内置配色方案（构建时使用）
+ */
+const builtinSchemes = {
+    cyber: {
+        modes: ['dark'],
+        colors: {
+            accent: '#00ff9f',
+            bgPrimary: '#0a0a0a',
+            bgSecondary: '#111111',
+            textPrimary: '#e8e8e8',
+            textSecondary: '#888888',
+            border: '#222222',
+        }
+    },
+    ocean: {
+        modes: ['dark'],
+        colors: {
+            accent: '#0ea5e9',
+            bgPrimary: '#0c1222',
+            bgSecondary: '#111827',
+            textPrimary: '#e2e8f0',
+            textSecondary: '#94a3b8',
+            border: '#1e293b',
+        }
+    },
+    sakura: {
+        modes: ['light'],
+        colors: {
+            accent: '#f472b6',
+            bgPrimary: '#fdf2f8',
+            bgSecondary: '#fce7f3',
+            textPrimary: '#831843',
+            textSecondary: '#9d174d',
+            border: '#fbcfe8',
+        }
+    },
+    forest: {
+        modes: ['light', 'dark'],
+        colors: {
+            light: {
+                accent: '#22c55e',
+                bgPrimary: '#f0fdf4',
+                bgSecondary: '#dcfce7',
+                textPrimary: '#14532d',
+                textSecondary: '#166534',
+                border: '#bbf7d0',
+            },
+            dark: {
+                accent: '#22c55e',
+                bgPrimary: '#052e16',
+                bgSecondary: '#14532d',
+                textPrimary: '#ecfdf5',
+                textSecondary: '#86efac',
+                border: '#166534',
+            }
+        }
+    },
+    sunset: {
+        modes: ['light', 'dark'],
+        colors: {
+            light: {
+                accent: '#f97316',
+                bgPrimary: '#fffbeb',
+                bgSecondary: '#fef3c7',
+                textPrimary: '#451a03',
+                textSecondary: '#78350f',
+                border: '#fde68a',
+            },
+            dark: {
+                accent: '#f97316',
+                bgPrimary: '#1c1917',
+                bgSecondary: '#292524',
+                textPrimary: '#fef3c7',
+                textSecondary: '#d6d3d1',
+                border: '#44403c',
+            }
+        }
+    }
+};
+
+/**
+ * 从配色方案获取颜色
+ */
+function getSchemeColors(schemeId, mode) {
+    const scheme = builtinSchemes[schemeId];
+    if (!scheme) return null;
+
+    // 检查是否兼容
+    if (scheme.modes && !scheme.modes.includes(mode)) {
+        return null;
+    }
+
+    // 如果有按模式的颜色定义
+    if (scheme.colors && typeof scheme.colors.light === 'object') {
+        return scheme.colors[mode] || scheme.colors.dark || null;
+    }
+
+    return scheme.colors;
+}
+
+/**
  * 生成首屏主题 CSS
  * 在 JS 加载前应用正确的主题颜色，避免闪烁
+ * 支持 locked 配置，首屏使用锁定的配色方案
  */
 function generateInitialThemeCSS() {
     const theme = extractThemeConfig();
@@ -408,7 +559,16 @@ function generateInitialThemeCSS() {
         defaultMode = 'dark'; // auto 时使用 dark 作为首屏默认
     }
 
-    const colors = theme[defaultMode];
+    // 获取颜色配置（优先使用 locked 方案）
+    let colors = theme[defaultMode];
+
+    if (theme.locked && theme.locked[defaultMode]) {
+        const schemeColors = getSchemeColors(theme.locked[defaultMode], defaultMode);
+        if (schemeColors) {
+            colors = schemeColors;
+        }
+    }
+
     if (!colors) return '';
 
     const accentRgb = hexToRgb(colors.accent);
@@ -425,7 +585,9 @@ function generateInitialThemeCSS() {
         shadowSm: 0.05,
         shadowMd: 0.1,
         glow: 0.2,
-        navbarScrolled: 0.85,
+        navbarScrolled: 1,
+        cardBorderStrong: 0.5,
+        cardBorderMuted: 0.25,
     } : {
         accentDim: 0.1,
         gridColor: 0.03,
@@ -435,7 +597,9 @@ function generateInitialThemeCSS() {
         shadowSm: 0.3,
         shadowMd: 0.5,
         glow: 0.3,
-        navbarScrolled: 0.85,
+        navbarScrolled: 0.98,
+        cardBorderStrong: 0.4,
+        cardBorderMuted: 0.2,
     };
 
     return `<style id="theme-initial">
@@ -476,6 +640,19 @@ function generateInitialThemeCSS() {
 
         /* P4 分割线 */
         --divider-glow: rgba(${accentRgb}, 0.4);
+
+        /* 卡片边框层次 */
+        --card-border-strong: rgba(${accentRgb}, ${derive.cardBorderStrong});
+        --card-border-muted: rgba(${accentRgb}, ${derive.cardBorderMuted});
+
+        /* 玻璃光泽系统 */
+        --glass-border-top: ${isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.08)'};
+        --glass-border-bottom: ${isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(0, 0, 0, 0.5)'};
+        --glass-border-side: ${isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.03)'};
+        --glass-outer-shadow: ${isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.4)'};
+        --glass-inner-glow: rgba(${accentRgb}, 0.03);
+        --glass-hover-border: rgba(${accentRgb}, ${isLight ? 0.25 : 0.15});
+        --glass-hover-glow: rgba(${accentRgb}, 0.05);
 
         /* P2 终端（默认跟随主主题） */
         --terminal-bg: ${colors.bgSecondary};

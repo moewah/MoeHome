@@ -53,43 +53,89 @@ npm run serve
 
 ### 主题配色
 
-在 `src/config.js` 中配置明暗双主题配色：
+支持模式切换和配色方案切换，用户选择自动保存到本地存储。
+
+#### 模式切换
+
+| 模式 | 说明 | 图标 |
+|------|------|------|
+| `auto` | 跟随系统 | 🖥️ |
+| `light` | 浅色模式 | ☀️ |
+| `dark` | 深色模式 | 🌙 |
+
+- **PC端**：点击导航栏配色按钮展开菜单，选择模式和配色方案
+- **移动端**：点击侧边栏按钮循环切换模式
+
+#### 内置配色方案
+
+| 方案 | 类型 | 特色 |
+|------|------|------|
+| 默认配色 | 双模式 | 项目默认配色 |
+| Catppuccin Mocha | 暗色 | 柔和粉彩 |
+| Kanagawa Dragon | 暗色 | 浮世绘风格，秋红色调 |
+| One Dark Pro | 暗色 | Atom 经典，科技蓝 |
+| One Light | 亮色 | Atom 经典亮色版 |
+| Gruvbox Light | 亮色 | 复古暖色调 |
+| Ayu Light | 亮色 | 简约清爽 |
+
+#### 配置示例
 
 ```javascript
 theme: {
     default: 'auto',  // 'light' | 'dark' | 'auto'
 
-    light: {
-        accent: "#D97706",        // 强调色（链接、按钮、高亮）
-        bgPrimary: "#FFFFFF",     // 主背景
-        bgSecondary: "#F9FAFB",   // 次背景（卡片、区块）
-        textPrimary: "#18181B",   // 主文字
-        textSecondary: "#71717A", // 次文字（描述、标签）
-        border: "#E4E4E7",        // 边框
+    defaults: {
+        light: {
+            accent: "#D97706",
+            bgPrimary: "#FBF8F3",
+            bgSecondary: "#F5F2ED",
+            textPrimary: "#1C1917",
+            textSecondary: "#57534E",
+            border: "#E7E5E4",
+        },
+        dark: {
+            accent: "#00ff9f",
+            bgPrimary: "#0a0a0a",
+            bgSecondary: "#111111",
+            textPrimary: "#e8e8e8",
+            textSecondary: "#888888",
+            border: "#222222",
+        },
     },
 
-    dark: {
-        accent: "#00ff9f",
-        bgPrimary: "#0a0a0a",
-        bgSecondary: "#111111",
-        textPrimary: "#e8e8e8",
-        textSecondary: "#888888",
-        border: "#222222",
-    },
+    // 锁定配色方案（可选）
+    locked: {
+        light: null,  // 锁定亮色模式使用指定方案
+        dark: null,   // 锁定暗色模式使用指定方案
+    }
 }
 ```
 
 | 配置 | 说明 |
 |------|------|
-| `default` | 首屏默认主题，`auto` 时使用深色 |
-| `accent` | 强调色，用于链接、按钮、高亮元素 |
-| `bgPrimary` | 页面主背景色 |
-| `bgSecondary` | 次级背景色（卡片、区块） |
-| `textPrimary` | 主要文字颜色 |
-| `textSecondary` | 次要文字颜色（描述、标签） |
-| `border` | 边框、分割线颜色 |
+| `default` | 首屏默认模式 |
+| `defaults.light/dark` | 默认配色（未选择方案时使用） |
+| `locked.light/dark` | 锁定配色方案，用户无法切换 |
 
-**注意**：衍生色（悬停、阴影、玻璃光泽等）会根据主色自动计算，无需手动配置。
+**自定义配色方案**：
+
+```javascript
+theme: {
+    schemes: {
+        myScheme: {
+            name: '我的配色',
+            icon: 'fa-heart',
+            modes: ['light', 'dark'],
+            colors: {
+                light: { accent: '#...', bgPrimary: '#...', ... },
+                dark: { accent: '#...', bgPrimary: '#...', ... }
+            }
+        }
+    }
+}
+```
+
+**衍生色**：悬停、阴影、玻璃光泽等颜色自动计算，无需手动配置。
 
 ### 导航栏配置
 
@@ -124,7 +170,7 @@ nav: {
 | `brand.hoverText` | 自动循环打字机效果显示的文字（与名字交替显示） |
 | `menus` | 自定义二级菜单数组 |
 
-**主题切换**：点击循环切换 (auto → light → dark)，图标动态变化：🖥️ / ☀️ / 🌙
+**主题设置**：点击配色按钮展开菜单，选择模式（auto/light/dark）和配色方案。
 
 **移动端手势**：支持从屏幕右边缘向左滑动打开侧边栏，侧边栏内向右滑动关闭。
 
