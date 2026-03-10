@@ -33,16 +33,18 @@ window.HOMEPAGE_CONFIG = {
 
   // ========== 主题配色 ==========
   theme: {
-    // 默认主题模式（'auto' 时构建使用 dark 作为首屏默认）
-    default: "auto", // 'light' | 'dark' | 'auto'
+    // 默认主题模式
+    // 可选值: 'light' | 'dark' | 'auto'
+    default: "auto",
 
-    // 锁定每个模式使用的配色方案（可选，null = 使用下方 defaults）
-    locked: {
-      light: null, // null = 使用下方 defaults.light
-      dark: null, // 可以设置为 'catppuccinMocha', 'oneDarkPro' 等
+    // 默认配色方案（页面打开时的初始配色，用户仍可自由切换）
+    // 可选值: null(使用defaults) | 'catppuccinMocha' | 'kanagawaDragon' | 'oneDarkPro' | 'oneLight' | 'gruvboxLight' | 'ayuLight'
+    defaultScheme: {
+      light: null, // 亮色模式: null | oneLight | gruvboxLight | ayuLight
+      dark: null, // 暗色模式: null | catppuccinMocha | kanagawaDragon | oneDarkPro
     },
 
-    // 默认配色（向后兼容，仍可自定义）
+    // 兜底配色方案（当 defaultScheme 为 null 或不可用时使用）
     defaults: {
       light: {
         accent: "#D97706", // 琥珀橙（Claude 暖灰风格）
@@ -61,10 +63,6 @@ window.HOMEPAGE_CONFIG = {
         border: "#222222",
       },
     },
-
-    // 预设配色方案库
-    // 用户可通过 schemes 覆盖或新增方案
-    schemes: {},
   },
 
   // ========== 导航栏配置 ==========
@@ -103,7 +101,7 @@ window.HOMEPAGE_CONFIG = {
 
   // ========== Favicon 配置 ==========
   favicon: {
-    path: "",                        // 自定义 favicon 路径（如 "images/favicon.ico"），留空则从头像自动生成
+    path: "", // 自定义 favicon 路径（如 "images/favicon.ico"），留空则从头像自动生成
   },
 
   // ========== 身份标签 ==========
@@ -167,7 +165,7 @@ window.HOMEPAGE_CONFIG = {
     count: 4,
     openInNewTab: true,
     title: {
-      text: "近期更新",
+      text: "Recent Posts",
       icon: "fa-solid fa-newspaper",
     },
     display: {
@@ -181,7 +179,7 @@ window.HOMEPAGE_CONFIG = {
   projects: {
     enabled: false, // 设置为 false 可禁用此模块
     title: {
-      text: "我的项目",
+      text: "Projects",
       icon: "fa-solid fa-folder-open",
     },
     // GitHub 用户主页地址，构建时自动获取公开仓库
@@ -204,8 +202,8 @@ window.HOMEPAGE_CONFIG = {
   linksConfig: {
     enabled: true, // 改成 false 禁用整个链接导航模块
     title: {
-      text: '链接导航',
-      icon: 'fa-solid fa-link',
+      text: "Quick Links",
+      icon: "fa-solid fa-link",
     },
   },
 
@@ -303,42 +301,42 @@ window.HOMEPAGE_CONFIG = {
     },
   ],
 
-  // ========== 赞赏支持配置 ==========
+  // ========== Donation Config ==========
   donation: {
-    enabled: false,  // 设置为 true 启用
+    enabled: false, // 设置为 true 启用
     title: {
-      text: '赞赏支持',
-      icon: 'fa-solid fa-mug-hot',
+      text: "Support Me",
+      icon: "fa-solid fa-mug-hot",
     },
-    message: '如果我的内容对你有帮助，欢迎请我喝杯咖啡~',
+    message: "如果我的内容对你有帮助，欢迎请我喝杯咖啡~",
     // 支付方式配置（建议启用2-3个，骨架屏最多显示3个按钮）
     methods: [
       {
-        name: '微信支付',
-        key: 'wechat',
-        icon: 'fa-brands fa-weixin',
-        qrImage: 'images/wechat.png',  // 图片路径相对于 src/ 目录
+        name: "微信支付",
+        key: "wechat",
+        icon: "fa-brands fa-weixin",
+        qrImage: "images/wechat.png", // 图片路径相对于 src/ 目录
         enabled: true,
       },
       {
-        name: '支付宝',
-        key: 'alipay',
-        icon: 'fa-brands fa-alipay',
-        qrImage: 'images/alipay.png',
+        name: "支付宝",
+        key: "alipay",
+        icon: "fa-brands fa-alipay",
+        qrImage: "images/alipay.png",
         enabled: true,
       },
       {
-        name: 'PayPal',
-        key: 'paypal',
-        icon: 'fa-brands fa-paypal',
-        url: 'https://www.paypal.com/paypalme/yourname',
+        name: "PayPal",
+        key: "paypal",
+        icon: "fa-brands fa-paypal",
+        url: "https://www.paypal.com/paypalme/yourname",
         enabled: true,
       },
       {
-        name: '爱发电',
-        key: 'afdian',
-        icon: 'fa-solid fa-heart',
-        url: 'https://afdian.com/a/yourname',
+        name: "爱发电",
+        key: "afdian",
+        icon: "fa-solid fa-heart",
+        url: "https://afdian.com/a/yourname",
         enabled: true,
       },
     ],
@@ -384,7 +382,7 @@ window.HOMEPAGE_CONFIG = {
     },
     // Umami - 完整脚本标签，留空则不启用
     // 示例: '<script defer src="https://umami.example.com/script.js" data-website-id="xxx"></script>'
-    umami: '',
+    umami: "",
     // 自定义脚本 - 支持任意第三方统计代码
     // 留空数组则不启用
     customScripts: [],

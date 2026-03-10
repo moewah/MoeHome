@@ -418,30 +418,30 @@ function updateThemeSchemeList() {
     const effectiveMode = ThemeManager.getEffectiveMode();
     const currentScheme = ThemeManager.getActiveScheme(effectiveMode);
     const availableSchemes = ThemeManager.getAvailableSchemes(effectiveMode);
-    const locked = ThemeManager.locked[effectiveMode];
+    const defaultSchemeId = ThemeManager.defaultScheme[effectiveMode];
 
     // 清空列表
     schemeList.textContent = '';
 
-    // 添加默认选项
+    // 添加默认选项（使用兜底配色）
     const defaultItem = createThemeSchemeItem(null, {
         id: null,
-        name: '默认配色',
+        name: 'System Scheme',
         icon: 'fa-palette'
-    }, !currentScheme, false); // 默认配色：isActive 取决于当前是否无配色，永不锁定
+    }, !currentScheme, false);
     schemeList.appendChild(defaultItem);
 
     // 添加可用方案
     availableSchemes.forEach(scheme => {
         const isActive = currentScheme?.id === scheme.id;
-        const isLocked = locked === scheme.id;
-        const item = createThemeSchemeItem(scheme.id, scheme, isActive, isLocked);
+        const isDefault = defaultSchemeId === scheme.id;
+        const item = createThemeSchemeItem(scheme.id, scheme, isActive, isDefault);
         schemeList.appendChild(item);
     });
 }
 
 // 创建配色方案列表项
-function createThemeSchemeItem(schemeId, scheme, isActive, isLocked) {
+function createThemeSchemeItem(schemeId, scheme, isActive, isDefault) {
     const item = document.createElement('div');
     item.className = 'theme-scheme-item';
     item.setAttribute('role', 'option');
@@ -452,8 +452,8 @@ function createThemeSchemeItem(schemeId, scheme, isActive, isLocked) {
         item.setAttribute('aria-selected', 'true');
     }
 
-    if (isLocked) {
-        item.classList.add('is-locked');
+    if (isDefault) {
+        item.classList.add('is-default');
     }
 
     // 图标容器
@@ -477,17 +477,16 @@ function createThemeSchemeItem(schemeId, scheme, isActive, isLocked) {
         item.appendChild(checkEl);
     }
 
-    // 锁定标记
-    if (isLocked) {
-        const lockEl = document.createElement('i');
-        lockEl.className = 'fa-solid fa-lock theme-scheme-item-lock';
-        lockEl.title = '已锁定';
-        item.appendChild(lockEl);
+    // 默认配色标记（仅视觉提示）
+    if (isDefault) {
+        const defaultEl = document.createElement('i');
+        defaultEl.className = 'fa-solid fa-star theme-scheme-item-default';
+        defaultEl.title = 'Default Scheme';
+        item.appendChild(defaultEl);
     }
 
-    // 点击事件
+    // 点击事件（允许自由切换）
     item.addEventListener('click', () => {
-        if (isLocked) return;
         selectThemeScheme(schemeId);
     });
 
@@ -495,9 +494,7 @@ function createThemeSchemeItem(schemeId, scheme, isActive, isLocked) {
     item.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            if (!isLocked) {
-                selectThemeScheme(schemeId);
-            }
+            selectThemeScheme(schemeId);
         } else if (e.key === 'ArrowDown') {
             e.preventDefault();
             const next = item.nextElementSibling;

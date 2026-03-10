@@ -238,7 +238,7 @@ rss: {
     count: 4,
     openInNewTab: true,
     title: {
-        text: '近期更新',
+        text: 'Recent Posts',
         icon: 'fa-solid fa-newspaper'
     },
     display: {
@@ -283,7 +283,7 @@ contribution: {
 linksConfig: {
     enabled: true,    // 改成 false 禁用整个链接导航模块
     title: {
-        text: '链接导航',
+        text: 'Quick Links',
         icon: 'fa-solid fa-link',
     },
 },

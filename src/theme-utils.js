@@ -6,11 +6,10 @@
  * - Mode = light/dark，决定衍生色规则（透明度、阴影、玻璃效果）
  * - Scheme = 命名配色集合，独立于模式的颜色组合
  *
- * 配置优先级：locked[mode] > localStorage scheme > defaults[mode]
+ * 用户切换只在当前会话生效，刷新后恢复 config 定义的默认值
  */
 
 const ThemeManager = {
-    STORAGE_KEY: 'moewah-theme-preference',
     THEME_ATTRIBUTE: 'data-theme',
 
     /**
@@ -37,93 +36,90 @@ const ThemeManager = {
 
     /**
      * 内置预设配色方案
-     * 基于 Ghostty/Kitty 终端最受欢迎的主题
      */
     builtinSchemes: {
-        // ========== 暗色主题 ==========
         catppuccinMocha: {
             id: 'catppuccinMocha',
             name: 'Catppuccin Mocha',
-            icon: 'fa-mug-hot',
+            icon: 'fa-palette',
             modes: ['dark'],
             colors: {
-                accent: '#89b4fa',       // blue
-                bgPrimary: '#1e1e2e',   // base
-                bgSecondary: '#181825', // mantle
-                textPrimary: '#cdd6f4', // text
-                textSecondary: '#a6adc8', // subtext0
-                border: '#313244',      // surface0
+                accent: '#89b4fa',
+                bgPrimary: '#1e1e2e',
+                bgSecondary: '#181825',
+                textPrimary: '#cdd6f4',
+                textSecondary: '#a6adc8',
+                border: '#313244',
             }
         },
         kanagawaDragon: {
             id: 'kanagawaDragon',
             name: 'Kanagawa Dragon',
-            icon: 'fa-dragon',
+            icon: 'fa-palette',
             modes: ['dark'],
             colors: {
-                accent: '#c4746e',       // autumn red (signature)
-                bgPrimary: '#181616',   // dragon black
-                bgSecondary: '#1d1c1c', // dragon sumi ink 0
-                textPrimary: '#c5c9c5', // dragon white
-                textSecondary: '#7a8382', // dragon ash
-                border: '#282727',      // dragon sumi ink 1
+                accent: '#c4746e',
+                bgPrimary: '#181616',
+                bgSecondary: '#1d1c1c',
+                textPrimary: '#c5c9c5',
+                textSecondary: '#7a8382',
+                border: '#282727',
             }
         },
         oneDarkPro: {
             id: 'oneDarkPro',
             name: 'One Dark Pro',
-            icon: 'fa-circle-half-stroke',
+            icon: 'fa-palette',
             modes: ['dark'],
             colors: {
-                accent: '#61afef',       // blue (signature)
-                bgPrimary: '#282c34',   // background
-                bgSecondary: '#2c313a', // current line
-                textPrimary: '#abb2bf', // foreground
-                textSecondary: '#5c6370', // comment
-                border: '#3e4451',      // gutter
+                accent: '#61afef',
+                bgPrimary: '#282c34',
+                bgSecondary: '#2c313c',
+                textPrimary: '#abb2bf',
+                textSecondary: '#5c6370',
+                border: '#3e4451',
             }
         },
-        // ========== 亮色主题 ==========
         oneLight: {
             id: 'oneLight',
             name: 'One Light',
-            icon: 'fa-circle-half-stroke',
+            icon: 'fa-palette',
             modes: ['light'],
             colors: {
-                accent: '#4078f2',       // blue (signature)
-                bgPrimary: '#fafafa',   // background
-                bgSecondary: '#f0f0f0', // current line
-                textPrimary: '#383a42', // foreground
-                textSecondary: '#a0a1a7', // comment
-                border: '#e5e5e6',      // gutter
+                accent: '#4078f2',
+                bgPrimary: '#fafafa',
+                bgSecondary: '#f0f0f0',
+                textPrimary: '#383a42',
+                textSecondary: '#696c77',
+                border: '#e5e5e6',
             }
         },
         gruvboxLight: {
             id: 'gruvboxLight',
             name: 'Gruvbox Light',
-            icon: 'fa-fire',
+            icon: 'fa-palette',
             modes: ['light'],
             colors: {
-                accent: '#af3a03',      // orange (signature)
-                bgPrimary: '#fbf1c7',  // bg0
-                bgSecondary: '#f2e5bc', // bg1
-                textPrimary: '#3c3836', // fg1
-                textSecondary: '#665c54', // fg2
-                border: '#d5c4a1',     // bg2
+                accent: '#af3a03',
+                bgPrimary: '#fbf1c7',
+                bgSecondary: '#f2e5bc',
+                textPrimary: '#3c3836',
+                textSecondary: '#665c54',
+                border: '#d5c4a1',
             }
         },
         ayuLight: {
             id: 'ayuLight',
             name: 'Ayu Light',
-            icon: 'fa-feather',
+            icon: 'fa-palette',
             modes: ['light'],
             colors: {
-                accent: '#ff9940',       // orange accent
-                bgPrimary: '#fafafa',   // main background
-                bgSecondary: '#f3f3f3', // panel background
-                textPrimary: '#5c6166', // primary foreground
-                textSecondary: '#8a9199', // ui foreground
-                border: '#e6e6e6',      // ui border
+                accent: '#ff9940',
+                bgPrimary: '#fafafa',
+                bgSecondary: '#f3f3f3',
+                textPrimary: '#5c6166',
+                textSecondary: '#8a9199',
+                border: '#e6e6e6',
             }
         }
     },
@@ -166,8 +162,8 @@ const ThemeManager = {
      * 运行时主题数据
      */
     themes: {
-        light: { name: '浅色', icon: 'fa-sun', colors: {} },
-        dark: { name: '深色', icon: 'fa-moon', colors: {} }
+        light: { name: 'Light', icon: 'fa-sun', colors: {} },
+        dark: { name: 'Dark', icon: 'fa-moon', colors: {} }
     },
 
     /**
@@ -176,19 +172,24 @@ const ThemeManager = {
     schemes: {},
 
     /**
-     * 锁定配置
+     * 默认配置（从 config 加载）
      */
-    locked: {
+    defaultMode: 'light',
+    defaultScheme: {
         light: null,
         dark: null
     },
 
     /**
-     * 当前选中的配色方案
+     * 当前会话状态（刷新后重置）
+     * undefined = 未设置，使用 defaultScheme
+     * null = 用户明确选择 defaults
+     * string = 用户选择的配色方案 ID
      */
+    activeMode: undefined,
     activeSchemes: {
-        light: null,
-        dark: null
+        light: undefined,
+        dark: undefined
     },
 
     /**
@@ -196,9 +197,7 @@ const ThemeManager = {
      */
     init() {
         this.loadConfig();
-        this.loadSavedSchemes();
-        const savedTheme = this.getSavedTheme();
-        const effectiveTheme = this.getEffectiveTheme(savedTheme);
+        const effectiveTheme = this.getEffectiveTheme(this.getSavedTheme());
         this.applyTheme(effectiveTheme);
         this.setupSystemThemeListener();
     },
@@ -215,18 +214,22 @@ const ThemeManager = {
             return;
         }
 
-        // 加载锁定配置
-        if (config.locked) {
-            this.locked.light = config.locked.light || null;
-            this.locked.dark = config.locked.dark || null;
+        this.defaultMode = config.default || 'light';
+
+        if (config.defaultScheme) {
+            this.defaultScheme.light = config.defaultScheme.light || null;
+            this.defaultScheme.dark = config.defaultScheme.dark || null;
+        }
+        if (config.locked && !config.defaultScheme) {
+            this.defaultScheme.light = config.locked.light || null;
+            this.defaultScheme.dark = config.locked.dark || null;
+            console.info('[Theme] 检测到旧版 locked 配置，已自动迁移为 defaultScheme');
         }
 
-        // 加载默认配色
         const defaultsConfig = config.defaults || {};
         const lightDefaults = { ...this.defaults.light, ...(defaultsConfig.light || {}) };
         const darkDefaults = { ...this.defaults.dark, ...(defaultsConfig.dark || {}) };
 
-        // 检测旧版格式
         if (config.light && !config.defaults) {
             this.themes.light.colors = this.buildColors('light', { ...this.defaults.light, ...config.light }, null);
             this.themes.dark.colors = this.buildColors('dark', { ...this.defaults.dark, ...config.dark }, null);
@@ -236,21 +239,7 @@ const ThemeManager = {
             this.themes.dark.colors = this.buildColors('dark', darkDefaults, null);
         }
 
-        // 初始化内置方案
         this.initBuiltinSchemes();
-
-        // 加载用户自定义方案
-        if (config.schemes) {
-            Object.entries(config.schemes).forEach(([id, scheme]) => {
-                this.schemes[id] = {
-                    id,
-                    name: scheme.name || id,
-                    icon: scheme.icon || 'fa-palette',
-                    modes: scheme.modes || ['light', 'dark'],
-                    colors: scheme.colors
-                };
-            });
-        }
     },
 
     /**
@@ -265,58 +254,27 @@ const ThemeManager = {
     },
 
     /**
-     * 安全解析 localStorage 数据
-     * 兼容旧版本纯字符串格式（"dark", "light", "auto"）
-     */
-    safeParseStorage(saved) {
-        if (!saved) return null;
-        // 处理旧版本纯字符串格式
-        if (saved === 'dark' || saved === 'light' || saved === 'auto') {
-            return { mode: saved };
-        }
-        try {
-            return JSON.parse(saved);
-        } catch (e) {
-            return null;
-        }
-    },
-
-    /**
-     * 加载保存的配色方案设置
-     */
-    loadSavedSchemes() {
-        try {
-            const saved = localStorage.getItem(this.STORAGE_KEY);
-            if (saved) {
-                const data = this.safeParseStorage(saved);
-                if (data) {
-                    if (data.schemeLight !== undefined) {
-                        this.activeSchemes.light = data.schemeLight;
-                    }
-                    if (data.schemeDark !== undefined) {
-                        this.activeSchemes.dark = data.schemeDark;
-                    }
-                }
-            }
-        } catch (e) {
-            console.warn('[Theme] 无法读取保存的配色方案:', e);
-        }
-    },
-
-    /**
      * 获取模式适用的配色方案
      */
     getActiveScheme(mode) {
-        if (this.locked[mode]) {
-            const scheme = this.schemes[this.locked[mode]];
+        const savedSchemeId = this.activeSchemes[mode];
+
+        // 用户明确选择使用 defaults
+        if (savedSchemeId === null) {
+            return null;
+        }
+
+        // 用户选择了特定配色方案
+        if (savedSchemeId) {
+            const scheme = this.schemes[savedSchemeId];
             if (scheme && this.isSchemeCompatible(scheme, mode)) {
                 return scheme;
             }
         }
 
-        const savedSchemeId = this.activeSchemes[mode];
-        if (savedSchemeId) {
-            const scheme = this.schemes[savedSchemeId];
+        // 使用默认配色方案
+        if (this.defaultScheme[mode]) {
+            const scheme = this.schemes[this.defaultScheme[mode]];
             if (scheme && this.isSchemeCompatible(scheme, mode)) {
                 return scheme;
             }
@@ -333,16 +291,10 @@ const ThemeManager = {
     },
 
     /**
-     * 设置配色方案
+     * 设置配色方案（只在当前会话生效）
      */
     setScheme(schemeId, mode) {
-        if (this.locked[mode]) {
-            console.warn(`[Theme] 模式 ${mode} 的配色方案已被锁定为 ${this.locked[mode]}`);
-            return false;
-        }
-
         this.activeSchemes[mode] = schemeId;
-        this.saveSchemes();
 
         const currentMode = this.getEffectiveMode();
         if (currentMode === mode) {
@@ -351,25 +303,6 @@ const ThemeManager = {
 
         this.emitSchemeChange(schemeId, mode);
         return true;
-    },
-
-    /**
-     * 保存配色方案设置
-     */
-    saveSchemes() {
-        try {
-            const saved = localStorage.getItem(this.STORAGE_KEY);
-            const data = saved ? this.safeParseStorage(saved) : { mode: 'auto' };
-            if (!data) {
-                this.resetStorage();
-                return;
-            }
-            data.schemeLight = this.activeSchemes.light;
-            data.schemeDark = this.activeSchemes.dark;
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-        } catch (e) {
-            console.warn('[Theme] 无法保存配色方案:', e);
-        }
     },
 
     /**
@@ -434,22 +367,13 @@ const ThemeManager = {
             '--contribution-4': colors.accent,
 
             '--divider-glow': `rgba(${accentRgb}, 0.4)`,
-
             '--card-border-strong': `rgba(${accentRgb}, ${derive.cardBorderStrong})`,
             '--card-border-muted': `rgba(${accentRgb}, ${derive.cardBorderMuted})`,
 
-            '--glass-border-top': mode === 'light'
-                ? `rgba(0, 0, 0, 0.04)`
-                : `rgba(255, 255, 255, 0.08)`,
-            '--glass-border-bottom': mode === 'light'
-                ? `rgba(0, 0, 0, 0.08)`
-                : `rgba(0, 0, 0, 0.5)`,
-            '--glass-border-side': mode === 'light'
-                ? `rgba(0, 0, 0, 0.03)`
-                : `rgba(255, 255, 255, 0.03)`,
-            '--glass-outer-shadow': mode === 'light'
-                ? `rgba(0, 0, 0, 0.1)`
-                : `rgba(0, 0, 0, 0.4)`,
+            '--glass-border-top': mode === 'light' ? `rgba(0, 0, 0, 0.04)` : `rgba(255, 255, 255, 0.08)`,
+            '--glass-border-bottom': mode === 'light' ? `rgba(0, 0, 0, 0.08)` : `rgba(0, 0, 0, 0.5)`,
+            '--glass-border-side': mode === 'light' ? `rgba(0, 0, 0, 0.03)` : `rgba(255, 255, 255, 0.03)`,
+            '--glass-outer-shadow': mode === 'light' ? `rgba(0, 0, 0, 0.1)` : `rgba(0, 0, 0, 0.4)`,
             '--glass-inner-glow': `rgba(${accentRgb}, 0.03)`,
             '--glass-hover-border': `rgba(${accentRgb}, ${mode === 'light' ? 0.25 : 0.15})`,
             '--glass-hover-glow': `rgba(${accentRgb}, 0.05)`,
@@ -472,9 +396,7 @@ const ThemeManager = {
             cursor: colors.accent,
         };
 
-        if (!terminal) {
-            return defaults;
-        }
+        if (!terminal) return defaults;
 
         return {
             bg: terminal.bg || defaults.bg,
@@ -524,23 +446,14 @@ const ThemeManager = {
     },
 
     /**
-     * 获取保存的主题偏好
+     * 获取当前主题模式
      */
     getSavedTheme() {
-        try {
-            const saved = localStorage.getItem(this.STORAGE_KEY);
-            if (saved) {
-                const data = this.safeParseStorage(saved);
-                return data?.mode || 'auto';
-            }
-        } catch (e) {
-            // 忽略解析错误
-        }
-        return 'auto';
+        return this.activeMode !== undefined ? this.activeMode : this.defaultMode;
     },
 
     /**
-     * 设置并保存主题
+     * 设置主题模式（只在当前会话生效）
      */
     setSavedTheme(theme) {
         if (!['auto', 'light', 'dark'].includes(theme)) {
@@ -548,28 +461,9 @@ const ThemeManager = {
             return;
         }
 
-        try {
-            const saved = localStorage.getItem(this.STORAGE_KEY);
-            const data = saved ? this.safeParseStorage(saved) : { mode: 'auto' };
-            if (!data) {
-                this.resetStorage();
-                return;
-            }
-            data.mode = theme;
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-        } catch (e) {
-            console.warn('[Theme] 无法保存主题:', e);
-        }
-
+        this.activeMode = theme;
         this.applyTheme(this.getEffectiveTheme(theme));
         this.emitThemeChange(theme);
-    },
-
-    /**
-     * 重置存储格式
-     */
-    resetStorage() {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify({ mode: 'auto' }));
     },
 
     /**
@@ -688,11 +582,7 @@ const ThemeManager = {
      * 获取主题标签
      */
     getThemeLabel(theme) {
-        const labels = {
-            auto: '跟随系统',
-            light: '浅色',
-            dark: '深色'
-        };
+        const labels = { auto: 'Auto', light: 'Light', dark: 'Dark' };
         return labels[theme] || theme;
     },
 
@@ -700,16 +590,11 @@ const ThemeManager = {
      * 获取主题图标
      */
     getThemeIcon(theme) {
-        const icons = {
-            auto: 'fa-desktop',
-            light: 'fa-sun',
-            dark: 'fa-moon'
-        };
+        const icons = { auto: 'fa-desktop', light: 'fa-sun', dark: 'fa-moon' };
         return icons[theme] || 'fa-circle';
     }
 };
 
-// 模块导出支持
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = ThemeManager;
 }

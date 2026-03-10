@@ -426,11 +426,11 @@
                 <!-- Right Actions -->
                 <div class="navbar-actions">
                     <!-- Theme Menu Toggle - 统一的主题设置按钮 -->
-                    <button class="nav-theme-toggle" id="nav-theme-toggle" aria-label="主题设置" title="主题设置">
+                    <button class="nav-theme-toggle" id="nav-theme-toggle" aria-label="Theme Settings" title="Theme Settings">
                         <i class="fa-solid fa-palette"></i>
                     </button>
                     <!-- Mobile Menu Toggle -->
-                    <button class="navbar-toggle" id="navbar-toggle" aria-label="菜单">
+                    <button class="navbar-toggle" id="navbar-toggle" aria-label="Menu">
                         <i class="fa-solid fa-bars"></i>
                     </button>
                 </div>
@@ -441,19 +441,19 @@
         <div class="theme-dropdown" id="theme-dropdown" aria-hidden="true">
             <!-- 模式选择区 -->
             <div class="theme-section">
-                <div class="theme-section-label">模式</div>
+                <div class="theme-section-label">Theme Mode</div>
                 <div class="theme-mode-list" id="theme-mode-list" role="listbox">
                     <button class="theme-mode-item" data-mode="auto" role="option" tabindex="0">
                         <i class="fa-solid fa-desktop"></i>
-                        <span>跟随系统</span>
+                        <span>Auto</span>
                     </button>
                     <button class="theme-mode-item" data-mode="light" role="option" tabindex="0">
                         <i class="fa-solid fa-sun"></i>
-                        <span>浅色</span>
+                        <span>Light</span>
                     </button>
                     <button class="theme-mode-item" data-mode="dark" role="option" tabindex="0">
                         <i class="fa-solid fa-moon"></i>
-                        <span>深色</span>
+                        <span>Dark</span>
                     </button>
                 </div>
             </div>
@@ -463,7 +463,7 @@
 
             <!-- 配色方案区 -->
             <div class="theme-section">
-                <div class="theme-section-label">配色方案</div>
+                <div class="theme-section-label">Color Schemes</div>
                 <div class="theme-scheme-list" id="theme-scheme-list" role="listbox">
                     <!-- 由 JS 动态生成 -->
                 </div>
@@ -477,7 +477,7 @@
         <aside class="nav-sidebar" id="nav-sidebar">
             <div class="nav-sidebar-header">
                 <span class="nav-sidebar-title">Menu</span>
-                <button class="nav-sidebar-close" id="nav-sidebar-close" aria-label="关闭菜单">
+                <button class="nav-sidebar-close" id="nav-sidebar-close" aria-label="Close Menu">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -489,9 +489,9 @@
                 {{NAV_CUSTOM_MENUS_MOBILE}}
             </nav>
             <div class="nav-sidebar-footer">
-                <button class="nav-sidebar-theme" id="nav-sidebar-theme" aria-label="主题切换">
+                <button class="nav-sidebar-theme" id="nav-sidebar-theme" aria-label="Theme Mode">
                     <i class="fa-solid fa-desktop"></i>
-                    <span>主题切换</span>
+                    <span>Theme Mode</span>
                 </button>
             </div>
         </aside>
@@ -505,7 +505,7 @@
         <!-- Main content -->
         <div class="container">
             <!-- Skeleton Screen -->
-            <div class="profile skeleton-container" id="skeleton-screen" role="status" aria-label="内容加载中" aria-live="polite">
+            <div class="profile skeleton-container" id="skeleton-screen" role="status" aria-label="Loading content" aria-live="polite">
                 <span class="sr-only">正在加载页面内容，请稍候...</span>
                 <div class="skeleton-avatar skeleton"></div>
                 <div class="skeleton-name skeleton"></div>
@@ -568,7 +568,7 @@
                             <span class="prompt">$ </span>
                             <span class="command">./wisdom.sh</span>
                         </div>
-                        <div class="output" id="quote-output" aria-live="polite" aria-label="名人语录"><span class="cursor-blink" aria-hidden="true"></span></div>
+                        <div class="output" id="quote-output" aria-live="polite" aria-label="Quotes"><span class="cursor-blink" aria-hidden="true"></span></div>
                     </div>
                 </div>
 

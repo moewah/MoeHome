@@ -556,9 +556,9 @@ body {
     background: var(--active-bg);
 }
 
-.theme-scheme-item.is-locked {
-    opacity: 0.6;
-    cursor: not-allowed;
+/* 默认配色标记（仅视觉提示，不阻止交互） */
+.theme-scheme-item.is-default {
+    position: relative;
 }
 
 .theme-scheme-item-icon {
@@ -569,9 +569,13 @@ body {
     justify-content: center;
     border-radius: 4px;
     background: var(--bg-secondary);
-    color: var(--accent);
+    color: var(--text-secondary);
     font-size: 12px;
     flex-shrink: 0;
+}
+
+.theme-scheme-item.is-active .theme-scheme-item-icon {
+    color: var(--accent);
 }
 
 .theme-scheme-item-name {
@@ -601,14 +605,14 @@ body {
     display: block;
 }
 
-.theme-scheme-item-lock {
+.theme-scheme-item-default {
     width: 12px;
     height: 12px;
     color: var(--text-secondary);
     margin-left: 4px;
 }
 
-.theme-scheme-item.is-locked .theme-scheme-item-lock {
+.theme-scheme-item.is-default .theme-scheme-item-default {
     display: block;
 }
 

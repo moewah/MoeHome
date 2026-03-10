@@ -198,7 +198,7 @@ function extractLinksConfig() {
     if (!configMatch) {
         return {
             enabled: true,
-            titleText: '链接导航',
+            titleText: 'Quick Links',
             titleIcon: 'fa-solid fa-link',
         };
     }
@@ -222,7 +222,7 @@ function extractDonationConfig() {
     if (!configMatch) {
         return {
             enabled: false,
-            titleText: '赞赏支持',
+            titleText: 'Support Me',
             titleIcon: 'fa-solid fa-mug-hot',
             message: '如果我的内容对你有帮助，欢迎请我喝杯咖啡~',
             methods: [],
@@ -728,7 +728,7 @@ function extractRSSConfig() {
             url: '',
             count: 6,
             openInNewTab: true,
-            titleText: '近期更新',
+            titleText: 'Recent Posts',
             titleIcon: 'fa-solid fa-newspaper',
             showDate: true,
             showDescription: true,
@@ -1233,7 +1233,7 @@ function extractProjectsConfig() {
     if (!projectsMatch) {
         return {
             enabled: false,
-            titleText: '我的项目',
+            titleText: 'Projects',
             titleIcon: 'fa-solid fa-folder-open',
             githubUser: '',
             count: 4,
