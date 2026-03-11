@@ -2552,14 +2552,14 @@ body {
 /* ========== 项目轮播 ========== */
 /*
  * 架构设计：
- * - wrapper: overflow:hidden，不设置左右padding，确保与上下板块对齐
+ * - wrapper: overflow:hidden，左右预留1px为hover边框显示空间
  * - track: 承载卡片，自由移动
  * - 卡片宽度由JavaScript动态计算，确保精确填满可见区域
  */
 .projects-carousel-wrapper {
     overflow: hidden;
-    /* 只保留上下padding，左右padding为0确保对齐 */
-    padding: var(--space-2) 0 var(--space-3) 0;
+    /* 左右各预留 1px 为 hover 边框显示空间 */
+    padding: var(--space-2) 1px var(--space-3) 1px;
 }
 
 .carousel-track {
