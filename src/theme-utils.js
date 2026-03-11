@@ -114,7 +114,7 @@ const ThemeManager = {
         },
         nordSnowStorm: {
             id: 'nordSnowStorm',
-            name: '北极冰川',
+            name: '冰川青',
             icon: 'fa-snowflake',
             modes: ['light'],
             colors: {

@@ -71,7 +71,7 @@ npm run serve
 | 方案 ID | 名称 | 类型 | 说明 |
 |---------|------|------|------|
 | `coralOrange` | 珊瑚橙 | 亮色 | 系统默认 |
-| `nordSnowStorm` | 北极冰川 | 亮色 | 北极冰川风格 |
+| `nordSnowStorm` | 冰川青 | 亮色 | Nord 霜雪青色调 |
 | `gruvboxLight` | 复古风 | 亮色 | 复古暖色调 |
 | `ayuLight` | 简约风 | 亮色 | 简约清爽 |
 | `cyberGreen` | 赛博绿 | 暗色 | 系统默认 |
