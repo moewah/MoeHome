@@ -44,6 +44,9 @@ function initPage() {
 
     // 初始化滚动进度按钮
     initScrollProgressButton();
+
+    // 初始化音乐播放器
+    initMusicPlayer();
 }
 
 // ========== 导航栏初始化 ==========
@@ -1966,6 +1969,308 @@ function initScrollProgressButton() {
 
     // 初始化时执行一次
     handleScroll();
+}
+
+// ========== 音乐播放器模块 ==========
+/**
+ * MusicPlayer - 简约音乐播放器组件
+ * 支持 Meting API (带备用API) 和本地音乐播放
+ */
+class MusicPlayer {
+    constructor(config) {
+        this.config = config;
+        this.audio = new Audio();
+        this.playlist = [];
+        this.currentIndex = 0;
+        this.isPlaying = false;
+        this.isLoading = false;
+        this.playMode = config.playMode || 'list'; // list, one, random
+
+        // DOM 元素
+        this.elements = {};
+
+        // 初始化
+        this.init();
+    }
+
+    init() {
+        // 获取 DOM 元素
+        this.elements = {
+            player: document.getElementById('music-player'),
+            playBtn: document.getElementById('music-play'),
+            playIcon: document.getElementById('music-play-icon'),
+            prevBtn: document.getElementById('music-prev'),
+            nextBtn: document.getElementById('music-next'),
+            volumeBtn: document.getElementById('music-volume-btn'),
+            volumeIcon: document.getElementById('music-volume-icon'),
+            volumeSlider: document.getElementById('music-volume-slider'),
+            volumeFill: document.getElementById('music-volume-fill'),
+            progressFill: document.getElementById('music-progress-fill'),
+        };
+
+        if (!this.elements.player) return;
+
+        // 设置初始音量
+        this.audio.volume = this.config.volume || 0.5;
+
+        // 绑定事件
+        this.bindEvents();
+
+        // 根据模式加载播放列表
+        if (this.config.mode === 'meting') {
+            this.loadMetingPlaylist();
+        } else if (this.config.mode === 'local') {
+            this.loadLocalPlaylist();
+        }
+    }
+
+    bindEvents() {
+        // 播放/暂停
+        this.elements.playBtn?.addEventListener('click', () => this.togglePlay());
+
+        // 上一曲/下一曲
+        this.elements.prevBtn?.addEventListener('click', () => this.prev());
+        this.elements.nextBtn?.addEventListener('click', () => this.next());
+
+        // 音量控制
+        this.elements.volumeBtn?.addEventListener('click', () => this.toggleMute());
+        this.elements.volumeSlider?.addEventListener('click', (e) => this.setVolumeFromClick(e));
+
+        // 音频事件
+        this.audio.addEventListener('timeupdate', () => this.updateProgress());
+        this.audio.addEventListener('ended', () => this.onEnded());
+        this.audio.addEventListener('play', () => this.onPlay());
+        this.audio.addEventListener('pause', () => this.onPause());
+        this.audio.addEventListener('waiting', () => this.setLoading(true));
+        this.audio.addEventListener('canplay', () => this.setLoading(false));
+        this.audio.addEventListener('error', (e) => this.onError(e));
+    }
+
+    // 加载 Meting 播放列表（支持备用 API）
+    async loadMetingPlaylist() {
+        const { meting } = this.config;
+        if (!meting || !meting.id) {
+            console.warn('MoeWah Music: 未配置歌单 ID');
+            return;
+        }
+
+        this.setLoading(true);
+
+        // 获取 API 列表
+        const apis = meting.apis || [];
+        if (apis.length === 0) {
+            console.warn('MoeWah Music: 未配置 API');
+            this.setLoading(false);
+            return;
+        }
+
+        // 尝试每个 API
+        for (let i = 0; i < apis.length; i++) {
+            const apiUrl = apis[i]
+                .replace(':server', meting.server)
+                .replace(':type', meting.type)
+                .replace(':id', meting.id);
+
+            try {
+                const url = apiUrl + (apiUrl.includes('?') ? '&' : '?') + 'r=' + Math.random();
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (Array.isArray(data) && data.length > 0) {
+                    this.playlist = data.map(song => song.url).filter(Boolean);
+
+                    if (this.playlist.length > 0) {
+                        this.currentIndex = 0;
+                        console.log(`MoeWah Music: 成功加载 ${this.playlist.length} 首歌曲 (API ${i + 1})`);
+
+                        if (this.config.autoplay) {
+                            this.play();
+                        }
+                        this.setLoading(false);
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.warn(`MoeWah Music: API ${i + 1} 失败`, error.message);
+            }
+        }
+
+        console.error('MoeWah Music: 所有 API 都失败了');
+        this.setLoading(false);
+    }
+
+    // 加载本地播放列表（URL 数组）
+    loadLocalPlaylist() {
+        const { local } = this.config;
+        if (!local || !Array.isArray(local) || local.length === 0) {
+            console.warn('MoeWah Music: 未配置本地音乐');
+            return;
+        }
+
+        this.playlist = local.filter(url => typeof url === 'string' && url.trim());
+        this.currentIndex = 0;
+
+        if (this.playlist.length > 0) {
+            console.log(`MoeWah Music: 成功加载 ${this.playlist.length} 首本地音乐`);
+
+            if (this.config.autoplay) {
+                this.play();
+            }
+        }
+    }
+
+    // 播放控制
+    togglePlay() {
+        if (this.isPlaying) {
+            this.pause();
+        } else {
+            this.play();
+        }
+    }
+
+    play() {
+        if (this.playlist.length === 0) return;
+
+        const url = this.playlist[this.currentIndex];
+        if (!url) {
+            this.next();
+            return;
+        }
+
+        this.audio.src = url;
+        this.audio.play().catch(err => {
+            if (err.name === 'NotAllowedError') {
+                this.onPause();
+            }
+        });
+    }
+
+    pause() {
+        this.audio.pause();
+    }
+
+    prev() {
+        if (this.playlist.length === 0) return;
+
+        if (this.playMode === 'random') {
+            this.currentIndex = Math.floor(Math.random() * this.playlist.length);
+        } else {
+            this.currentIndex = (this.currentIndex - 1 + this.playlist.length) % this.playlist.length;
+        }
+
+        if (this.isPlaying) {
+            this.play();
+        }
+    }
+
+    next() {
+        if (this.playlist.length === 0) return;
+
+        if (this.playMode === 'random') {
+            this.currentIndex = Math.floor(Math.random() * this.playlist.length);
+        } else {
+            this.currentIndex = (this.currentIndex + 1) % this.playlist.length;
+        }
+
+        if (this.isPlaying) {
+            this.play();
+        }
+    }
+
+    // 音量控制
+    setVolume(volume) {
+        this.audio.volume = Math.max(0, Math.min(1, volume));
+        this.updateVolumeUI();
+    }
+
+    setVolumeFromClick(e) {
+        const rect = this.elements.volumeSlider.getBoundingClientRect();
+        const volume = (e.clientX - rect.left) / rect.width;
+        this.setVolume(volume);
+    }
+
+    toggleMute() {
+        if (this.audio.volume > 0) {
+            this._previousVolume = this.audio.volume;
+            this.setVolume(0);
+        } else {
+            this.setVolume(this._previousVolume || 0.5);
+        }
+    }
+
+    updateVolumeUI() {
+        const volume = this.audio.volume;
+
+        if (this.elements.volumeFill) {
+            this.elements.volumeFill.style.width = `${volume * 100}%`;
+        }
+
+        if (this.elements.volumeIcon) {
+            let iconClass = 'fa-volume-high';
+            if (volume === 0) {
+                iconClass = 'fa-volume-xmark';
+            } else if (volume < 0.5) {
+                iconClass = 'fa-volume-low';
+            }
+            this.elements.volumeIcon.className = `fa-solid ${iconClass}`;
+        }
+    }
+
+    updateProgress() {
+        if (this.audio.duration && this.elements.progressFill) {
+            const progress = (this.audio.currentTime / this.audio.duration) * 100;
+            this.elements.progressFill.style.width = `${progress}%`;
+        }
+    }
+
+    onPlay() {
+        this.isPlaying = true;
+        this.elements.playBtn?.classList.add('playing');
+        if (this.elements.playIcon) {
+            this.elements.playIcon.className = 'fa-solid fa-pause';
+        }
+    }
+
+    onPause() {
+        this.isPlaying = false;
+        this.elements.playBtn?.classList.remove('playing');
+        if (this.elements.playIcon) {
+            this.elements.playIcon.className = 'fa-solid fa-play';
+        }
+    }
+
+    onEnded() {
+        if (this.playMode === 'one') {
+            this.play();
+        } else {
+            this.next();
+        }
+    }
+
+    onError() {
+        this.setLoading(false);
+        setTimeout(() => this.next(), 1000);
+    }
+
+    setLoading(loading) {
+        this.isLoading = loading;
+    }
+}
+
+// 初始化音乐播放器
+function initMusicPlayer() {
+    const playerEl = document.getElementById('music-player');
+    if (!playerEl) return;
+
+    const configAttr = playerEl.dataset.config;
+    if (!configAttr) return;
+
+    try {
+        const config = JSON.parse(configAttr);
+        new MusicPlayer(config);
+    } catch (e) {
+        console.error('MoeWah Music: 配置解析失败', e);
+    }
 }
 
 // ========== 页面加载完成后初始化 ==========

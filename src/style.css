@@ -1235,6 +1235,139 @@ body {
     display: none;
 }
 
+/* ========== Music Player (简约版) ========== */
+.music-player {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-5);
+    padding: 12px 0 14px;
+    margin: 28px 0 40px;
+    position: relative;
+}
+
+/* 播放控制按钮 */
+.music-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.music-btn:hover {
+    color: var(--accent);
+    opacity: 1;
+}
+
+.music-btn:active {
+    opacity: 0.6;
+}
+
+/* 播放中的按钮状态 */
+.music-btn--play.playing {
+    color: var(--accent);
+    opacity: 1;
+}
+
+/* 音量控制 */
+.music-volume {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-left: var(--space-1);
+}
+
+.music-volume-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease;
+    opacity: 0.7;
+}
+
+.music-volume-btn:hover {
+    color: var(--accent);
+    opacity: 1;
+}
+
+/* 音量滑块 */
+.music-volume-slider {
+    position: relative;
+    width: 50px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.music-volume-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: var(--accent);
+    border-radius: 1px;
+    transition: width var(--duration-fast) ease;
+}
+
+/* 进度条 - 沿用分割线设计 */
+.music-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--divider-glow, var(--border)) 15%,
+        var(--divider-glow, var(--border)) 50%,
+        var(--divider-glow, var(--border)) 85%,
+        transparent 100%
+    );
+}
+
+.music-progress-fill {
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--accent) 15%,
+        var(--accent) 85%,
+        transparent 100%
+    );
+    width: 0%;
+    transition: width 0.1s linear;
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+    .music-player {
+        gap: var(--space-4);
+        margin: 24px 0;
+    }
+
+    .music-volume-slider {
+        width: 40px;
+    }
+}
+
 /* ========== Terminal-style description ========== */
 .terminal {
     background: var(--terminal-bg);
@@ -2569,7 +2702,7 @@ body {
 /* ========== 项目轮播 ========== */
 /*
  * 架构设计：
- * - wrapper: overflow:hidden，左右预留1px为hover边框显示空间
+ * - wrapper: overflow:hidden，不设置左右padding，确保与上下板块对齐
  * - track: 承载卡片，自由移动
  * - 卡片宽度由JavaScript动态计算，确保精确填满可见区域
  */

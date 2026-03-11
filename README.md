@@ -24,6 +24,7 @@
 - 📦 **易部署** - 构建输出即插即用，支持任意静态托管
 - 🐙 **GitHub 集成** - 自动展示项目和贡献图（支持真实/随机数据）
 - 📰 **RSS 聚合** - 构建时预获取博客文章，无运行时延迟
+- 🎵 **音乐播放器** - 支持 Meting API 和本地音乐，简约设计融入页面
 - 📊 **多统计支持** - Google Analytics、Clarity、Umami、自定义脚本
 
 ## 快速开始
@@ -188,6 +189,44 @@ quotes: [
     "Be water, my friend."
 ]
 ```
+
+### 音乐播放器
+
+简约风格的音乐播放器，位于头像与终端之间：
+
+```javascript
+music: {
+    enabled: true,              // 是否启用（禁用时显示分割线）
+    volume: 0.5,                // 默认音量 (0-1)
+    playMode: 'list',           // 播放模式: list=列表循环, one=单曲循环, random=随机
+    mode: 'meting',             // 音乐来源: meting=在线API, local=本地文件
+
+    // Meting API 模式
+    meting: {
+        server: 'netease',      // 平台: netease | tencent | kugou | xiami | baidu
+        type: 'playlist',       // 类型: song | playlist | album | search | artist
+        id: '10046455237',      // 歌单/单曲 ID
+        apis: [                 // API 列表（按顺序尝试）
+            'https://api.i-meto.com/meting/api?server=:server&type=:type&id=:id&r=:r',
+            'https://api.injahow.cn/meting/?server=:server&type=:type&id=:id',
+        ],
+    },
+
+    // 本地音乐模式（音乐文件放 src/music/ 目录）
+    local: [
+        'music/song1.mp3',
+        'music/song2.mp3',
+    ],
+}
+```
+
+| 配置 | 说明 |
+|------|------|
+| `enabled` | 是否启用，禁用时显示原分割线 |
+| `mode` | `meting`=在线音乐，`local`=本地文件 |
+| `meting.server` | 音乐平台：`netease`/`tencent`/`kugou` 等 |
+| `meting.id` | 歌单 ID，从平台分享链接中获取 |
+| `local` | 本地音乐路径数组，相对于 `src/` 目录 |
 
 ### 博客文章 RSS
 
@@ -392,6 +431,7 @@ MoeHome/
 │   ├── config.js           # 配置文件
 │   ├── style.css           # 样式文件
 │   ├── theme-utils.js      # 主题工具函数
+│   ├── music/              # 本地音乐文件（可选）
 │   └── images/             # 图片资源
 │       ├── avatar.webp     # 默认头像
 │       ├── screenshot-full.png  # 预览截图

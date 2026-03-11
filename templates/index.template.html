@@ -227,6 +227,7 @@
             .skeleton-tagline { width: clamp(180px, 40vw, 300px); height: clamp(16px, 2vw, 24px); border-radius: 6px; margin: 0 auto 40px; }
             .skeleton-terminal { width: 100%; max-width: 600px; min-height: 140px; border-radius: 12px; margin: 0 auto 40px; }
             .skeleton-divider { width: 100%; height: 1px; margin: 48px 0; }
+            .skeleton-music { width: 200px; height: 24px; margin: 28px auto 40px; border-radius: 4px; }
             .skeleton-footer { width: clamp(150px, 25vw, 220px); height: 16px; border-radius: 6px; margin: 20px auto; }
 
             /* Content hidden state */
@@ -285,6 +286,7 @@
                 .container { padding-top: calc(var(--navbar-height) + 32px); }
                 /* 移动端骨架屏位置同步调整 */
                 .skeleton-container { top: calc(var(--navbar-height) + 32px); }
+                .skeleton-music { width: 160px; margin: 24px auto 36px; }
             }
             @media (min-width: 769px) {
                 .navbar-menu { display: flex; }
@@ -525,6 +527,7 @@
                 <div class="skeleton-avatar skeleton"></div>
                 <div class="skeleton-name skeleton"></div>
                 <div class="skeleton-tagline skeleton"></div>
+                {{SKELETON_MUSIC}}
                 <div class="skeleton-terminal skeleton"></div>
                 {{SKELETON_RSS}}
                 {{SKELETON_PROJECTS}}
@@ -555,8 +558,8 @@
                     <span class="highlight">{{TAGLINE_HIGHLIGHT}}</span>
                 </p>
 
-                <!-- Divider -->
-                <div class="divider lazy-load" data-delay="1"></div>
+                <!-- Music Player or Divider -->
+                {{MUSIC_PLAYER}}
 
                 <!-- Terminal -->
                 <div class="terminal lazy-load" id="terminal" data-delay="2">

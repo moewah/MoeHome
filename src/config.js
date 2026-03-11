@@ -138,6 +138,42 @@ window.HOMEPAGE_CONFIG = {
     quoteDeleteSpeed: 42, // ms per character（删除速度，比打字快）
   },
 
+  // ========== 音乐播放器配置 ==========
+  music: {
+    enabled: false, // 是否启用音乐播放器（启用后替换头像与终端之间的分割线）
+    volume: 0.5, // 默认音量 (0-1，0.5代表50%音量)
+    autoplay: false, // 是否自动播放（注意：大多数浏览器会阻止自动播放）
+
+    // 播放模式："list"=列表循环, "one"=单曲循环, "random"=随机播放
+    playMode: "list",
+
+    // 使用方式："meting" 使用 Meting API，"local" 使用本地音乐列表
+    mode: "meting",
+
+    // Meting API 配置（当 mode 为 "meting" 时使用）
+    meting: {
+      // 音乐平台：netease, tencent, kugou, xiami, baidu
+      server: "netease",
+      // 类型：song=单曲, playlist=歌单, album=专辑, search=搜索, artist=艺术家
+      type: "playlist",
+      // 歌单/专辑/单曲 ID 或搜索关键词
+      id: "",
+      // API 地址列表（按顺序尝试）
+      apis: [
+        "https://api.i-meto.com/meting/api?server=:server&type=:type&id=:id&r=:r",
+        "https://api.injahow.cn/meting/?server=:server&type=:type&id=:id",
+        "https://api.moeyao.cn/meting/?server=:server&type=:type&id=:id",
+      ],
+    },
+
+    // 本地音乐配置（当 mode 为 "local" 时使用）
+    // 填写相对于 config.js 的音乐文件路径
+    local: [
+      // "music/song1.mp3",
+      // "music/song2.mp3",
+    ],
+  },
+
   // ========== RSS 文章配置 ==========
   rss: {
     enabled: false, // 设置为 true 启用

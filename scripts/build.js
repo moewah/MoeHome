@@ -852,6 +852,7 @@ function generateAnalyticsHTML(config) {
     return scripts;
 }
 
+// 生成链接 HTML
 // ========== 邮箱反爬虫 ==========
 /**
  * 编码邮箱地址（Base64 + 字符反转双重保护）
@@ -917,7 +918,6 @@ function generateLinkHTML(link) {
                     </a>`;
 }
 
-// 生成链接 HTML
 function generateLinksHTML(links) {
     // 过滤掉未启用的链接
     const enabledLinks = links.filter(link => link.enabled !== false);
@@ -1016,6 +1016,56 @@ function generateSkeletonNoticeHTML(notice) {
     }
 
     return '<div class="skeleton-notice skeleton"></div>';
+}
+
+// 生成音乐播放器 HTML（简约版）
+function generateMusicPlayerHTML(music) {
+    if (!music.enabled) {
+        // 音乐播放器禁用时，显示原始分割线
+        return '<!-- Divider -->\n                <div class="divider lazy-load" data-delay="1"></div>';
+    }
+
+    // 将配置序列化为 JSON 供前端 JS 使用
+    const musicConfigJSON = JSON.stringify({
+        volume: music.volume,
+        autoplay: music.autoplay,
+        playMode: music.playMode,
+        mode: music.mode,
+        meting: music.meting,
+        local: music.local,
+    }).replace(/"/g, '&quot;');
+
+    return `<!-- Music Player -->
+                <div class="music-player lazy-load" data-delay="1" id="music-player" data-config="${musicConfigJSON}">
+                    <button class="music-btn music-btn--prev" id="music-prev" title="上一曲" aria-label="上一曲">
+                        <i class="fa-solid fa-backward-step"></i>
+                    </button>
+                    <button class="music-btn music-btn--play" id="music-play" title="播放" aria-label="播放">
+                        <i class="fa-solid fa-play" id="music-play-icon"></i>
+                    </button>
+                    <button class="music-btn music-btn--next" id="music-next" title="下一曲" aria-label="下一曲">
+                        <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                    <div class="music-volume">
+                        <button class="music-volume-btn" id="music-volume-btn" title="音量" aria-label="音量">
+                            <i class="fa-solid fa-volume-high" id="music-volume-icon"></i>
+                        </button>
+                        <div class="music-volume-slider" id="music-volume-slider">
+                            <div class="music-volume-fill" id="music-volume-fill" style="width: ${music.volume * 100}%"></div>
+                        </div>
+                    </div>
+                    <div class="music-progress">
+                        <div class="music-progress-fill" id="music-progress-fill"></div>
+                    </div>
+                </div>`;
+}
+
+// 生成骨架屏音乐播放器占位
+function generateSkeletonMusicHTML(music) {
+    if (!music.enabled) {
+        return '';
+    }
+    return '<div class="skeleton-music skeleton"></div>';
 }
 
 // 生成页脚 HTML（单行居中布局）
@@ -1371,6 +1421,89 @@ function extractContributionConfig() {
         enabled: enabledMatch ? enabledMatch[1] === 'true' : true,
         useRealData: useRealDataMatch ? useRealDataMatch[1] === 'true' : true,
         githubUser: githubUserMatch ? githubUserMatch[1].trim() : '',
+    };
+}
+
+// 提取 Music 配置
+function extractMusicConfig() {
+    const musicMatch = configContent.match(/music:\s*\{([\s\S]*?)(?=\n\s*\},?\s*\n\s*\/\/ =|\n\s*\},?\s*$)/);
+    if (!musicMatch) {
+        return {
+            enabled: false,
+            volume: 0.5,
+            autoplay: false,
+            playMode: 'list',
+            mode: 'meting',
+            meting: {
+                server: 'netease',
+                type: 'playlist',
+                id: '',
+                apis: [],
+            },
+            local: [],
+        };
+    }
+
+    const musicContent = musicMatch[1];
+
+    // 基础配置
+    const enabledMatch = musicContent.match(/enabled:\s*(true|false)/);
+    const volumeMatch = musicContent.match(/volume:\s*([0-9.]+)/);
+    const autoplayMatch = musicContent.match(/autoplay:\s*(true|false)/);
+    const playModeMatch = musicContent.match(/playMode:\s*['"`]([^'"`]+)['"`]/);
+    const modeMatch = musicContent.match(/mode:\s*['"`]([^'"`]+)['"`]/);
+
+    // Meting 配置
+    const metingMatch = musicContent.match(/meting:\s*\{([\s\S]*?)\n\s*\}/);
+    let metingConfig = {
+        server: 'netease',
+        type: 'playlist',
+        id: '',
+        apis: [],
+    };
+
+    if (metingMatch) {
+        const metingContent = metingMatch[1];
+        const serverMatch = metingContent.match(/server:\s*['"`]([^'"`]+)['"`]/);
+        const typeMatch = metingContent.match(/type:\s*['"`]([^'"`]+)['"`]/);
+        const idMatch = metingContent.match(/id:\s*['"`]([^'"`]+)['"`]/);
+
+        // 提取 apis 数组
+        const apisMatch = metingContent.match(/apis:\s*\[([\s\S]*?)\]/);
+        let apis = [];
+        if (apisMatch) {
+            apis = apisMatch[1]
+                .match(/['"`]([^'"`]+)['"`]/g)
+                ?.map(s => s.replace(/['"`]/g, '').trim())
+                .filter(Boolean) || [];
+        }
+
+        metingConfig = {
+            server: serverMatch ? serverMatch[1].trim() : metingConfig.server,
+            type: typeMatch ? typeMatch[1].trim() : metingConfig.type,
+            id: idMatch ? idMatch[1].trim() : metingConfig.id,
+            apis: apis,
+        };
+    }
+
+    // Local 配置 - 提取 URL 数组
+    const localMatch = musicContent.match(/local:\s*\[([\s\S]*?)\]/);
+    let localUrls = [];
+    if (localMatch) {
+        localUrls = localMatch[1]
+            .match(/['"`]([^'"`]+)['"`]/g)
+            ?.map(s => s.replace(/['"`]/g, '').trim())
+            .filter(Boolean) || [];
+    }
+
+    return {
+        enabled: enabledMatch ? enabledMatch[1] === 'true' : false,
+        volume: volumeMatch ? parseFloat(volumeMatch[1]) : 0.5,
+        autoplay: autoplayMatch ? autoplayMatch[1] === 'true' : false,
+        playMode: playModeMatch ? playModeMatch[1].trim() : 'list',
+        mode: modeMatch ? modeMatch[1].trim() : 'meting',
+        meting: metingConfig,
+        local: localUrls,
     };
 }
 
@@ -1833,9 +1966,9 @@ const config = {
     donation: extractDonationConfig(),
 
     // Footer - Copyright
-    footerCopyrightYear: extractNestedString(/copyright:\s*\{([\s\S]*?)\}/, 'year', '2018-2026'),
-    footerCopyrightName: extractNestedString(/copyright:\s*\{([\s\S]*?)\}/, 'name', 'Your Name'),
-    footerCopyrightUrl: extractNestedString(/copyright:\s*\{([\s\S]*?)\}/, 'url', 'https://yourblog.com/'),
+    footerCopyrightYear: extractNestedString(/copyright:\s*\{([\s\S]*?)\}/, 'year', '2026'),
+    footerCopyrightName: extractNestedString(/copyright:\s*\{([\s\S]*?)\}/, 'name', 'MoeWah'),
+    footerCopyrightUrl: extractNestedString(/copyright:\s*\{([\s\S]*?)\}/, 'url', 'https://www.moewah.com/'),
     // Footer - ICP
     footerIcpEnabled: extractNestedBoolean(/icp:\s*\{([\s\S]*?)\}/, 'enabled', false),
     footerIcpNumber: extractNestedString(/icp:\s*\{([\s\S]*?)\}/, 'number', ''),
@@ -1855,6 +1988,9 @@ const config = {
 
     // Contribution
     contribution: extractContributionConfig(),
+
+    // Music
+    music: extractMusicConfig(),
 
     // Nav
     nav: extractNavConfig(),
@@ -1958,6 +2094,10 @@ async function build() {
         .replace(/{{TERMINAL_TITLE}}/g, config.terminalTitle)
         .replace(/{{IDENTITY}}/g, config.identity.join(' / '))
         .replace(/{{INTERESTS}}/g, config.interests.join(' / '))
+
+        // Music Player
+        .replace(/{{MUSIC_PLAYER}}/g, generateMusicPlayerHTML(config.music))
+        .replace(/{{SKELETON_MUSIC}}/g, generateSkeletonMusicHTML(config.music))
 
         // Links
         .replace(/{{LINKS_SECTION}}/g, generateLinksSectionHTML(config.links, config.linksConfig))
@@ -2157,6 +2297,31 @@ async function build() {
             const srcPath = 'src/' + method.qrImage;
             const destPath = method.qrImage;
             await processFile(srcPath, destPath);
+        }
+    }
+
+    // 处理本地音乐文件
+    if (config.music.enabled && config.music.mode === 'local' && config.music.local.length > 0) {
+        console.log('🎵 处理本地音乐文件...');
+        const distMusicDir = path.join(distDir, 'music');
+        if (!fs.existsSync(distMusicDir)) {
+            fs.mkdirSync(distMusicDir, { recursive: true });
+        }
+        for (const musicPath of config.music.local) {
+            const srcPath = path.join(rootDir, 'src', musicPath);
+            const destPath = path.join(distDir, musicPath);
+            if (fs.existsSync(srcPath)) {
+                // 确保目标目录存在
+                const destDir = path.dirname(destPath);
+                if (!fs.existsSync(destDir)) {
+                    fs.mkdirSync(destDir, { recursive: true });
+                }
+                fs.copyFileSync(srcPath, destPath);
+                const stat = fs.statSync(destPath);
+                console.log(`   ✓ ${musicPath} (${formatSize(stat.size)})`);
+            } else {
+                console.warn(`   ⚠️ 音乐文件不存在: ${musicPath}`);
+            }
         }
     }
 
