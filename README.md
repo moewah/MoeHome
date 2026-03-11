@@ -338,10 +338,14 @@ scrollProgress: {
 
 ```javascript
 footer: {
-    text: 'Powered by',
-    link: {
-        text: 'Your Name',
+    copyright: {
+        year: '2018-2026',
+        name: 'Your Name',
         url: 'https://yourblog.com/'
+    },
+    icp: {
+        enabled: false,           // 是否显示备案号
+        number: '京ICP备XXXXXXXX号'
     }
 }
 ```

@@ -3008,20 +3008,43 @@ body {
 .footer {
     margin-top: var(--space-10);
     text-align: center;
-    color: var(--text-secondary);
-    font-size: 0.8rem;
     opacity: 0;
     animation: fadeIn 1s ease 1.2s forwards;
 }
 
-.footer a {
+.footer-text {
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    margin: 0;
+}
+
+.footer-brand {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.footer-brand:hover {
     color: var(--accent);
+}
+
+.footer-divider {
+    color: var(--text-secondary);
+    opacity: 0.5;
+    margin: 0 0.5em;
+}
+
+.footer-icp {
+    color: var(--text-secondary);
+    opacity: 0.6;
     text-decoration: none;
     transition: opacity 0.2s ease;
 }
 
-.footer a:hover {
-    opacity: 0.7;
+.footer-icp:hover {
+    opacity: 1;
 }
 
 /* ========== Scroll Progress Button ========== */

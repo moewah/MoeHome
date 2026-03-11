@@ -117,6 +117,23 @@ function extractNestedString(parentPattern, key, fallback = '') {
 }
 
 /**
+ * 提取嵌套布尔值
+ */
+function extractNestedBoolean(parentPattern, key, fallback = false) {
+    const parentMatch = configContent.match(parentPattern);
+    if (!parentMatch || !parentMatch[1]) {
+        return fallback;
+    }
+
+    const parentContent = parentMatch[1];
+    const match = parentContent.match(new RegExp(key + ':\\s*(true|false)'));
+    if (match && match[1]) {
+        return match[1] === 'true';
+    }
+    return fallback;
+}
+
+/**
  * 提取链接数组 - 支持字符串内包含引号
  * 使用健壮的字符串匹配，正确处理转义字符
  */
@@ -1001,6 +1018,18 @@ function generateSkeletonNoticeHTML(notice) {
     return '<div class="skeleton-notice skeleton"></div>';
 }
 
+// 生成页脚 HTML（单行居中布局）
+function generateFooterHTML(config) {
+    const copyright = `© ${config.footerCopyrightYear} <a href="${config.footerCopyrightUrl}" target="_blank" rel="noopener noreferrer" class="footer-brand">${config.footerCopyrightName}</a>`;
+
+    // 如果启用 ICP 且有备案号，添加分隔符和 ICP 链接
+    if (config.footerIcpEnabled && config.footerIcpNumber) {
+        return `<p class="footer-text">${copyright} <span class="footer-divider">·</span> <a href="${config.footerIcpUrl}" target="_blank" rel="noopener noreferrer" class="footer-icp">${config.footerIcpNumber}</a></p>`;
+    }
+
+    return `<p class="footer-text">${copyright}</p>`;
+}
+
 // 生成 Donation HTML
 function generateDonationHTML(donation) {
     if (!donation.enabled) {
@@ -1803,10 +1832,14 @@ const config = {
     // Donation
     donation: extractDonationConfig(),
 
-    // Footer
-    footerText: extractNestedString(/footer:\s*\{([\s\S]*?)\}/, 'text', 'Powered by'),
-    footerLinkText: extractNestedString(/link:\s*\{([\s\S]*?)\}/, 'text', 'MoeWah'),
-    footerLinkUrl: extractNestedString(/link:\s*\{([\s\S]*?)\}/, 'url', 'https://www.moewah.com/'),
+    // Footer - Copyright
+    footerCopyrightYear: extractNestedString(/copyright:\s*\{([\s\S]*?)\}/, 'year', '2018-2026'),
+    footerCopyrightName: extractNestedString(/copyright:\s*\{([\s\S]*?)\}/, 'name', 'Your Name'),
+    footerCopyrightUrl: extractNestedString(/copyright:\s*\{([\s\S]*?)\}/, 'url', 'https://yourblog.com/'),
+    // Footer - ICP
+    footerIcpEnabled: extractNestedBoolean(/icp:\s*\{([\s\S]*?)\}/, 'enabled', false),
+    footerIcpNumber: extractNestedString(/icp:\s*\{([\s\S]*?)\}/, 'number', ''),
+    footerIcpUrl: extractNestedString(/icp:\s*\{([\s\S]*?)\}/, 'url', 'https://beian.miit.gov.cn/'),
 
     // Notice
     noticeEnabled: extractNestedString(/notice:\s*\{([\s\S]*?)\}/, 'enabled', 'true') === 'true',
@@ -1954,12 +1987,10 @@ async function build() {
         .replace(/{{PROJECTS}}/g, generateProjectsHTML(githubRepos, config.projects, contributionData, config.contribution))
         .replace(/{{SKELETON_PROJECTS}}/g, generateSkeletonProjectsHTML(config.projects))
 
-        // Footer
-        .replace(/{{FOOTER_TEXT}}/g, config.footerText)
-        .replace(/{{FOOTER_LINK}}/g, config.footerLinkText)
-        .replace(/{{FOOTER_URL}}/g, config.footerLinkUrl)
+        // Footer - 生成单行页脚 HTML
+        .replace(/{{FOOTER_CONTENT}}/g, generateFooterHTML(config))
 
-        // Nav Links
+// Nav Links
         .replace(/{{NAV_POSTS_LINK}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-link" data-section="rss-section">文章</a>' : '')
         .replace(/{{NAV_PROJECTS_LINK}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-link" data-section="projects-section">项目</a>' : '')
         .replace(/{{NAV_LINKS_LINK}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-link" data-section="links-container">链接</a>' : '')

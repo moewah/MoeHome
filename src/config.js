@@ -332,10 +332,17 @@ window.HOMEPAGE_CONFIG = {
 
   // ========== 页脚配置 ==========
   footer: {
-    text: "Powered by",
-    link: {
-      text: "喵斯基部落",
-      url: "#",
+    // 版权信息配置
+    copyright: {
+      year: "2018-2026", // 版权年份
+      name: "Your Name", // 版权名称
+      url: "https://yourblog.com/", // 链接地址
+    },
+    // ICP 备案号配置（中国大陆网站需要）
+    icp: {
+      enabled: false, // 是否显示备案号
+      number: "京ICP备XXXXXXXX号", // 备案号
+      url: "https://beian.miit.gov.cn/", // 备案查询地址，一般不需要修改
     },
   },
 
