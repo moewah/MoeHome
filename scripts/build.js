@@ -1052,12 +1052,17 @@ function generateMusicPlayerHTML(music) {
                 </div>`;
 }
 
-// 生成骨架屏音乐播放器占位
+// 生成骨架屏音乐播放器占位 - 精确匹配五分点布局
 function generateSkeletonMusicHTML(music) {
     if (!music.enabled) {
         return '';
     }
-    return '<div class="skeleton-music skeleton"></div>';
+    return `<div class="skeleton-music">
+        <div class="skeleton-music-btn skeleton-music-btn--prev skeleton"></div>
+        <div class="skeleton-music-btn skeleton-music-btn--play skeleton"></div>
+        <div class="skeleton-music-btn skeleton-music-btn--next skeleton"></div>
+        <div class="skeleton-music-progress skeleton"></div>
+    </div>`;
 }
 
 // 生成页脚 HTML（单行居中布局）

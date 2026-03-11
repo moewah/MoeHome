@@ -1266,20 +1266,20 @@ body {
 /* 间距计算：
    - 上间距：播放器按钮顶部距离 tagline 的间距 → margin-top
    - 下间距：进度条距离 terminal 的间距 → margin-bottom
-   - 内部间距：按钮与进度条之间的间距 → padding-bottom
+   - 内部间距：按钮与进度条之间的间距 → 包含在 height 中
 */
+/* 五分点定位：三按钮精确位于 25%、50%、75% 位置 */
 .music-player {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-5);
-    padding: 0 0 var(--space-4); /* 底部留出按钮与进度条的间距: 16px */
-    margin: var(--space-6) 0 var(--space-10); /* 上间距: 24px, 下间距: 40px */
     position: relative;
+    height: calc(24px + var(--space-4)); /* 按钮高度 + 按钮与进度条间距 */
+    margin: var(--space-6) 0 var(--space-10); /* 上间距: 24px, 下间距: 40px */
 }
 
-/* 播放控制按钮 */
+/* 播放控制按钮 - 绝对定位实现精确百分比位置 */
 .music-btn {
+    position: absolute;
+    top: 0; /* 按钮位于容器顶部 */
+    transform: translateX(-50%); /* 按钮中心点对齐目标位置 */
     width: 24px;
     height: 24px;
     border: none;
@@ -1292,6 +1292,21 @@ body {
     transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease;
     font-size: 14px;
     opacity: 0.7;
+}
+
+/* 上一曲：精确 25% 位置 */
+.music-btn--prev {
+    left: 25%;
+}
+
+/* 播放键：精确 50% 位置 */
+.music-btn--play {
+    left: 50%;
+}
+
+/* 下一曲：精确 75% 位置 */
+.music-btn--next {
+    left: 75%;
 }
 
 .music-btn:hover {
@@ -1342,7 +1357,6 @@ body {
 /* 响应式 */
 @media (max-width: 480px) {
     .music-player {
-        gap: var(--space-4);
         margin-top: var(--space-5); /* 移动端上间距: 20px */
         margin-bottom: var(--space-8); /* 移动端下间距: 32px */
     }
@@ -3808,6 +3822,47 @@ body.skeleton-active .cursor {
     width: 100%;
     height: 1px;
     margin: var(--space-12) 0;
+}
+
+/* 音乐播放器骨架屏 - 精确匹配五分点布局 */
+.skeleton-music {
+    position: relative;
+    width: 100%;
+    max-width: 200px;
+    height: calc(24px + var(--space-4)); /* 与实际播放器一致: 40px */
+    margin: var(--space-6) auto var(--space-10);
+}
+
+.skeleton-music-btn {
+    position: absolute;
+    top: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    transform: translateX(-50%);
+}
+
+.skeleton-music-btn--prev {
+    left: 25%;
+}
+
+.skeleton-music-btn--play {
+    left: 50%;
+    width: 28px;
+    height: 28px;
+}
+
+.skeleton-music-btn--next {
+    left: 75%;
+}
+
+.skeleton-music-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    border-radius: 1px;
 }
 
 .skeleton-notice {
