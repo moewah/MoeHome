@@ -1046,14 +1046,6 @@ function generateMusicPlayerHTML(music) {
                     <button class="music-btn music-btn--next" id="music-next" title="下一曲" aria-label="下一曲">
                         <i class="fa-solid fa-forward-step"></i>
                     </button>
-                    <div class="music-volume">
-                        <button class="music-volume-btn" id="music-volume-btn" title="音量" aria-label="音量">
-                            <i class="fa-solid fa-volume-high" id="music-volume-icon"></i>
-                        </button>
-                        <div class="music-volume-slider" id="music-volume-slider">
-                            <div class="music-volume-fill" id="music-volume-fill" style="width: ${music.volume * 100}%"></div>
-                        </div>
-                    </div>
                     <div class="music-progress">
                         <div class="music-progress-fill" id="music-progress-fill"></div>
                     </div>

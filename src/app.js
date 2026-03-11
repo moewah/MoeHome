@@ -2001,10 +2001,6 @@ class MusicPlayer {
             playIcon: document.getElementById('music-play-icon'),
             prevBtn: document.getElementById('music-prev'),
             nextBtn: document.getElementById('music-next'),
-            volumeBtn: document.getElementById('music-volume-btn'),
-            volumeIcon: document.getElementById('music-volume-icon'),
-            volumeSlider: document.getElementById('music-volume-slider'),
-            volumeFill: document.getElementById('music-volume-fill'),
             progressFill: document.getElementById('music-progress-fill'),
         };
 
@@ -2031,10 +2027,6 @@ class MusicPlayer {
         // 上一曲/下一曲
         this.elements.prevBtn?.addEventListener('click', () => this.prev());
         this.elements.nextBtn?.addEventListener('click', () => this.next());
-
-        // 音量控制
-        this.elements.volumeBtn?.addEventListener('click', () => this.toggleMute());
-        this.elements.volumeSlider?.addEventListener('click', (e) => this.setVolumeFromClick(e));
 
         // 音频事件
         this.audio.addEventListener('timeupdate', () => this.updateProgress());
@@ -2177,45 +2169,6 @@ class MusicPlayer {
         }
     }
 
-    // 音量控制
-    setVolume(volume) {
-        this.audio.volume = Math.max(0, Math.min(1, volume));
-        this.updateVolumeUI();
-    }
-
-    setVolumeFromClick(e) {
-        const rect = this.elements.volumeSlider.getBoundingClientRect();
-        const volume = (e.clientX - rect.left) / rect.width;
-        this.setVolume(volume);
-    }
-
-    toggleMute() {
-        if (this.audio.volume > 0) {
-            this._previousVolume = this.audio.volume;
-            this.setVolume(0);
-        } else {
-            this.setVolume(this._previousVolume || 0.5);
-        }
-    }
-
-    updateVolumeUI() {
-        const volume = this.audio.volume;
-
-        if (this.elements.volumeFill) {
-            this.elements.volumeFill.style.width = `${volume * 100}%`;
-        }
-
-        if (this.elements.volumeIcon) {
-            let iconClass = 'fa-volume-high';
-            if (volume === 0) {
-                iconClass = 'fa-volume-xmark';
-            } else if (volume < 0.5) {
-                iconClass = 'fa-volume-low';
-            }
-            this.elements.volumeIcon.className = `fa-solid ${iconClass}`;
-        }
-    }
-
     updateProgress() {
         if (this.audio.duration && this.elements.progressFill) {
             const progress = (this.audio.currentTime / this.audio.duration) * 100;
@@ -2229,6 +2182,8 @@ class MusicPlayer {
         if (this.elements.playIcon) {
             this.elements.playIcon.className = 'fa-solid fa-pause';
         }
+        // 头像呼吸光晕效果
+        document.querySelector('.avatar')?.classList.add('music-playing');
     }
 
     onPause() {
@@ -2237,6 +2192,8 @@ class MusicPlayer {
         if (this.elements.playIcon) {
             this.elements.playIcon.className = 'fa-solid fa-play';
         }
+        // 移除头像呼吸光晕效果
+        document.querySelector('.avatar')?.classList.remove('music-playing');
     }
 
     onEnded() {

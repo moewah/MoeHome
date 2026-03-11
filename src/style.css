@@ -1082,6 +1082,33 @@ body {
     }
 }
 
+/* 音乐播放时的呼吸光晕效果 */
+.avatar.music-playing {
+    animation: avatar-breathe 2.5s ease-in-out infinite;
+    border-color: var(--accent);
+}
+
+@keyframes avatar-breathe {
+    0%,
+    100% {
+        box-shadow:
+            0 0 0 4px var(--bg-primary),
+            0 0 20px var(--accent-dim),
+            0 0 40px rgba(0, 0, 0, 0.3),
+            0 20px 60px rgba(0, 0, 0, 0.5);
+        border-color: var(--accent);
+    }
+    50% {
+        box-shadow:
+            0 0 0 4px var(--bg-primary),
+            0 0 30px var(--glow),
+            0 0 60px var(--glow),
+            0 0 100px var(--accent-dim),
+            0 20px 60px rgba(0, 0, 0, 0.5);
+        border-color: color-mix(in srgb, var(--accent) 80%, white);
+    }
+}
+
 /* ========== Status indicator ========== */
 .status {
     position: absolute;
@@ -1282,55 +1309,6 @@ body {
     opacity: 1;
 }
 
-/* 音量控制 */
-.music-volume {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin-left: var(--space-1);
-}
-
-.music-volume-btn {
-    width: 24px;
-    height: 24px;
-    border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease;
-    opacity: 0.7;
-}
-
-.music-volume-btn:hover {
-    color: var(--accent);
-    opacity: 1;
-}
-
-/* 音量滑块 */
-.music-volume-slider {
-    position: relative;
-    width: 50px;
-    height: 2px;
-    background: var(--border);
-    border-radius: 1px;
-    cursor: pointer;
-    overflow: hidden;
-}
-
-.music-volume-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    background: var(--accent);
-    border-radius: 1px;
-    transition: width var(--duration-fast) ease;
-}
-
 /* 进度条 - 沿用分割线设计 */
 .music-progress {
     position: absolute;
@@ -1367,10 +1345,6 @@ body {
         gap: var(--space-4);
         margin-top: var(--space-5); /* 移动端上间距: 20px */
         margin-bottom: var(--space-8); /* 移动端下间距: 32px */
-    }
-
-    .music-volume-slider {
-        width: 40px;
     }
 }
 
