@@ -38,30 +38,10 @@ window.HOMEPAGE_CONFIG = {
     default: "auto",
 
     // 默认配色方案（页面打开时的初始配色，用户仍可自由切换）
-    // 可选值: null(使用defaults) | 'coralOrange' | 'nordSnowStorm' | 'gruvboxLight' | 'ayuLight' | 'cyberGreen' | 'catppuccinMocha' | 'kanagawaDragon' | 'rosePineMoon'
+    // 可选值: null(使用内置默认) | 'coralOrange' | 'nordSnowStorm' | 'gruvboxLight' | 'ayuLight' | 'cyberGreen' | 'catppuccinMocha' | 'kanagawaDragon' | 'rosePineMoon'
     defaultScheme: {
-      light: null, // 亮色模式: null(使用coralOrange) | coralOrange | nordSnowStorm | gruvboxLight | ayuLight
-      dark: null, // 暗色模式: null(使用cyberGreen) | cyberGreen | catppuccinMocha | kanagawaDragon | rosePineMoon
-    },
-
-    // 兜底配色方案（当 defaultScheme 为 null 或不可用时使用）
-    defaults: {
-      light: {
-        accent: "#C6613F", // 珊瑚橙
-        bgPrimary: "#FAF9F5", // 暖白
-        bgSecondary: "#F0EEE6", // 柔暖灰
-        textPrimary: "#141413", // 近黑
-        textSecondary: "#87867F", // 中性灰
-        border: "#E8E6DC", // 淡边框
-      },
-      dark: {
-        accent: "#00ff9f",
-        bgPrimary: "#0a0a0a",
-        bgSecondary: "#111111",
-        textPrimary: "#e8e8e8",
-        textSecondary: "#888888",
-        border: "#222222",
-      },
+      light: null, // 亮色模式: null(使用内置默认) | coralOrange | nordSnowStorm | gruvboxLight | ayuLight
+      dark: null, // 暗色模式: null(使用内置默认) | cyberGreen | catppuccinMocha | kanagawaDragon | rosePineMoon
     },
   },
 

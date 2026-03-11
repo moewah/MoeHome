@@ -13,28 +13,6 @@ const ThemeManager = {
     THEME_ATTRIBUTE: 'data-theme',
 
     /**
-     * 默认主题配置（作为 fallback）
-     */
-    defaults: {
-        light: {
-            accent: '#C6613F',
-            bgPrimary: '#FAF9F5',
-            bgSecondary: '#F0EEE6',
-            textPrimary: '#141413',
-            textSecondary: '#87867F',
-            border: '#E8E6DC',
-        },
-        dark: {
-            accent: '#00ff9f',
-            bgPrimary: '#0a0a0a',
-            bgSecondary: '#111111',
-            textPrimary: '#e8e8e8',
-            textSecondary: '#888888',
-            border: '#222222',
-        }
-    },
-
-    /**
      * 内置预设配色方案
      */
     builtinSchemes: {
@@ -47,8 +25,8 @@ const ThemeManager = {
             modes: ['light'],
             colors: {
                 accent: '#C6613F',      // 珊瑚橙 - 温暖专业的品牌色
-                bgPrimary: '#FAF9F5',   // 暖白 - 主背景色
-                bgSecondary: '#F0EEE6', // 柔暖灰 - 卡片/次背景
+                bgPrimary: '#F8F2ED',   // 暖米白 - 主背景色
+                bgSecondary: '#FAFAFA', // 纯净白 - 卡片/次背景
                 textPrimary: '#141413', // 近黑 - 主文本
                 textSecondary: '#87867F', // 中性灰 - 次文本
                 border: '#E8E6DC',      // 淡边框
@@ -225,6 +203,16 @@ const ThemeManager = {
     },
 
     /**
+     * 获取系统默认配色（从 isDefault: true 的方案中获取）
+     */
+    getDefaultColors(mode) {
+        const defaultScheme = Object.values(this.builtinSchemes).find(
+            scheme => scheme.isDefault && scheme.modes?.includes(mode)
+        );
+        return defaultScheme?.colors || null;
+    },
+
+    /**
      * 初始化主题系统
      */
     init() {
@@ -238,11 +226,15 @@ const ThemeManager = {
      * 从 config 加载主题配置
      */
     loadConfig() {
+        // 先初始化内置方案，确保 getDefaultColors 可用
+        this.initBuiltinSchemes();
+
         const config = window.HOMEPAGE_CONFIG?.theme;
         if (!config) {
-            this.themes.light.colors = this.buildColors('light', this.defaults.light, null);
-            this.themes.dark.colors = this.buildColors('dark', this.defaults.dark, null);
-            this.initBuiltinSchemes();
+            const lightColors = this.getDefaultColors('light');
+            const darkColors = this.getDefaultColors('dark');
+            this.themes.light.colors = this.buildColors('light', lightColors, null);
+            this.themes.dark.colors = this.buildColors('dark', darkColors, null);
             return;
         }
 
@@ -258,20 +250,19 @@ const ThemeManager = {
             console.info('[Theme] 检测到旧版 locked 配置，已自动迁移为 defaultScheme');
         }
 
-        const defaultsConfig = config.defaults || {};
-        const lightDefaults = { ...this.defaults.light, ...(defaultsConfig.light || {}) };
-        const darkDefaults = { ...this.defaults.dark, ...(defaultsConfig.dark || {}) };
+        // 使用内置默认配色作为基础
+        const lightColors = this.getDefaultColors('light');
+        const darkColors = this.getDefaultColors('dark');
 
+        // 支持旧版配置格式迁移
         if (config.light && !config.defaults) {
-            this.themes.light.colors = this.buildColors('light', { ...this.defaults.light, ...config.light }, null);
-            this.themes.dark.colors = this.buildColors('dark', { ...this.defaults.dark, ...config.dark }, null);
+            this.themes.light.colors = this.buildColors('light', { ...lightColors, ...config.light }, null);
+            this.themes.dark.colors = this.buildColors('dark', { ...darkColors, ...config.dark }, null);
             console.info('[Theme] 检测到旧版配置格式，已自动迁移');
         } else {
-            this.themes.light.colors = this.buildColors('light', lightDefaults, null);
-            this.themes.dark.colors = this.buildColors('dark', darkDefaults, null);
+            this.themes.light.colors = this.buildColors('light', lightColors, null);
+            this.themes.dark.colors = this.buildColors('dark', darkColors, null);
         }
-
-        this.initBuiltinSchemes();
     },
 
     /**

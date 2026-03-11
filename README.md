@@ -18,7 +18,7 @@
 - 🔍 **SEO 友好** - 构建生成纯静态 HTML，搜索引擎完美支持
 - 🔒 **邮箱反爬虫** - mailto 链接动态编码，防止被爬虫抓取邮箱地址
 - ✨ **精致视觉** - 网格背景、玻璃光泽卡片、自定义光标、终端打字机
-- 🎨 **多主题配色** - 跟随系统、浅色、暗色三种模式，八种精选配色方案，通过 config.js 锁定心仪色彩，支持完整配色变量自定义
+- 🎨 **多主题配色** - 跟随系统、浅色、暗色三种模式，八种精选配色方案，通过 config.js 锁定心仪色彩
 - 📱 **响应式设计** - 完美适配移动端和桌面端，支持触摸手势
 - 🚀 **零运行时依赖** - 前端无框架，构建时自动压缩优化
 - 📦 **易部署** - 构建输出即插即用，支持任意静态托管
@@ -54,18 +54,15 @@ npm run serve
 
 ### 主题配色
 
-支持模式切换和配色方案切换，用户选择自动保存到本地存储。
+支持模式切换和配色方案切换，用户切换只在当前会话生效，刷新后恢复默认配置。
 
 #### 模式切换
 
-| 模式 | 说明 | 图标 |
-|------|------|------|
-| `auto` | 跟随系统 | 🖥️ |
-| `light` | 浅色模式 | ☀️ |
-| `dark` | 深色模式 | 🌙 |
-
-- **PC端**：点击导航栏配色按钮展开菜单，选择模式和配色方案
-- **移动端**：点击侧边栏按钮循环切换模式
+| 模式 | 说明 |
+|------|------|
+| `light` | 浅色模式 |
+| `dark` | 深色模式 |
+| `auto` | 跟随系统 |
 
 #### 内置配色方案
 
@@ -85,19 +82,12 @@ npm run serve
 ```javascript
 theme: {
     // 默认模式: 'light' | 'dark' | 'auto'
-    default: 'auto',
+    default: 'light',
 
     // 默认配色方案（刷新后恢复此配置）
-    // 设为 null 使用下方 defaults 兜底配色
     defaultScheme: {
-        light: null,  // 亮色: null(使用amberOrange) | amberOrange | nordSnowStorm | gruvboxLight | ayuLight
-        dark: null    // 暗色: null(使用cyberGreen) | cyberGreen | catppuccinMocha | kanagawaDragon | rosePineMoon
-    },
-
-    // 兜底配色（defaultScheme 为 null 时使用）
-    defaults: {
-        light: { accent: '#D97706', bgPrimary: '#FBF8F3', ... },
-        dark: { accent: '#00ff9f', bgPrimary: '#0a0a0a', ... }
+        light: 'gruvboxLight',  // 亮色: null(使用内置默认coralOrange) | coralOrange | nordSnowStorm | gruvboxLight | ayuLight
+        dark: 'catppuccinMocha' // 暗色: null(使用内置默认cyberGreen) | cyberGreen | catppuccinMocha | kanagawaDragon | rosePineMoon
     }
 }
 ```
@@ -105,26 +95,7 @@ theme: {
 | 配置 | 说明 |
 |------|------|
 | `default` | 首屏默认模式 |
-| `defaultScheme.light/dark` | 默认配色方案，`null` 使用 defaults |
-| `defaults.light/dark` | 兜底配色（defaultScheme 为 null 时使用） |
-
-**自定义配色方案**：
-
-```javascript
-theme: {
-    schemes: {
-        myScheme: {
-            name: '我的配色',
-            icon: 'fa-heart',
-            modes: ['light', 'dark'],
-            colors: {
-                light: { accent: '#...', bgPrimary: '#...', ... },
-                dark: { accent: '#...', bgPrimary: '#...', ... }
-            }
-        }
-    }
-}
-```
+| `defaultScheme` | 默认配色方案，用户切换后刷新恢复此配置，设为 `null` 使用内置默认配色 |
 
 **衍生色**：悬停、阴影、玻璃光泽等颜色自动计算，无需手动配置。
 
@@ -297,7 +268,7 @@ links: [
     {
         name: 'Email',
         description: '联系 & 合作',
-        url: 'mailto:example@email.com',
+        url: 'mailto:admin@example.com',
         icon: 'fa-solid fa-envelope',
         brand: 'email',
         external: false,
@@ -317,15 +288,7 @@ links: [
 | `enabled` | 是否显示 |
 | `antiCrawler` | 邮箱反爬虫保护（仅 mailto 链接有效），开启后邮箱地址会被编码 |
 
-**邮箱反爬虫原理**：开启后，`mailto:example@email.com` 会被转换为 `onclick="location.href='mailto:'+atob('...')"` 的形式，爬虫无法通过正则匹配或 HTML 解析获取邮箱，但用户点击仍可正常唤起邮件客户端。
-
-| 配置 | 说明 |
-|------|------|
-| `name` | 按钮显示名称 |
-| `url` | 链接地址 |
-| `icon` | Font Awesome 图标类 |
-| `color` | 按钮主题颜色 |
-| `enabled` | 是否显示 |
+**邮箱反爬虫原理**：开启后，`mailto:admin@example.com` 会被转换为 `onclick="location.href='mailto:'+atob('...')"` 的形式，爬虫无法通过正则匹配或 HTML 解析获取邮箱，但用户点击仍可正常唤起邮件客户端。
 
 ### 赞赏支持
 
