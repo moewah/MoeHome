@@ -1126,7 +1126,7 @@ body {
 .tagline {
     font-size: clamp(0.9rem, 2vw, 1.1rem);
     color: var(--text-secondary);
-    margin-bottom: var(--space-10);
+    margin-bottom: 0; /* 间距由下一个元素（播放器或 divider）的 margin-top 控制 */
     font-weight: 300;
     letter-spacing: 0.05em;
     display: flex;
@@ -1194,7 +1194,7 @@ body {
         var(--divider-glow) 85%,
         transparent 100%
     );
-    margin: 48px 0;
+    margin: var(--space-6) 0 var(--space-10); /* 上间距: 24px, 下间距: 40px，与播放器一致 */
 }
 
 /* 终端前的分割线 - 简洁短款 */
@@ -1236,13 +1236,18 @@ body {
 }
 
 /* ========== Music Player (简约版) ========== */
+/* 间距计算：
+   - 上间距：播放器按钮顶部距离 tagline 的间距 → margin-top
+   - 下间距：进度条距离 terminal 的间距 → margin-bottom
+   - 内部间距：按钮与进度条之间的间距 → padding-bottom
+*/
 .music-player {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: var(--space-5);
-    padding: 12px 0 14px;
-    margin: 28px 0 40px;
+    padding: 0 0 var(--space-4); /* 底部留出按钮与进度条的间距: 16px */
+    margin: var(--space-6) 0 var(--space-10); /* 上间距: 24px, 下间距: 40px */
     position: relative;
 }
 
@@ -1360,7 +1365,8 @@ body {
 @media (max-width: 480px) {
     .music-player {
         gap: var(--space-4);
-        margin: 24px 0;
+        margin-top: var(--space-5); /* 移动端上间距: 20px */
+        margin-bottom: var(--space-8); /* 移动端下间距: 32px */
     }
 
     .music-volume-slider {
