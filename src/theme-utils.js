@@ -26,10 +26,10 @@ const ThemeManager = {
             colors: {
                 accent: '#C6613F',      // 珊瑚橙 - 温暖专业的品牌色
                 bgPrimary: '#F8F2ED',   // 暖米白 - 主背景色
-                bgSecondary: '#FAFAFA', // 纯净白 - 卡片/次背景
-                textPrimary: '#141413', // 近黑 - 主文本
-                textSecondary: '#87867F', // 中性灰 - 次文本
-                border: '#E8E6DC',      // 淡边框
+                bgSecondary: '#FFF',    // 纯白 - 卡片/次背景
+                textPrimary: '#3D3630', // 深棕 - 主文本
+                textSecondary: '#8B7E75', // 暖灰 - 次文本
+                border: '#EDE4DC',      // 暖边框
             }
         },
         cyberGreen: {
