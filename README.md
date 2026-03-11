@@ -16,6 +16,7 @@
 
 - 🎨 **配置驱动** - 所有内容在 config.js 中管理，无需修改代码
 - 🔍 **SEO 友好** - 构建生成纯静态 HTML，搜索引擎完美支持
+- 🔒 **邮箱反爬虫** - mailto 链接动态编码，防止被爬虫抓取邮箱地址
 - ✨ **精致视觉** - 网格背景、玻璃光泽卡片、自定义光标、终端打字机
 - 🎨 **多主题配色** - 跟随系统、浅色、暗色三种模式，八种精选配色方案，通过 config.js 锁定心仪色彩，支持完整配色变量自定义
 - 📱 **响应式设计** - 完美适配移动端和桌面端，支持触摸手势
@@ -292,9 +293,31 @@ links: [
         external: true,
         color: '#00ff9f',
         enabled: true
+    },
+    {
+        name: 'Email',
+        description: '联系 & 合作',
+        url: 'mailto:example@email.com',
+        icon: 'fa-solid fa-envelope',
+        brand: 'email',
+        external: false,
+        color: '#ea4335',
+        antiCrawler: true,  // 邮箱反爬虫保护，对邮箱地址编码防止被抓取
+        enabled: true
     }
 ]
 ```
+
+| 配置 | 说明 |
+|------|------|
+| `name` | 按钮显示名称 |
+| `url` | 链接地址 |
+| `icon` | Font Awesome 图标类 |
+| `color` | 按钮主题颜色 |
+| `enabled` | 是否显示 |
+| `antiCrawler` | 邮箱反爬虫保护（仅 mailto 链接有效），开启后邮箱地址会被编码 |
+
+**邮箱反爬虫原理**：开启后，`mailto:example@email.com` 会被转换为 `onclick="location.href='mailto:'+atob('...')"` 的形式，爬虫无法通过正则匹配或 HTML 解析获取邮箱，但用户点击仍可正常唤起邮件客户端。
 
 | 配置 | 说明 |
 |------|------|

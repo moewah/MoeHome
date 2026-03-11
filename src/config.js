@@ -237,6 +237,7 @@ window.HOMEPAGE_CONFIG = {
       brand: "email",
       external: false,
       color: "#ea4335",
+      antiCrawler: true, // 反爬虫保护，对邮箱地址编码防止被抓取
       enabled: true,
     },
     {

@@ -152,6 +152,10 @@ function extractLinks() {
         const enabledMatch = objContent.match(/enabled:\s*(true|false)/);
         const enabled = enabledMatch ? enabledMatch[1] === 'true' : true;
 
+        // 提取 antiCrawler 字段（邮箱反爬虫保护）
+        const antiCrawlerMatch = objContent.match(/antiCrawler:\s*(true|false)/);
+        const antiCrawler = antiCrawlerMatch ? antiCrawlerMatch[1] === 'true' : true;
+
         if (name && url) {
             links.push({
                 name,
@@ -161,7 +165,8 @@ function extractLinks() {
                 brand: brand || 'link',
                 external,
                 color,
-                enabled
+                enabled,
+                antiCrawler
             });
         }
     }
@@ -830,17 +835,58 @@ function generateAnalyticsHTML(config) {
     return scripts;
 }
 
-// 生成链接 HTML
-function generateLinksHTML(links) {
-    // 过滤掉未启用的链接
-    const enabledLinks = links.filter(link => link.enabled !== false);
+// ========== 邮箱反爬虫 ==========
+/**
+ * 编码邮箱地址（Base64 + 字符反转双重保护）
+ * @param {string} email - 邮箱地址
+ * @returns {string} 编码后的字符串
+ */
+function encodeEmail(email) {
+    // 先反转字符串，再 Base64 编码
+    const reversed = email.split('').reverse().join('');
+    return Buffer.from(reversed).toString('base64');
+}
 
-    return enabledLinks.map(link => {
-        const externalAttrs = link.external
-            ? 'target="_blank" rel="noopener noreferrer"'
-            : '';
+/**
+ * 解码邮箱地址的 JS 代码
+ * @param {string} encoded - 编码后的字符串
+ * @returns {string} JS 解码表达式
+ */
+function getEmailDecodeJS(encoded) {
+    // 反转 Base64 解码：先 Base64 解码，再反转字符串
+    return `atob('${encoded}').split('').reverse().join('')`;
+}
 
-        return `                    <a href="${link.url}" class="link" data-brand="${link.brand}" style="--brand-color: ${link.color}" ${externalAttrs}>
+/**
+ * 处理链接 URL（针对 mailto 进行反爬虫处理）
+ * @param {string} url - 原始 URL
+ * @param {boolean} external - 是否外部链接
+ * @param {boolean} antiCrawler - 是否启用反爬虫
+ * @returns {{ href: string, attrs: string }} 处理后的 href 和属性
+ */
+function processLinkUrl(url, external, antiCrawler = true) {
+    if (antiCrawler && url.startsWith('mailto:')) {
+        const email = url.replace('mailto:', '');
+        const encoded = encodeEmail(email);
+        return {
+            href: 'javascript:void(0)',
+            attrs: `onclick="location.href='mailto:'+${getEmailDecodeJS(encoded)}"`,
+            isEmail: true
+        };
+    }
+    return {
+        href: url,
+        attrs: external ? 'target="_blank" rel="noopener noreferrer"' : '',
+        isEmail: false
+    };
+}
+
+// 生成单个链接 HTML
+function generateLinkHTML(link) {
+    const antiCrawler = link.antiCrawler !== false;
+    const { href, attrs } = processLinkUrl(link.url, link.external, antiCrawler);
+
+    return `                    <a href="${href}" class="link" data-brand="${link.brand}" style="--brand-color: ${link.color}" ${attrs}>
                         <div class="link-left">
                             <div class="link-icon-wrapper">
                                 <i class="${link.icon}"></i>
@@ -852,7 +898,13 @@ function generateLinksHTML(links) {
                         </div>
                         <span class="link-indicator"></span>
                     </a>`;
-    }).join('\n');
+}
+
+// 生成链接 HTML
+function generateLinksHTML(links) {
+    // 过滤掉未启用的链接
+    const enabledLinks = links.filter(link => link.enabled !== false);
+    return enabledLinks.map(generateLinkHTML).join('\n');
 }
 
 // 生成链接模块（含顶部分割线和标题）
@@ -870,24 +922,7 @@ function generateLinksSectionHTML(links, linksConfig) {
         return '';
     }
 
-    const linksHTML = enabledLinks.map(link => {
-        const externalAttrs = link.external
-            ? 'target="_blank" rel="noopener noreferrer"'
-            : '';
-
-        return `                    <a href="${link.url}" class="link" data-brand="${link.brand}" style="--brand-color: ${link.color}" ${externalAttrs}>
-                        <div class="link-left">
-                            <div class="link-icon-wrapper">
-                                <i class="${link.icon}"></i>
-                            </div>
-                            <div class="link-content">
-                                <span class="link-text">${link.name}</span>
-                                <span class="link-description">${link.description}</span>
-                            </div>
-                        </div>
-                        <span class="link-indicator"></span>
-                    </a>`;
-    }).join('\n');
+    const linksHTML = enabledLinks.map(generateLinkHTML).join('\n');
 
     return `<div class="divider divider-compact lazy-load" data-delay="4"></div>
 
