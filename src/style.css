@@ -564,18 +564,35 @@ body {
 .theme-scheme-item-icon {
     width: 20px;
     height: 20px;
+    border-radius: 50%;
+    background: var(--scheme-bg-primary, var(--bg-secondary));
+    border: 1px solid var(--scheme-border, var(--border));
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    font-size: 12px;
     flex-shrink: 0;
+    box-sizing: border-box;
+    transition: border-color var(--duration-fast) ease,
+                box-shadow var(--duration-fast) ease,
+                transform var(--duration-fast) ease;
+}
+
+.theme-scheme-item-icon::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--scheme-accent, var(--accent));
+}
+
+/* 悬浮微交互 */
+.theme-scheme-item:hover .theme-scheme-item-icon {
+    transform: scale(1.1);
 }
 
 .theme-scheme-item.is-active .theme-scheme-item-icon {
-    color: var(--accent);
+    border-color: var(--scheme-accent, var(--accent));
+    box-shadow: 0 0 10px var(--scheme-accent, var(--accent));
 }
 
 .theme-scheme-item-name {

@@ -448,13 +448,24 @@ function createThemeSchemeItem(schemeId, scheme, isActive, isDefault) {
         item.classList.add('is-default');
     }
 
-    // 图标容器
-    const iconContainer = document.createElement('div');
-    iconContainer.className = 'theme-scheme-item-icon';
-    const iconEl = document.createElement('i');
-    iconEl.className = 'fa-solid ' + (scheme.icon || 'fa-palette');
-    iconContainer.appendChild(iconEl);
-    item.appendChild(iconContainer);
+    // 颜色指示器（双色圆点）
+    const colorIndicator = document.createElement('div');
+    colorIndicator.className = 'theme-scheme-item-icon';
+    colorIndicator.setAttribute('aria-hidden', 'true'); // 颜色信息通过名称传达
+
+    // 注入方案颜色变量
+    const colors = scheme.colors || {};
+    if (colors.bgPrimary) {
+        colorIndicator.style.setProperty('--scheme-bg-primary', colors.bgPrimary);
+    }
+    if (colors.accent) {
+        colorIndicator.style.setProperty('--scheme-accent', colors.accent);
+    }
+    if (colors.border) {
+        colorIndicator.style.setProperty('--scheme-border', colors.border);
+    }
+
+    item.appendChild(colorIndicator);
 
     // 名称
     const nameEl = document.createElement('span');
