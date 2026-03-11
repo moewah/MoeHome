@@ -13,7 +13,7 @@
     --accent: #00ff9f;
     --accent-dim: rgba(0, 255, 159, 0.1);
     --border: #222222;
-    --grid-color: rgba(0, 255, 159, 0.03);
+    --grid-color: rgba(0, 255, 159, 0.08);
 
     /* === 玻璃光泽系统（深色主题默认值）=== */
     --glass-border-top: rgba(255, 255, 255, 0.08);
@@ -930,7 +930,7 @@ body {
             transparent 1px
         );
     background-size: 50px 50px;
-    animation: gridMove 20s linear infinite;
+    animation: gridMove 8s linear infinite;
     z-index: 0;
     pointer-events: none;
 }
