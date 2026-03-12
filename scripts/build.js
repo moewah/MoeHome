@@ -1018,7 +1018,19 @@ function generateSkeletonNoticeHTML(notice) {
     return '<div class="skeleton-notice skeleton"></div>';
 }
 
-// 生成音乐播放器 HTML（简约版）
+// 生成音乐切换图标 HTML（极简音符图标）
+function generateMusicToggleIconHTML(music) {
+    if (!music.enabled) {
+        return '';
+    }
+    // 音符图标，点击展开音乐控件
+    return `
+                    <button class="music-toggle" id="music-toggle" title="音乐" aria-label="展开音乐播放器" aria-expanded="false">
+                        <i class="fa-solid fa-music"></i>
+                    </button>`;
+}
+
+// 生成音乐播放器 HTML（可展开版，包含分割线切换）
 function generateMusicPlayerHTML(music) {
     if (!music.enabled) {
         // 音乐播放器禁用时，显示原始分割线
@@ -1035,34 +1047,38 @@ function generateMusicPlayerHTML(music) {
         local: music.local,
     }).replace(/"/g, '&quot;');
 
-    return `<!-- Music Player -->
-                <div class="music-player lazy-load" data-delay="1" id="music-player" data-config="${musicConfigJSON}">
-                    <button class="music-btn music-btn--prev" id="music-prev" title="上一曲" aria-label="上一曲">
-                        <i class="fa-solid fa-backward-step"></i>
-                    </button>
-                    <button class="music-btn music-btn--play" id="music-play" title="播放" aria-label="播放">
-                        <i class="fa-solid fa-play" id="music-play-icon"></i>
-                    </button>
-                    <button class="music-btn music-btn--next" id="music-next" title="下一曲" aria-label="下一曲">
-                        <i class="fa-solid fa-forward-step"></i>
-                    </button>
-                    <div class="music-progress">
-                        <div class="music-progress-fill" id="music-progress-fill"></div>
+    // 音乐区域容器：包含分割线和音乐播放器，通过切换显示
+    return `<!-- Music Area (divider <-> player toggle) -->
+                <div class="music-area" id="music-area">
+                    <!-- 分割线：默认显示，展开音乐时隐藏 -->
+                    <div class="divider lazy-load music-divider" data-delay="1" id="music-divider"></div>
+                    <!-- 音乐播放器：默认隐藏，点击音符图标后展开 -->
+                    <div class="music-player-wrapper" id="music-player-wrapper">
+                        <div class="music-player" id="music-player" data-config="${musicConfigJSON}">
+                            <button class="music-btn music-btn--prev" id="music-prev" title="上一曲" aria-label="上一曲">
+                                <i class="fa-solid fa-backward-step"></i>
+                            </button>
+                            <button class="music-btn music-btn--play" id="music-play" title="播放" aria-label="播放">
+                                <i class="fa-solid fa-play" id="music-play-icon"></i>
+                            </button>
+                            <button class="music-btn music-btn--next" id="music-next" title="下一曲" aria-label="下一曲">
+                                <i class="fa-solid fa-forward-step"></i>
+                            </button>
+                            <div class="music-progress">
+                                <div class="music-progress-fill" id="music-progress-fill"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>`;
 }
 
-// 生成骨架屏音乐播放器占位 - 精确匹配五分点布局
+// 生成骨架屏音乐播放器占位 - 初始不显示，展开时由JS控制
 function generateSkeletonMusicHTML(music) {
     if (!music.enabled) {
         return '';
     }
-    return `<div class="skeleton-music">
-        <div class="skeleton-music-btn skeleton-music-btn--prev skeleton"></div>
-        <div class="skeleton-music-btn skeleton-music-btn--play skeleton"></div>
-        <div class="skeleton-music-btn skeleton-music-btn--next skeleton"></div>
-        <div class="skeleton-music-progress skeleton"></div>
-    </div>`;
+    // 骨架屏不再显示音乐控件占位，因为初始状态是收起的
+    return '';
 }
 
 // 生成页脚 HTML（单行居中布局）
@@ -1942,7 +1958,6 @@ const config = {
     name: extractNestedString(/profile:\s*\{([\s\S]*?)\}/, 'name', 'MoeWah'),
     avatar: extractNestedString(/profile:\s*\{([\s\S]*?)\}/, 'avatar', 'images/avatar.webp'),
     taglinePrefix: extractNestedString(/tagline:\s*\{([\s\S]*?)\}/, 'prefix', '🐾'),
-    taglineText: extractNestedString(/tagline:\s*\{([\s\S]*?)\}/, 'text', 'Meow~'),
     taglineHighlight: extractNestedString(/tagline:\s*\{([\s\S]*?)\}/, 'highlight', '万物皆可萌！'),
 
     // Identity & Interests
@@ -2084,7 +2099,6 @@ async function build() {
         .replace(/{{NAME}}/g, config.name)
         .replace(/{{AVATAR}}/g, config.avatar)
         .replace(/{{TAGLINE_PREFIX}}/g, config.taglinePrefix)
-        .replace(/{{TAGLINE_TEXT}}/g, config.taglineText)
         .replace(/{{TAGLINE_HIGHLIGHT}}/g, config.taglineHighlight)
 
         // Terminal
@@ -2093,6 +2107,7 @@ async function build() {
         .replace(/{{INTERESTS}}/g, config.interests.join(' / '))
 
         // Music Player
+        .replace(/{{MUSIC_TOGGLE_ICON}}/g, generateMusicToggleIconHTML(config.music))
         .replace(/{{MUSIC_PLAYER}}/g, generateMusicPlayerHTML(config.music))
         .replace(/{{SKELETON_MUSIC}}/g, generateSkeletonMusicHTML(config.music))
 

@@ -1180,21 +1180,82 @@ body {
     animation: pawPulse 2s ease-in-out infinite;
 }
 
-.tagline .meow {
-    background: linear-gradient(
-        135deg,
-        var(--accent) 0%,
-        var(--accent-deep) 100%
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-weight: 500;
-}
-
 .tagline .highlight {
     color: var(--accent);
     font-weight: 500;
+}
+
+/* 音乐切换图标 - 玻璃微珠按钮质感 */
+.music-toggle {
+    /* 尺寸与间距 */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+
+    /* 玻璃微珠质感 */
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+
+    /* 玻璃微珠按钮效果 */
+    box-shadow:
+        inset 0 0.5px 0 0 var(--btn-glass-border-top),
+        inset 0 -0.5px 0 0 var(--btn-glass-border-bottom),
+        0 1px 4px -1px var(--btn-glass-shadow),
+        inset 0 0 10px 0 var(--btn-glass-inner-tint);
+
+    /* 图标样式 */
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+
+    /* 默认状态 */
+    opacity: 0.6;
+    transform: scale(1);
+
+    /* 过渡动画 */
+    transition:
+        opacity 0.25s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 悬停状态 */
+.music-toggle:hover {
+    opacity: 1;
+    color: var(--accent);
+    transform: scale(1.1);
+    box-shadow:
+        inset 0 0.5px 0 0 var(--btn-glass-hover-border),
+        inset 0 -0.5px 0 0 var(--btn-glass-border-bottom),
+        0 2px 8px -1px var(--btn-glass-shadow),
+        inset 0 0 15px 0 var(--btn-glass-active-glow);
+}
+
+/* 按下状态 */
+.music-toggle:active {
+    transform: scale(0.95);
+}
+
+/* 展开状态 */
+.music-toggle.is-active {
+    opacity: 1;
+    color: var(--accent);
+    box-shadow:
+        inset 0 0.5px 0 0 var(--btn-glass-hover-border),
+        inset 0 -0.5px 0 0 var(--btn-glass-border-bottom),
+        0 2px 8px -1px var(--btn-glass-shadow),
+        inset 0 0 18px 0 var(--btn-glass-active-glow);
+}
+
+/* 聚焦状态 */
+.music-toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
 }
 
 @keyframes pawPulse {
@@ -1262,40 +1323,126 @@ body {
     display: none;
 }
 
-/* ========== Music Player (简约版) ========== */
-/* 间距计算：
-   - 上间距：播放器按钮顶部距离 tagline 的间距 → margin-top
-   - 下间距：进度条距离 terminal 的间距 → margin-bottom
-   - 内部间距：按钮与进度条之间的间距 → 包含在 height 中
-*/
-/* 五分点定位：三按钮精确位于 25%、50%、75% 位置 */
-.music-player {
+/* ========== Music Player (可展开版) ========== */
+/* 音乐区域容器 */
+.music-area {
     position: relative;
-    height: calc(26px + var(--space-4)); /* play按钮高度 + 按钮与进度条间距 */
-    margin: var(--space-6) 0 var(--space-10); /* 上间距: 24px, 下间距: 40px */
 }
 
-/* 播放控制按钮 - 玻璃微珠质感（紧凑版）*/
+/* 分割线：与播放器同步消失出现 */
+.music-divider {
+    display: block;
+    margin: var(--space-6) 0 var(--space-10);
+    opacity: 1;
+    transform: scaleX(1);
+    transform-origin: center;
+    transition:
+        opacity 0.35s ease-out,
+        transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 展开时分割线快速淡出并收缩 */
+.music-area.is-expanded .music-divider {
+    opacity: 0;
+    transform: scaleX(0);
+    pointer-events: none;
+    margin: 0;
+}
+
+/* 播放器外层容器 */
+.music-player-wrapper {
+    display: block;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition:
+        max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.4s ease-out 0.05s;
+}
+
+/* 展开时播放器容器展开 */
+.music-area.is-expanded .music-player-wrapper {
+    max-height: 100px;
+    opacity: 1;
+}
+
+/* 播放器主体：从中心展开，与分割线同步 */
+.music-player {
+    position: relative;
+    height: calc(26px + var(--space-4));
+    margin: var(--space-6) 0 var(--space-10);
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: center;
+    transition:
+        opacity 0.4s ease-out,
+        transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 展开时播放器从中心展开 */
+.music-area.is-expanded .music-player {
+    opacity: 1;
+    transform: scaleX(1);
+}
+
+/* 播放器按钮：展开时依次淡入弹起 */
+.music-area.is-expanded .music-btn--prev {
+    animation: btnRise 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+}
+
+.music-area.is-expanded .music-btn--play {
+    animation: btnRise 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+}
+
+.music-area.is-expanded .music-btn--next {
+    animation: btnRise 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s both;
+}
+
+.music-area.is-expanded .music-progress {
+    animation: progressExpand 0.5s ease-out 0.25s both;
+}
+
+@keyframes btnRise {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(8px) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+    }
+}
+
+@keyframes progressExpand {
+    from {
+        opacity: 0;
+        transform: scaleX(0);
+    }
+    to {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+}
+
+/* 播放控制按钮 - 玻璃微珠质感 */
 .music-btn {
     position: absolute;
     top: 0;
     transform: translateX(-50%);
 
-    /* 圆润容器 - 24px 极限 */
+    /* 圆润容器 */
     width: 24px;
     height: 24px;
     border-radius: 50%;
     border: none;
     background: transparent;
 
-    /* 玻璃光泽效果 - 精细版 */
+    /* 玻璃微珠按钮效果 */
     box-shadow:
-        inset 0 0.5px 0 0 var(--glass-border-top),
-        inset 0 -0.5px 0 0 var(--glass-border-bottom),
-        inset 1px 0 0 0 var(--glass-border-side),
-        inset -1px 0 0 0 var(--glass-border-side),
-        0 1px 4px -1px var(--glass-outer-shadow),
-        inset 0 0 10px 0 var(--glass-inner-glow);
+        inset 0 0.5px 0 0 var(--btn-glass-border-top),
+        inset 0 -0.5px 0 0 var(--btn-glass-border-bottom),
+        0 1px 5px -1px var(--btn-glass-shadow),
+        inset 0 0 12px 0 var(--btn-glass-inner-tint);
 
     /* 图标居中 */
     display: flex;
@@ -1325,12 +1472,10 @@ body {
     font-size: 11px;
     /* 默认带微弱 accent 色调 */
     box-shadow:
-        inset 0 0.5px 0 0 var(--glass-hover-border),
-        inset 0 -0.5px 0 0 var(--glass-border-bottom),
-        inset 1px 0 0 0 var(--glass-hover-border),
-        inset -1px 0 0 0 var(--glass-hover-border),
-        0 1px 6px -1px var(--glass-outer-shadow),
-        inset 0 0 12px 0 var(--glass-hover-glow);
+        inset 0 0.5px 0 0 var(--btn-glass-hover-border),
+        inset 0 -0.5px 0 0 var(--btn-glass-border-bottom),
+        0 2px 8px -1px var(--btn-glass-shadow),
+        inset 0 0 15px 0 var(--btn-glass-active-glow);
 }
 
 /* 下一曲：精确 75% 位置 */
@@ -1338,17 +1483,14 @@ body {
     left: 75%;
 }
 
-/* Hover - 借鉴玻璃卡片效果 */
+/* Hover */
 .music-btn:hover {
     color: var(--accent);
     box-shadow:
-        inset 0 0.5px 0 0 rgba(255, 255, 255, 0.12),
-        inset 0 -0.5px 0 0 var(--glass-border-bottom),
-        inset 1px 0 0 0 rgba(255, 255, 255, 0.05),
-        inset -1px 0 0 0 rgba(255, 255, 255, 0.05),
-        0 2px 8px -1px var(--glass-outer-shadow),
-        0 0 0 0.5px var(--glass-hover-border),
-        inset 0 0 15px 0 var(--glass-hover-glow);
+        inset 0 0.5px 0 0 var(--btn-glass-hover-border),
+        inset 0 -0.5px 0 0 var(--btn-glass-border-bottom),
+        0 3px 10px -1px var(--btn-glass-shadow),
+        inset 0 0 18px 0 var(--btn-glass-active-glow);
 }
 
 /* Active - 按压感 */
@@ -1360,10 +1502,10 @@ body {
 .music-btn--play.playing {
     color: var(--accent);
     box-shadow:
-        inset 0 0.5px 0 0 rgba(255, 255, 255, 0.15),
-        inset 0 -0.5px 0 0 var(--glass-border-bottom),
-        0 2px 10px -1px var(--glass-outer-shadow),
-        inset 0 0 18px 0 var(--glass-hover-glow);
+        inset 0 0.5px 0 0 var(--btn-glass-hover-border),
+        inset 0 -0.5px 0 0 var(--btn-glass-border-bottom),
+        0 3px 12px -1px var(--btn-glass-shadow),
+        inset 0 0 20px 0 var(--btn-glass-active-glow);
 }
 
 /* 进度条 - 沿用分割线设计 */
@@ -1401,6 +1543,17 @@ body {
     .music-player {
         margin-top: var(--space-5); /* 移动端上间距: 20px */
         margin-bottom: var(--space-8); /* 移动端下间距: 32px */
+    }
+
+    .music-divider {
+        margin-top: var(--space-5);
+        margin-bottom: var(--space-8);
+    }
+
+    .music-toggle {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
     }
 }
 

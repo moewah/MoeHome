@@ -2216,18 +2216,55 @@ class MusicPlayer {
 
 // 初始化音乐播放器
 function initMusicPlayer() {
+    const toggleBtn = document.getElementById('music-toggle');
+    const musicArea = document.getElementById('music-area');
     const playerEl = document.getElementById('music-player');
-    if (!playerEl) return;
 
-    const configAttr = playerEl.dataset.config;
-    if (!configAttr) return;
+    // 如果没有切换按钮，说明音乐功能未启用
+    if (!toggleBtn || !musicArea) return;
 
-    try {
-        const config = JSON.parse(configAttr);
-        new MusicPlayer(config);
-    } catch (e) {
-        console.error('MoeWah Music: 配置解析失败', e);
-    }
+    // 音乐播放器实例（延迟初始化）
+    let musicPlayerInstance = null;
+    let isExpanded = false;
+
+    // 切换展开/收起（分割线 <-> 音乐播放器）
+    const toggleExpand = () => {
+        isExpanded = !isExpanded;
+
+        // 更新展开状态（在 music-area 上切换类名）
+        musicArea.classList.toggle('is-expanded', isExpanded);
+        toggleBtn.classList.toggle('is-active', isExpanded);
+        toggleBtn.setAttribute('aria-expanded', isExpanded);
+
+        // 首次展开时初始化播放器
+        if (isExpanded && !musicPlayerInstance && playerEl) {
+            const configAttr = playerEl.dataset.config;
+            if (configAttr) {
+                try {
+                    const config = JSON.parse(configAttr);
+                    musicPlayerInstance = new MusicPlayer(config);
+                } catch (e) {
+                    console.error('MoeWah Music: 配置解析失败', e);
+                }
+            }
+        }
+
+        // 收起时暂停播放
+        if (!isExpanded && musicPlayerInstance && musicPlayerInstance.isPlaying) {
+            musicPlayerInstance.pause();
+        }
+    };
+
+    // 绑定切换事件
+    toggleBtn.addEventListener('click', toggleExpand);
+
+    // 键盘支持
+    toggleBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleExpand();
+        }
+    });
 }
 
 // ========== 页面加载完成后初始化 ==========

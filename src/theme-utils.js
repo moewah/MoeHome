@@ -97,8 +97,8 @@ const ThemeManager = {
             modes: ['light'],
             colors: {
                 accent: '#88C0D0',      // nord8 - Frost 青色，Nord 标志性色彩
-                bgPrimary: '#ECEFF4',   // nord6 - Snow Storm 最亮，纯净北极白
-                bgSecondary: '#E5E9F0', // nord5 - Snow Storm 次亮，柔和雪白
+                bgPrimary: '#E5E9F0',   // nord5 - Snow Storm 次亮，柔和雪白
+                bgSecondary: '#ECEFF4', // nord6 - Snow Storm 最亮，纯净北极白
                 textPrimary: '#2E3440', // nord0 - Polar Night 最暗，深邃北极夜
                 textSecondary: '#4C566A', // nord3 - Polar Night 柔和，可读性极佳
                 border: '#D8DEE9',      // nord4 - Snow Storm 边框，淡雅分隔
@@ -111,8 +111,8 @@ const ThemeManager = {
             modes: ['light'],
             colors: {
                 accent: '#af3a03',
-                bgPrimary: '#fbf1c7',
-                bgSecondary: '#f2e5bc',
+                bgPrimary: '#f2e5bc',
+                bgSecondary: '#fbf1c7',
                 textPrimary: '#3c3836',
                 textSecondary: '#665c54',
                 border: '#d5c4a1',
@@ -125,8 +125,8 @@ const ThemeManager = {
             modes: ['light'],
             colors: {
                 accent: '#ff9940',
-                bgPrimary: '#fafafa',
-                bgSecondary: '#f3f3f3',
+                bgPrimary: '#f3f3f3',
+                bgSecondary: '#fafafa',
                 textPrimary: '#5c6166',
                 textSecondary: '#8a9199',
                 border: '#e6e6e6',
@@ -393,13 +393,22 @@ const ThemeManager = {
             '--card-border-strong': `rgba(${accentRgb}, ${derive.cardBorderStrong})`,
             '--card-border-muted': `rgba(${accentRgb}, ${derive.cardBorderMuted})`,
 
-            '--glass-border-top': mode === 'light' ? `rgba(0, 0, 0, 0.04)` : `rgba(255, 255, 255, 0.08)`,
+            /* 玻璃光泽系统 */
+            '--glass-border-top': mode === 'light' ? `rgba(255, 255, 255, 0.04)` : `rgba(255, 255, 255, 0.08)`,
             '--glass-border-bottom': mode === 'light' ? `rgba(0, 0, 0, 0.08)` : `rgba(0, 0, 0, 0.5)`,
-            '--glass-border-side': mode === 'light' ? `rgba(0, 0, 0, 0.03)` : `rgba(255, 255, 255, 0.03)`,
+            '--glass-border-side': mode === 'light' ? `rgba(255, 255, 255, 0.03)` : `rgba(255, 255, 255, 0.03)`,
             '--glass-outer-shadow': mode === 'light' ? `rgba(0, 0, 0, 0.1)` : `rgba(0, 0, 0, 0.4)`,
-            '--glass-inner-glow': `rgba(${accentRgb}, 0.03)`,
+            '--glass-inner-glow': mode === 'light' ? `rgba(${accentRgb}, 0.03)` : `rgba(${accentRgb}, 0.03)`,
             '--glass-hover-border': `rgba(${accentRgb}, ${mode === 'light' ? 0.25 : 0.15})`,
-            '--glass-hover-glow': `rgba(${accentRgb}, 0.05)`,
+            '--glass-hover-glow': mode === 'light' ? `rgba(${accentRgb}, 0.05)` : `rgba(${accentRgb}, 0.05)`,
+
+            /* === 玻璃微珠按钮专用变量 === */
+            '--btn-glass-border-top': mode === 'light' ? `rgba(0, 0, 0, 0.15)` : `rgba(255, 255, 255, 0.08)`,
+            '--btn-glass-border-bottom': mode === 'light' ? `rgba(0, 0, 0, 0.2)` : `rgba(0, 0, 0, 0.5)`,
+            '--btn-glass-shadow': mode === 'light' ? `rgba(0, 0, 0, 0.15)` : `rgba(0, 0, 0, 0.4)`,
+            '--btn-glass-inner-tint': mode === 'light' ? `rgba(0, 0, 0, 0.03)` : `rgba(${accentRgb}, 0.03)`,
+            '--btn-glass-hover-border': mode === 'light' ? `rgba(0, 0, 0, 0.2)` : `rgba(${accentRgb}, 0.15)`,
+            '--btn-glass-active-glow': mode === 'light' ? `rgba(0, 0, 0, 0.06)` : `rgba(${accentRgb}, 0.05)`,
 
             '--terminal-bg': terminalColors.bg,
             '--terminal-text': terminalColors.text,

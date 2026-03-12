@@ -73,7 +73,6 @@ window.HOMEPAGE_CONFIG = {
     name: "MoeWah",
     tagline: {
       prefix: "🐾",
-      text: "Meow~",
       highlight: "万物皆可萌！",
     },
     avatar: "images/avatar.webp",

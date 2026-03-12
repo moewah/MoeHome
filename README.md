@@ -1,6 +1,6 @@
 # MoeHome 个人主页
 
-**个人品牌的中心化入口（Personal Brand Hub）**
+**个人品牌的中心化入口**
 
 MoeHome 不是传统意义上的"博客"或"作品集"，而是一张精心设计的数字名片——将分散的社交资产（GitHub、Twitter、博客、音乐品味）聚合为统一的品牌体验。
 
@@ -148,7 +148,6 @@ profile: {
     name: 'MoeWah',
     tagline: {
         prefix: '🐾',
-        text: 'Meow~',
         highlight: '万物皆可萌！'
     },
     avatar: 'images/avatar.webp'
