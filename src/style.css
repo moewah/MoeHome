@@ -1271,27 +1271,45 @@ body {
 /* 五分点定位：三按钮精确位于 25%、50%、75% 位置 */
 .music-player {
     position: relative;
-    height: calc(24px + var(--space-4)); /* 按钮高度 + 按钮与进度条间距 */
+    height: calc(26px + var(--space-4)); /* play按钮高度 + 按钮与进度条间距 */
     margin: var(--space-6) 0 var(--space-10); /* 上间距: 24px, 下间距: 40px */
 }
 
-/* 播放控制按钮 - 绝对定位实现精确百分比位置 */
+/* 播放控制按钮 - 玻璃微珠质感（紧凑版）*/
 .music-btn {
     position: absolute;
-    top: 0; /* 按钮位于容器顶部 */
-    transform: translateX(-50%); /* 按钮中心点对齐目标位置 */
+    top: 0;
+    transform: translateX(-50%);
+
+    /* 圆润容器 - 24px 极限 */
     width: 24px;
     height: 24px;
+    border-radius: 50%;
     border: none;
     background: transparent;
-    color: var(--text-secondary);
-    cursor: pointer;
+
+    /* 玻璃光泽效果 - 精细版 */
+    box-shadow:
+        inset 0 0.5px 0 0 var(--glass-border-top),
+        inset 0 -0.5px 0 0 var(--glass-border-bottom),
+        inset 1px 0 0 0 var(--glass-border-side),
+        inset -1px 0 0 0 var(--glass-border-side),
+        0 1px 4px -1px var(--glass-outer-shadow),
+        inset 0 0 10px 0 var(--glass-inner-glow);
+
+    /* 图标居中 */
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease;
-    font-size: 14px;
-    opacity: 0.7;
+
+    color: var(--text-secondary);
+    font-size: 10px;
+    cursor: pointer;
+
+    transition:
+        box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        color 0.2s ease,
+        transform 0.15s ease;
 }
 
 /* 上一曲：精确 25% 位置 */
@@ -1299,9 +1317,20 @@ body {
     left: 25%;
 }
 
-/* 播放键：精确 50% 位置 */
+/* 播放键：精确 50% 位置 - 主按钮稍突出 */
 .music-btn--play {
     left: 50%;
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+    /* 默认带微弱 accent 色调 */
+    box-shadow:
+        inset 0 0.5px 0 0 var(--glass-hover-border),
+        inset 0 -0.5px 0 0 var(--glass-border-bottom),
+        inset 1px 0 0 0 var(--glass-hover-border),
+        inset -1px 0 0 0 var(--glass-hover-border),
+        0 1px 6px -1px var(--glass-outer-shadow),
+        inset 0 0 12px 0 var(--glass-hover-glow);
 }
 
 /* 下一曲：精确 75% 位置 */
@@ -1309,19 +1338,32 @@ body {
     left: 75%;
 }
 
+/* Hover - 借鉴玻璃卡片效果 */
 .music-btn:hover {
     color: var(--accent);
-    opacity: 1;
+    box-shadow:
+        inset 0 0.5px 0 0 rgba(255, 255, 255, 0.12),
+        inset 0 -0.5px 0 0 var(--glass-border-bottom),
+        inset 1px 0 0 0 rgba(255, 255, 255, 0.05),
+        inset -1px 0 0 0 rgba(255, 255, 255, 0.05),
+        0 2px 8px -1px var(--glass-outer-shadow),
+        0 0 0 0.5px var(--glass-hover-border),
+        inset 0 0 15px 0 var(--glass-hover-glow);
 }
 
+/* Active - 按压感 */
 .music-btn:active {
-    opacity: 0.6;
+    transform: translateX(-50%) scale(0.92);
 }
 
 /* 播放中的按钮状态 */
 .music-btn--play.playing {
     color: var(--accent);
-    opacity: 1;
+    box-shadow:
+        inset 0 0.5px 0 0 rgba(255, 255, 255, 0.15),
+        inset 0 -0.5px 0 0 var(--glass-border-bottom),
+        0 2px 10px -1px var(--glass-outer-shadow),
+        inset 0 0 18px 0 var(--glass-hover-glow);
 }
 
 /* 进度条 - 沿用分割线设计 */
@@ -3828,9 +3870,8 @@ body.skeleton-active .cursor {
 .skeleton-music {
     position: relative;
     width: 100%;
-    max-width: 200px;
-    height: calc(24px + var(--space-4)); /* 与实际播放器一致: 40px */
-    margin: var(--space-6) auto var(--space-10);
+    height: calc(26px + var(--space-4)); /* 与实际播放器一致: play按钮26px + 间距 */
+    margin: var(--space-6) 0 var(--space-10);
 }
 
 .skeleton-music-btn {
@@ -3848,8 +3889,8 @@ body.skeleton-active .cursor {
 
 .skeleton-music-btn--play {
     left: 50%;
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
 }
 
 .skeleton-music-btn--next {
