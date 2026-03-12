@@ -1,6 +1,10 @@
 # MoeHome 个人主页
 
-一个简约、酷炫的个人主页模板，配置驱动、静态优先，支持多主题配色、GitHub 集成、RSS 聚合，专注性能与视觉体验。
+**个人品牌的中心化入口（Personal Brand Hub）**
+
+MoeHome 不是传统意义上的"博客"或"作品集"，而是一张精心设计的数字名片——将分散的社交资产（GitHub、Twitter、博客、音乐品味）聚合为统一的品牌体验。
+
+配置驱动、静态优先，支持多主题配色、GitHub 集成、RSS 聚合，专注性能与视觉体验。
 
 ![License](https://img.shields.io/badge/License-MIT-green)
 
