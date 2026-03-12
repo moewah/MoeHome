@@ -2249,10 +2249,8 @@ function initMusicPlayer() {
             }
         }
 
-        // 收起时暂停播放
-        if (!isExpanded && musicPlayerInstance && musicPlayerInstance.isPlaying) {
-            musicPlayerInstance.pause();
-        }
+        // 注意：收起时不再暂停播放，音乐控制仅由三个控制按钮管理
+        // 用户可以通过播放控制按钮来暂停/继续播放
     };
 
     // 绑定切换事件
