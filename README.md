@@ -476,8 +476,22 @@ npm run build
 
 - HTML5 + CSS3 + Vanilla JavaScript
 - Font Awesome 6 图标
-- Google Fonts（IBM Plex Mono 等宽字体）
-- 中文字体使用系统回退（PingFang SC / Microsoft YaHei 等）
+
+### 字体策略
+
+采用"西文优先 + 系统回退"策略，零外部中文字体加载，性能友好：
+
+| 变量 | 用途 | 字体栈 |
+|------|------|--------|
+| `--font-sans` | 正文/界面 | Avenir Next → SF Pro Text → PingFang SC → Microsoft YaHei → 系统回退 |
+| `--font-mono` | 终端/代码 | JetBrains Mono（Google Fonts）→ SF Mono → Cascadia Code → 系统回退 |
+| `--font-display` | 大标题/名言 | Iowan Old Style → Palatino Linotype → Noto Serif SC → Georgia |
+
+**设计亮点**：
+- 西文优先（Avenir Next）确保英文渲染精致
+- 完整 Emoji 回退链（Apple Color Emoji → Segoe UI Emoji → Noto Color Emoji）
+- 仅加载 JetBrains Mono 等宽字体（约 30KB），中文使用系统字体避免大文件加载
+- 国内 Google Fonts 镜像加速
 
 ### 开发依赖（仅构建时）
 

@@ -78,27 +78,46 @@
     --navbar-bg-scrolled: #0a0a0a;
 
     /* === 字体系统 === */
+    /* 正文/界面字体：西文优先，确保英文渲染精致 */
     --font-sans:
+        "Avenir Next",
+        "SF Pro Text",
         "PingFang SC",
         "Hiragino Sans GB",
         "Microsoft YaHei",
-        "Noto Sans SC",
+        ui-sans-serif,
+        system-ui,
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
-        "Roboto",
         "Helvetica Neue",
         Arial,
-        sans-serif;
+        "Noto Sans",
+        sans-serif,
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol",
+        "Noto Color Emoji";
+
+    /* 展示字体：衬线字体用于大标题、名言等 */
+    --font-display:
+        "Iowan Old Style",
+        "Palatino Linotype",
+        "Noto Serif SC",
+        ui-serif,
+        Georgia,
+        serif;
+
+    /* 代码/终端字体：开发者首选，连字支持 */
     --font-mono:
-        "IBM Plex Mono",
+        "JetBrains Mono",
         "SF Mono",
-        "Monaco",
-        "Inconsolata",
-        "Fira Mono",
-        "Consolas",
-        "Droid Sans Mono",
-        "Source Code Pro",
+        "Cascadia Code",
+        Menlo,
+        Monaco,
+        Consolas,
+        "Liberation Mono",
+        "Courier New",
         monospace;
 
     /* 动态视口高度 - 解决移动端 100vh 问题 */
@@ -1142,7 +1161,7 @@ body {
 
 /* ========== Name ========== */
 .name {
-    font-family: "IBM Plex Mono", monospace;
+    font-family: "JetBrains Mono", monospace;
     font-size: clamp(2rem, 6vw, 3.5rem);
     font-weight: 700;
     margin-bottom: var(--space-3);
@@ -1609,7 +1628,7 @@ body {
     padding: 0;
     margin-bottom: var(--space-10);
     text-align: left;
-    font-family: "IBM Plex Mono", monospace;
+    font-family: "JetBrains Mono", monospace;
     font-size: 0.75rem;
     overflow: hidden;
     position: relative;
@@ -1666,7 +1685,7 @@ body {
     font-size: 0.75rem;
     font-weight: 500;
     opacity: 0.6;
-    font-family: "IBM Plex Mono", monospace;
+    font-family: "JetBrains Mono", monospace;
     letter-spacing: 0.5px;
     white-space: nowrap;
 }

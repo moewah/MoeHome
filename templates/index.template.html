@@ -26,11 +26,11 @@
         <!-- Page Title -->
         <title>{{TITLE}}</title>
 
-        <!-- Fonts: 仅加载代码字体，中文使用系统字体回退 -->
+        <!-- Fonts: 仅加载代码字体 JetBrains Mono，中文使用系统字体回退 -->
         <link rel="preconnect" href="https://fonts.googleapis.cn" />
         <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin />
         <link
-            href="https://fonts.googleapis.cn/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+            href="https://fonts.googleapis.cn/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
             rel="stylesheet"
         />
 
@@ -59,7 +59,7 @@
             *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
             html { scroll-behavior: smooth; height: 100%; -webkit-text-size-adjust: 100%; }
             body {
-                font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+                font-family: "Avenir Next", "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
                 background: var(--bg-primary);
                 color: var(--text-primary);
                 overflow-x: hidden;
@@ -180,7 +180,7 @@
 
             /* ========== Name & Tagline ========== */
             .name {
-                font-family: "IBM Plex Mono", "SF Mono", "Monaco", monospace;
+                font-family: "JetBrains Mono", "SF Mono", "Cascadia Code", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
                 font-size: clamp(2rem, 6vw, 3.5rem);
                 font-weight: 700;
                 margin-bottom: 10px;
