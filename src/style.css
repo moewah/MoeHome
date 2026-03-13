@@ -12,6 +12,7 @@
     --text-secondary: #888888;
     --accent: #00ff9f;
     --accent-dim: rgba(0, 255, 159, 0.1);
+    --accent-deep: #00cc7f; /* accent 的深色变体，由 JS 动态更新 */
     --border: #222222;
     --grid-color: rgba(0, 255, 159, 0.08);
 
@@ -48,7 +49,9 @@
     /* 使用语义化命名，保持动画一致性 */
     --duration-instant: 0ms;      /* 即时响应 */
     --duration-fast: 150ms;       /* 快速反馈（微交互） */
+    --duration-snappy: 200ms;     /* 敏捷过渡（hover、focus） */
     --duration-normal: 250ms;     /* 标准过渡（按钮、链接） */
+    --duration-medium: 300ms;     /* 中等过渡（面板、卡片） */
     --duration-slow: 400ms;       /* 慢速过渡（面板展开） */
     --duration-slower: 600ms;     /* 更慢过渡（页面切换） */
     --duration-slowest: 800ms;    /* 最慢过渡（复杂动画） */
@@ -125,12 +128,15 @@
     text-decoration: none;
     border-radius: 0 0 8px 8px;
     z-index: var(--z-skip-link);
-    transition: top 0.2s ease;
+    transition: top var(--duration-normal) ease;
 }
 
-.skip-link:focus {
+/* Skip link 使用 :focus 确保键盘导航时可见 */
+.skip-link:focus,
+.skip-link:focus-visible {
     top: 0;
-    outline: none;
+    outline: 2px solid var(--bg-primary);
+    outline-offset: 2px;
 }
 
 html {
@@ -167,8 +173,8 @@ body {
     pointer-events: none;
     z-index: var(--z-cursor);
     transition:
-        transform 0.15s ease,
-        opacity 0.15s ease;
+        transform var(--duration-fast) ease,
+        opacity var(--duration-fast) ease;
     will-change: transform;
 }
 
@@ -187,7 +193,7 @@ body {
     height: var(--navbar-height);
     background: var(--navbar-bg);
     z-index: var(--z-navbar);
-    transition: background 0.3s ease;
+    transition: background var(--duration-medium) ease;
 }
 
 .navbar.scrolled {
@@ -217,7 +223,7 @@ body {
     font-family: var(--font-mono);
     font-size: 16px;
     font-weight: 500;
-    transition: color 0.2s ease;
+    transition: color var(--duration-snappy) ease;
     white-space: nowrap;
     flex-shrink: 0;
 }
@@ -253,7 +259,7 @@ body {
     text-decoration: none;
     font-size: 14px;
     font-weight: 500;
-    transition: color 0.2s ease;
+    transition: color var(--duration-snappy) ease;
     white-space: nowrap;
 }
 
@@ -267,7 +273,7 @@ body {
     height: 2px;
     background: var(--accent);
     border-radius: 1px;
-    transition: transform 0.2s ease;
+    transition: transform var(--duration-snappy) ease;
 }
 
 .nav-link:hover {
@@ -300,7 +306,7 @@ body {
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: color 0.2s ease;
+    transition: color var(--duration-snappy) ease;
     font-family: inherit;
     white-space: nowrap;
 }
@@ -309,7 +315,7 @@ body {
 .nav-dropdown-toggle .fa-chevron-down {
     font-size: 10px;
     opacity: 0.6;
-    transition: transform 0.2s ease;
+    transition: transform var(--duration-snappy) ease;
 }
 
 .nav-dropdown:hover .fa-chevron-down {
@@ -331,7 +337,7 @@ body {
     height: 2px;
     background: var(--accent);
     border-radius: 1px;
-    transition: transform 0.2s ease;
+    transition: transform var(--duration-snappy) ease;
 }
 
 .nav-dropdown:hover .nav-dropdown-toggle::after {
@@ -355,7 +361,7 @@ body {
     opacity: 0;
     visibility: hidden;
     z-index: var(--z-dropdown);
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: opacity var(--duration-snappy) ease, transform var(--duration-snappy) ease;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
@@ -371,7 +377,7 @@ body {
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 14px;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
 }
 
 .nav-dropdown-menu a:hover {
@@ -399,7 +405,7 @@ body {
     border-radius: 8px;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    transition: background var(--duration-snappy) ease, color var(--duration-snappy) ease, border-color var(--duration-snappy) ease;
 }
 
 .nav-theme-toggle:hover {
@@ -409,7 +415,7 @@ body {
 }
 
 .nav-theme-toggle i {
-    transition: transform 0.2s ease;
+    transition: transform var(--duration-snappy) ease;
 }
 
 .nav-theme-toggle:hover i {
@@ -645,7 +651,7 @@ body {
     border-radius: 8px;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    transition: background var(--duration-snappy) ease, color var(--duration-snappy) ease, border-color var(--duration-snappy) ease;
 }
 
 .navbar-toggle:hover {
@@ -661,7 +667,7 @@ body {
     background: rgba(0, 0, 0, 0.5);
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: opacity var(--duration-medium) ease, visibility var(--duration-medium) ease;
     z-index: var(--z-overlay);
 }
 
@@ -681,7 +687,7 @@ body {
     height: 100dvh;
     background: var(--bg-secondary);
     transform: translateX(100%);
-    transition: transform 0.3s ease;
+    transition: transform var(--duration-medium) ease;
     z-index: var(--z-sidebar);
     display: flex;
     flex-direction: column;
@@ -717,7 +723,7 @@ body {
     color: var(--text-secondary);
     cursor: pointer;
     border-radius: 6px;
-    transition: background 0.2s ease, color 0.2s ease;
+    transition: background var(--duration-snappy) ease, color var(--duration-snappy) ease;
 }
 
 .nav-sidebar-close:hover {
@@ -738,7 +744,7 @@ body {
     text-decoration: none;
     font-size: 15px;
     font-weight: 500;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
     border-left: 3px solid transparent;
 }
 
@@ -771,7 +777,7 @@ body {
     font-size: 15px;
     font-weight: 500;
     cursor: pointer;
-    transition: color 0.15s ease;
+    transition: color var(--duration-fast) ease;
     font-family: inherit;
     text-align: left;
 }
@@ -783,7 +789,7 @@ body {
 .nav-sidebar-dropdown-toggle .fa-chevron-down {
     font-size: 10px;
     opacity: 0.6;
-    transition: transform 0.2s ease;
+    transition: transform var(--duration-snappy) ease;
 }
 
 .nav-sidebar-dropdown.open .fa-chevron-down {
@@ -793,7 +799,7 @@ body {
 .nav-sidebar-dropdown-items {
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease;
+    transition: max-height var(--duration-medium) ease;
 }
 
 .nav-sidebar-dropdown.open .nav-sidebar-dropdown-items {
@@ -806,7 +812,7 @@ body {
     color: var(--text-secondary);
     text-decoration: none;
     font-size: 14px;
-    transition: color 0.15s ease;
+    transition: color var(--duration-fast) ease;
 }
 
 .nav-sidebar-dropdown-items a:hover {
@@ -832,7 +838,7 @@ body {
     color: var(--text-secondary);
     font-size: 14px;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease;
+    transition: background var(--duration-snappy) ease, color var(--duration-snappy) ease;
     font-family: inherit;
 }
 
@@ -1005,7 +1011,7 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: transform var(--duration-medium) ease;
     /* CLS 优化：预留空间 */
     aspect-ratio: 1;
 }
@@ -1385,18 +1391,22 @@ body {
 
 /* 播放器外层容器 */
 .music-player-wrapper {
-    display: block;
-    overflow: hidden;
-    max-height: 0;
+    display: grid;
+    grid-template-rows: 0fr;
     opacity: 0;
     transition:
-        max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.4s ease-out 0.05s;
+        grid-template-rows var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1),
+        opacity var(--duration-slow) ease-out 0.05s;
+}
+
+/* 内层容器：撑开 grid 行 */
+.music-player-inner {
+    overflow: hidden;
 }
 
 /* 展开时播放器容器展开 */
 .music-area.is-expanded .music-player-wrapper {
-    max-height: 100px;
+    grid-template-rows: 1fr;
     opacity: 1;
 }
 
@@ -1783,7 +1793,7 @@ body {
     border-radius: var(--radius-md);
     text-decoration: none;
     color: var(--text-primary);
-    transition: box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: box-shadow var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1), transform var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
     min-height: 76px;
@@ -1811,7 +1821,7 @@ body {
         transparent 60%
     );
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-medium) ease;
     pointer-events: none;
     z-index: 0;
 }
@@ -1866,7 +1876,7 @@ body {
     justify-content: center;
     background: var(--accent-dim);
     border-radius: 10px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--duration-medium) cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
     font-family:
         "Font Awesome 6 Free",
@@ -1882,7 +1892,7 @@ body {
 .link-icon-wrapper i {
     font-size: 1.15rem;
     color: var(--accent);
-    transition: color 0.3s ease;
+    transition: color var(--duration-medium) ease;
 }
 
 .link:hover .link-icon-wrapper i {
@@ -1927,7 +1937,7 @@ body {
     font-size: 0.75rem;
     color: var(--text-secondary);
     opacity: 0.6;
-    transition: opacity 0.25s ease;
+    transition: opacity var(--duration-normal) ease;
 }
 
 .link:hover .link-description {
@@ -1941,7 +1951,7 @@ body {
     gap: 6px;
     color: var(--text-secondary);
     font-size: 0.85rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--duration-medium) cubic-bezier(0.4, 0, 0.2, 1);
     opacity: 0.6;
     margin-left: auto;
     flex-shrink: 0;
@@ -1967,7 +1977,7 @@ body {
     background: currentColor;
     opacity: 0;
     transform: scale(0);
-    transition: all 0.3s ease;
+    transition: all var(--duration-medium) ease;
 }
 
 .link:hover .link-indicator::after {
@@ -2127,7 +2137,7 @@ body {
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all var(--duration-medium) cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
     font-family: var(--font-sans);
     position: relative;
@@ -2150,7 +2160,7 @@ body {
 .donation__btn-icon {
     font-size: 1rem;
     color: var(--accent);
-    transition: color 0.3s ease;
+    transition: color var(--duration-medium) ease;
 }
 
 /* Button Modifiers - 悬停时背景变品牌色，图标和文字变白色 */
@@ -2205,7 +2215,7 @@ body {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: opacity var(--duration-medium) ease, visibility var(--duration-medium) ease;
 }
 
 /* State Modifier */
@@ -2225,7 +2235,7 @@ body {
     width: 90%;
     text-align: center;
     transform: scale(0.9);
-    transition: transform 0.3s ease;
+    transition: transform var(--duration-medium) ease;
 }
 
 .donation__modal-overlay.is-active .donation__modal {
@@ -2274,7 +2284,7 @@ body {
     color: var(--text-secondary);
     font-size: 0.85rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--duration-snappy) ease;
 }
 
 .donation__modal-close:hover {
@@ -2389,7 +2399,7 @@ body {
     position: relative;
     transform-style: preserve-3d;
     -webkit-transform-style: preserve-3d;
-    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-slowest) cubic-bezier(0.4, 0, 0.2, 1);
     /* 性能优化：提示浏览器准备 transform 变化 */
     will-change: transform;
 }
@@ -2438,7 +2448,7 @@ body {
     /* 3D翻转关键属性 - iOS WebKit必须同时设置两个前缀 */
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    transition: box-shadow 0.3s ease, visibility 0s linear 0.4s, opacity 0.4s ease;
+    transition: box-shadow var(--duration-medium) ease, visibility 0s linear var(--duration-slow), opacity var(--duration-slow) ease;
     overflow: hidden;
     /* 玻璃光泽效果 */
     box-shadow:
@@ -2532,7 +2542,7 @@ body {
         transparent 50%
     );
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-medium) ease;
     pointer-events: none;
     z-index: 10;
     border-radius: 12px;
@@ -2556,7 +2566,7 @@ body {
         var(--glow-subtle),
         transparent
     );
-    transition: left 0.6s ease;
+    transition: left var(--duration-slower) ease;
     pointer-events: none;
     z-index: 1;
 }
@@ -2584,7 +2594,7 @@ body {
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: color 0.3s ease;
+    transition: color var(--duration-medium) ease;
     text-align: left;
 }
 
@@ -2639,7 +2649,7 @@ body {
     color: var(--text-secondary);
     opacity: 0;
     transform: translateX(-6px);
-    transition: all 0.3s ease;
+    transition: all var(--duration-medium) ease;
 }
 
 .rss-card-container:hover .rss-article-arrow {
@@ -2708,7 +2718,7 @@ body {
     font-weight: 600;
     letter-spacing: 0.05em;
     z-index: 2;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-medium) ease;
 }
 
 .rss-card-container:hover .article-index {
@@ -2892,7 +2902,7 @@ body {
     background: var(--border);
     border-radius: 2px;
     opacity: 0.4;
-    transition: all 0.3s ease;
+    transition: all var(--duration-medium) ease;
 }
 
 .contribution-cell[data-level="1"] {
@@ -2939,7 +2949,7 @@ body {
     display: flex;
     gap: var(--space-3);
     /* 优化的过渡动画 - 使用更平滑的贝塞尔曲线 */
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform;
 }
 
@@ -2965,7 +2975,7 @@ body {
     border: none;
     padding: 0;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: all var(--duration-normal) ease;
 }
 
 /* 扩展触摸目标到 44x44px (WCAG 2.5.5) */
@@ -3017,7 +3027,7 @@ body {
     border-radius: 10px;
     text-decoration: none;
     color: var(--text-primary);
-    transition: box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: box-shadow var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1), transform var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
     /* 玻璃光泽效果 */
@@ -3043,7 +3053,7 @@ body {
         transparent 60%
     );
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-medium) ease;
     pointer-events: none;
     z-index: 0;
 }
@@ -3171,7 +3181,7 @@ body {
     height: 100%;
     background: linear-gradient(90deg, var(--accent), var(--accent-deep));
     border-radius: 2px;
-    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width var(--duration-slowest) cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* 项目底部 - 语言色条 */
@@ -3207,7 +3217,7 @@ body {
     color: var(--text-secondary);
     opacity: 0;
     transform: translateX(-4px);
-    transition: all 0.25s ease;
+    transition: all var(--duration-normal) ease;
 }
 
 .project-card:hover .project-arrow {
@@ -3264,7 +3274,7 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     display: block;
-    transition: color 0.2s ease;
+    transition: color var(--duration-snappy) ease;
 }
 
 .project-card-mini:hover .project-mini-name {
@@ -3379,7 +3389,7 @@ body {
 .footer-brand {
     color: var(--text-secondary);
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color var(--duration-snappy) ease;
 }
 
 .footer-brand:hover {
@@ -3396,7 +3406,7 @@ body {
     color: var(--text-secondary);
     opacity: 0.6;
     text-decoration: none;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--duration-snappy) ease;
 }
 
 .footer-icp:hover {
@@ -3420,7 +3430,7 @@ body {
     opacity: 0;
     visibility: hidden;
     transform: translateY(20px) scale(0.8);
-    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+    transition: opacity var(--duration-medium) ease, visibility var(--duration-medium) ease, transform var(--duration-medium) ease;
     z-index: var(--z-sticky);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--border);
 }
@@ -3537,7 +3547,7 @@ body {
         min-height: unset;
         aspect-ratio: auto;
         transform-style: preserve-3d;
-        transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform var(--duration-slowest) cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     /* 移动端翻转状态 - 在固定高度容器内翻转不会影响布局 */
@@ -3935,7 +3945,7 @@ body {
 /* ========== Skeleton Screen ========== */
 /* 骨架屏容器过渡效果 */
 .skeleton-container {
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-medium) ease;
     /* CLS 优化：绝对定位，避免与实际内容布局竞争 */
     position: absolute;
     /* 匹配 .container 的 padding-top，确保与实际内容位置一致 */
@@ -3982,6 +3992,12 @@ body.skeleton-active .cursor {
     100% {
         background-position: -200% 0;
     }
+}
+
+/* 骨架屏隐藏时停止动画，节省资源 */
+.skeleton-container[style*="display: none"] .skeleton,
+.skeleton-container[style*="visibility: hidden"] .skeleton {
+    animation: none;
 }
 
 .skeleton-avatar {
@@ -4119,7 +4135,7 @@ body.skeleton-active .cursor {
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-medium) ease;
 }
 
 /* ========== Lazy Load Animation ========== */
@@ -4179,7 +4195,7 @@ body.skeleton-active .cursor {
     background-size: 200% 100%;
     animation: skeleton-loading 1.5s ease-in-out infinite;
     z-index: 1;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--duration-medium) ease;
 }
 
 /* 头像骨架屏 - 圆形裁剪 */
@@ -4195,7 +4211,7 @@ body.skeleton-active .cursor {
 }
 
 .image-placeholder img {
-    transition: filter 0.3s ease, transform 0.3s ease;
+    transition: filter var(--duration-medium) ease, transform var(--duration-medium) ease;
 }
 
 .image-placeholder img[data-blur] {
@@ -4319,7 +4335,41 @@ a:focus-visible,
 
     /* RSS 卡片翻转 */
     .rss-card-container {
+        transform-style: flat;
         transition: none;
+    }
+
+    .rss-card-container.flipped {
+        transform: none;
+    }
+
+    .rss-card-container.flipped .rss-article:not(.rss-article-back) {
+        visibility: hidden;
+        opacity: 0;
+    }
+
+    .rss-card-container.flipped .rss-article.rss-article-back {
+        visibility: visible;
+        opacity: 1;
+        transform: none;
+    }
+
+    /* 音乐播放器 */
+    .music-player-wrapper {
+        transition: opacity var(--duration-instant);
+    }
+
+    .music-player {
+        transition: none;
+    }
+
+    .music-area.is-expanded .music-btn--prev,
+    .music-area.is-expanded .music-btn--play,
+    .music-area.is-expanded .music-btn--next,
+    .music-area.is-expanded .music-progress {
+        animation: none;
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
     }
 
     /* 项目卡片悬停效果 */

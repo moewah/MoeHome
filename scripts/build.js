@@ -904,7 +904,7 @@ function generateLinkHTML(link) {
     const antiCrawler = link.antiCrawler !== false;
     const { href, attrs } = processLinkUrl(link.url, link.external, antiCrawler);
 
-    return `                    <a href="${href}" class="link" data-brand="${link.brand}" style="--brand-color: ${link.color}" ${attrs}>
+    return `                    <a href="${href}" class="link" data-brand="${link.brand}" style="--brand-color: ${link.color}" ${attrs} aria-label="${link.name} - ${link.description}">
                         <div class="link-left">
                             <div class="link-icon-wrapper">
                                 <i class="${link.icon}"></i>
@@ -1054,18 +1054,20 @@ function generateMusicPlayerHTML(music) {
                     <div class="divider lazy-load music-divider" data-delay="1" id="music-divider"></div>
                     <!-- 音乐播放器：默认隐藏，点击音符图标后展开 -->
                     <div class="music-player-wrapper" id="music-player-wrapper">
-                        <div class="music-player" id="music-player" data-config="${musicConfigJSON}">
-                            <button class="music-btn music-btn--prev" id="music-prev" title="上一曲" aria-label="上一曲">
-                                <i class="fa-solid fa-backward-step"></i>
-                            </button>
-                            <button class="music-btn music-btn--play" id="music-play" title="播放" aria-label="播放">
-                                <i class="fa-solid fa-play" id="music-play-icon"></i>
-                            </button>
-                            <button class="music-btn music-btn--next" id="music-next" title="下一曲" aria-label="下一曲">
-                                <i class="fa-solid fa-forward-step"></i>
-                            </button>
-                            <div class="music-progress">
-                                <div class="music-progress-fill" id="music-progress-fill"></div>
+                        <div class="music-player-inner">
+                            <div class="music-player" id="music-player" data-config="${musicConfigJSON}">
+                                <button class="music-btn music-btn--prev" id="music-prev" title="上一曲" aria-label="上一曲">
+                                    <i class="fa-solid fa-backward-step"></i>
+                                </button>
+                                <button class="music-btn music-btn--play" id="music-play" title="播放" aria-label="播放">
+                                    <i class="fa-solid fa-play" id="music-play-icon"></i>
+                                </button>
+                                <button class="music-btn music-btn--next" id="music-next" title="下一曲" aria-label="下一曲">
+                                    <i class="fa-solid fa-forward-step"></i>
+                                </button>
+                                <div class="music-progress">
+                                    <div class="music-progress-fill" id="music-progress-fill"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1258,7 +1260,7 @@ function generateRSSHTML(articles, rssConfig) {
         // 背面卡片额外类名
         const backClass = isBack ? ' rss-article-back' : '';
 
-        return '<a href="' + safeLink + '" class="rss-article' + backClass + '"' + targetAttr + '>\n' +
+        return '<a href="' + safeLink + '" class="rss-article' + backClass + '"' + targetAttr + ' aria-label="阅读文章：' + escapeHTML(article.title) + '">\n' +
             '                            <div class="rss-article-content">\n' +
             '                                <span class="rss-article-title">' + escapeHTML(article.title) + '</span>\n' +
             '                                ' + descHTML + '\n' +
@@ -1817,7 +1819,7 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
     const maxStars = Math.max(...repos.map(r => r.stars), 1); // 确保最小值为1避免除零
     const progressWidth = Math.max(Math.min((mainRepo.stars / maxStars) * 100, 100), 10);
 
-    const mainCardHTML = `                    <a href="${escapeHTML(mainRepo.url)}" class="project-card project-card-main" target="_blank" rel="noopener noreferrer">
+    const mainCardHTML = `                    <a href="${escapeHTML(mainRepo.url)}" class="project-card project-card-main" target="_blank" rel="noopener noreferrer" aria-label="查看项目：${escapeHTML(mainRepo.name)}">
                         <div class="project-tab">
                             <i class="fa-solid fa-file-code"></i>
                             <span class="project-name">${escapeHTML(mainRepo.name)}</span>
@@ -1848,7 +1850,7 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
     // 生成迷你卡片
     const miniCardsHTML = repos.slice(1).map((repo, index) => {
         const starsText = repo.stars >= 1000 ? formatNumber(repo.stars) : repo.stars.toString();
-        return `                        <a href="${escapeHTML(repo.url)}" class="project-card project-card-mini" target="_blank" rel="noopener noreferrer" data-index="${index}">
+        return `                        <a href="${escapeHTML(repo.url)}" class="project-card project-card-mini" target="_blank" rel="noopener noreferrer" data-index="${index}" aria-label="查看项目：${escapeHTML(repo.name)}">
                             <div class="project-mini-header">
                                 <i class="fa-solid fa-file-code"></i>
                                 <span class="project-mini-stars"><i class="fa-solid fa-star"></i> ${starsText}</span>

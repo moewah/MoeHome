@@ -902,6 +902,10 @@ function hideSkeleton() {
 
     // 隐藏骨架屏
     if (skeleton) {
+        // 先停止所有骨架屏动画，节省资源
+        skeleton.querySelectorAll('.skeleton').forEach(el => {
+            el.style.animation = 'none';
+        });
         skeleton.style.opacity = '0';
         skeleton.style.visibility = 'hidden';
         // 延迟移除DOM，等待过渡完成
