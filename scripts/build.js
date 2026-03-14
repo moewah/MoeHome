@@ -27,6 +27,82 @@ const minifyConfig = getMinifyConfig();
 // 定义路径
 const rootDir = path.join(__dirname, '..');
 const distDir = path.join(rootDir, 'dist');
+const templatesDir = path.join(rootDir, 'templates');
+const partialsDir = path.join(templatesDir, 'partials');
+
+/**
+ * 读取 partial 模板
+ * @param {string} name - partial 名称（不含扩展名）
+ * @returns {string} partial 内容
+ */
+function readPartial(name) {
+    const partialPath = path.join(partialsDir, `${name}.html`);
+    if (!fs.existsSync(partialPath)) {
+        console.warn(`⚠️ 找不到 partial: ${name}.html`);
+        return '';
+    }
+    return fs.readFileSync(partialPath, 'utf8');
+}
+
+/**
+ * 渲染 partials - 替换 {{> partialName}} 为对应 partial 内容
+ * @param {string} content - 模板内容
+ * @returns {string} 渲染后的内容
+ */
+function renderPartials(content) {
+    return content.replace(/\{\{>\s*(\w+)\}\}/g, (match, name) => {
+        return readPartial(name);
+    });
+}
+
+/**
+ * 生成导航链接 HTML
+ * @param {object} options - 配置选项
+ * @param {string} options.activePage - 当前页面标识（用于高亮）
+ * @param {boolean} options.isMobile - 是否为移动端
+ * @param {object} options.config - 配置对象
+ * @returns {string} 导航链接 HTML
+ */
+function generateNavLinks(options) {
+    const { activePage, isMobile, config } = options;
+    const links = [];
+    const linkClass = isMobile ? 'nav-sidebar-link' : 'nav-link';
+
+    // 首页
+    const homeActive = activePage === 'home' ? ' active' : '';
+    links.push(`<a href="/" class="${linkClass}${homeActive}">首页</a>`);
+
+    // 文章页（RSS 启用时）
+    if (config.rss && config.rss.enabled) {
+        const postsActive = activePage === 'posts' ? ' active' : '';
+        // 文章页暂时还是锚点跳转（后续可改为独立页面）
+        links.push(`<a href="/#rss-section" class="${linkClass}${postsActive}">文章</a>`);
+    }
+
+    // 项目页（Projects 启用时）
+    if (config.projects && config.projects.enabled) {
+        const projectsActive = activePage === 'projects' ? ' active' : '';
+        // 项目页暂时还是锚点跳转（后续可改为独立页面）
+        links.push(`<a href="/#projects-section" class="${linkClass}${projectsActive}">项目</a>`);
+    }
+
+    // 链接导航（Links 启用时）
+    if (config.linksConfig && config.linksConfig.enabled) {
+        const linksActive = activePage === 'links' ? ' active' : '';
+        links.push(`<a href="/#links-container" class="${linkClass}${linksActive}">链接</a>`);
+    }
+
+    // 自定义菜单
+    if (config.nav && config.nav.menus && config.nav.menus.length > 0) {
+        if (isMobile) {
+            links.push(generateCustomMenusMobileHTML(config.nav.menus));
+        } else {
+            links.push(generateCustomMenusHTML(config.nav.menus));
+        }
+    }
+
+    return links.join('\n            ');
+}
 
 // 清理 dist 目录
 function cleanDist() {
@@ -907,14 +983,14 @@ function generateLinkHTML(link) {
     return `                    <a href="${href}" class="link" data-brand="${link.brand}" style="--brand-color: ${link.color}" ${attrs} aria-label="${link.name} - ${link.description}">
                         <div class="link-left">
                             <div class="link-icon-wrapper">
-                                <i class="${link.icon}"></i>
+                                <i class="${link.icon}" aria-hidden="true"></i>
                             </div>
                             <div class="link-content">
                                 <span class="link-text">${link.name}</span>
                                 <span class="link-description">${link.description}</span>
                             </div>
                         </div>
-                        <span class="link-indicator"></span>
+                        <span class="link-indicator" aria-hidden="true"></span>
                     </a>`;
 }
 
@@ -1267,7 +1343,7 @@ function generateRSSHTML(articles, rssConfig) {
             '                            </div>\n' +
             '                            <div class="rss-article-meta">\n' +
             '                                ' + dateHTML + '\n' +
-            '                                <i class="fa-solid fa-arrow-right rss-article-arrow"></i>\n' +
+            '                                <i class="fa-solid fa-arrow-right rss-article-arrow" aria-hidden="true"></i>\n' +
             '                            </div>\n' +
             '                        </a>';
     }
@@ -1821,11 +1897,11 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
 
     const mainCardHTML = `                    <a href="${escapeHTML(mainRepo.url)}" class="project-card project-card-main" target="_blank" rel="noopener noreferrer" aria-label="查看项目：${escapeHTML(mainRepo.name)}">
                         <div class="project-tab">
-                            <i class="fa-solid fa-file-code"></i>
+                            <i class="fa-solid fa-file-code" aria-hidden="true"></i>
                             <span class="project-name">${escapeHTML(mainRepo.name)}</span>
                             <div class="project-stats">
-                                <span class="project-stat"><i class="fa-solid fa-star"></i> ${mainStarsText}</span>
-                                <span class="project-stat"><i class="fa-solid fa-code-fork"></i> ${mainForksText}</span>
+                                <span class="project-stat"><i class="fa-solid fa-star" aria-hidden="true"></i> ${mainStarsText}</span>
+                                <span class="project-stat"><i class="fa-solid fa-code-fork" aria-hidden="true"></i> ${mainForksText}</span>
                             </div>
                         </div>
                         <div class="project-body">
@@ -1836,10 +1912,10 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
                         </div>
                         <div class="project-footer">
                             <span class="project-language">
-                                <span class="language-dot" style="background-color: ${mainRepo.languageColor}"></span>
+                                <span class="language-dot" style="background-color: ${mainRepo.languageColor}" aria-hidden="true"></span>
                                 ${escapeHTML(mainRepo.language || 'Unknown')}
                             </span>
-                            <i class="fa-solid fa-arrow-up-right-from-square project-arrow"></i>
+                            <i class="fa-solid fa-arrow-up-right-from-square project-arrow" aria-hidden="true"></i>
                         </div>
                     </a>`;
 
@@ -1852,15 +1928,15 @@ function generateProjectsHTML(repos, projectsConfig, contributionData, contribut
         const starsText = repo.stars >= 1000 ? formatNumber(repo.stars) : repo.stars.toString();
         return `                        <a href="${escapeHTML(repo.url)}" class="project-card project-card-mini" target="_blank" rel="noopener noreferrer" data-index="${index}" aria-label="查看项目：${escapeHTML(repo.name)}">
                             <div class="project-mini-header">
-                                <i class="fa-solid fa-file-code"></i>
-                                <span class="project-mini-stars"><i class="fa-solid fa-star"></i> ${starsText}</span>
+                                <i class="fa-solid fa-file-code" aria-hidden="true"></i>
+                                <span class="project-mini-stars"><i class="fa-solid fa-star" aria-hidden="true"></i> ${starsText}</span>
                             </div>
                             <div class="project-mini-body">
                                 <span class="project-mini-name">${escapeHTML(repo.name)}</span>
                             </div>
                             <div class="project-mini-footer">
                                 <span class="project-language project-language-mini">
-                                    <span class="language-dot language-dot-mini" style="background-color: ${repo.languageColor}"></span>
+                                    <span class="language-dot language-dot-mini" style="background-color: ${repo.languageColor}" aria-hidden="true"></span>
                                     ${escapeHTML(repo.language || 'Unknown')}
                                 </span>
                             </div>
@@ -1965,6 +2041,7 @@ const config = {
     // Identity & Interests
     identity: extractArray(/identity:\s*\[([\s\S]*?)\]/, ['开源爱好者', 'Astro爱好者', 'AI探索者']),
     interests: extractArray(/interests:\s*\[([\s\S]*?)\]/, ['Astro & 前端开发', 'Docker & 容器技术']),
+    gear: extractArray(/gear:\s*\[([\s\S]*?)\]/, []),
 
     // Favicon
     favicon: extractFaviconConfig(),
@@ -2025,7 +2102,9 @@ if (!fs.existsSync(templatePath)) {
     process.exit(1);
 }
 
-const template = fs.readFileSync(templatePath, 'utf8');
+const templateRaw = fs.readFileSync(templatePath, 'utf8');
+// 先渲染 partials（{{> partialName}}）
+const template = renderPartials(templateRaw);
 
 // 主构建函数（异步）
 async function build() {
@@ -2107,6 +2186,12 @@ async function build() {
         .replace(/{{TERMINAL_TITLE}}/g, config.terminalTitle)
         .replace(/{{IDENTITY}}/g, config.identity.join(' / '))
         .replace(/{{INTERESTS}}/g, config.interests.join(' / '))
+        .replace(/{{GEAR_SECTION}}/g, config.gear.length > 0 ? `
+                        <div class="prompt-line" style="margin-top: 8px;">
+                            <span class="prompt">$ </span>
+                            <span class="command">cat gear.txt</span>
+                        </div>
+                        <div class="output">${config.gear.join(' / ')}</div>` : '')
 
         // Music Player
         .replace(/{{MUSIC_TOGGLE_ICON}}/g, generateMusicToggleIconHTML(config.music))
@@ -2144,17 +2229,10 @@ async function build() {
         // Footer - 生成单行页脚 HTML
         .replace(/{{FOOTER_CONTENT}}/g, generateFooterHTML(config))
 
-// Nav Links
-        .replace(/{{NAV_POSTS_LINK}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-link" data-section="rss-section">文章</a>' : '')
-        .replace(/{{NAV_PROJECTS_LINK}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-link" data-section="projects-section">项目</a>' : '')
-        .replace(/{{NAV_LINKS_LINK}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-link" data-section="links-container">链接</a>' : '')
-        .replace(/{{NAV_DONATION_LINK}}/g, '')
-        .replace(/{{NAV_POSTS_LINK_MOBILE}}/g, config.rss.enabled ? '<a href="#rss-section" class="nav-sidebar-link" data-section="rss-section">文章</a>' : '')
-        .replace(/{{NAV_PROJECTS_LINK_MOBILE}}/g, config.projects.enabled ? '<a href="#projects-section" class="nav-sidebar-link" data-section="projects-section">项目</a>' : '')
-        .replace(/{{NAV_LINKS_LINK_MOBILE}}/g, config.linksConfig.enabled ? '<a href="#links-container" class="nav-sidebar-link" data-section="links-container">链接</a>' : '')
-        .replace(/{{NAV_DONATION_LINK_MOBILE}}/g, '')
-        .replace(/{{NAV_CUSTOM_MENUS}}/g, generateCustomMenusHTML(config.nav?.menus))
-        .replace(/{{NAV_CUSTOM_MENUS_MOBILE}}/g, generateCustomMenusMobileHTML(config.nav?.menus))
+// Nav Links - 使用新的导航生成函数
+        .replace(/{{NAV_HOME_URL}}/g, '/')
+        .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: 'home', isMobile: false, config }))
+        .replace(/{{NAV_LINKS_MOBILE}}/g, generateNavLinks({ activePage: 'home', isMobile: true, config }))
 
         // Analytics
         .replace(/{{ANALYTICS}}/g, generateAnalyticsHTML(config));
@@ -2231,14 +2309,46 @@ async function build() {
         console.log('📋 内联 CSS: ' + formatSize(htmlBeforeInlineCSS) + ' → ' + formatSize(htmlAfterInlineCSS) + ' (节省 ' + calcReduction(htmlBeforeInlineCSS, htmlAfterInlineCSS) + ')');
     }
 
-    // 压缩并写入 HTML
+    // 压缩并写入首页 HTML
     const processedHTML = await processHTML(html, minifyConfig);
     const htmlSize = {
         original: Buffer.byteLength(html, 'utf8'),
         minified: Buffer.byteLength(processedHTML, 'utf8')
     };
     fs.writeFileSync(path.join(distDir, 'index.html'), processedHTML, 'utf8');
-    console.log('📄 HTML: ' + formatSize(htmlSize.original) + ' → ' + formatSize(htmlSize.minified) + ' (节省 ' + calcReduction(htmlSize.original, htmlSize.minified) + ')');
+    console.log('📄 index.html: ' + formatSize(htmlSize.original) + ' → ' + formatSize(htmlSize.minified) + ' (节省 ' + calcReduction(htmlSize.original, htmlSize.minified) + ')');
+
+    // ========== 生成 404 页面 ==========
+    console.log('📄 生成 404 页面...');
+    const template404Path = path.join(templatesDir, '404.template.html');
+    if (fs.existsSync(template404Path)) {
+        // 读取并渲染 partials
+        let html404 = renderPartials(fs.readFileSync(template404Path, 'utf8'));
+
+        // 替换模板变量
+        html404 = html404
+            .replace(/{{THEME_INITIAL}}/g, generateInitialThemeCSS())
+            .replace(/{{NAME}}/g, config.name)
+            .replace(/{{NAV_HOME_URL}}/g, '/')
+            .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: '', isMobile: false, config }))
+            .replace(/{{NAV_LINKS_MOBILE}}/g, generateNavLinks({ activePage: '', isMobile: true, config }))
+            .replace(/{{FOOTER_CONTENT}}/g, generateFooterHTML(config))
+            .replace(/{{FAVICON_LINKS}}/g, faviconLinks);
+
+        // 压缩内联 CSS
+        html404 = processInlineCSS(html404, minifyConfig);
+
+        // 压缩并写入
+        const processed404HTML = await processHTML(html404, minifyConfig);
+        const html404Size = {
+            original: Buffer.byteLength(html404, 'utf8'),
+            minified: Buffer.byteLength(processed404HTML, 'utf8')
+        };
+        fs.writeFileSync(path.join(distDir, '404.html'), processed404HTML, 'utf8');
+        console.log('📄 404.html: ' + formatSize(html404Size.original) + ' → ' + formatSize(html404Size.minified) + ' (节省 ' + calcReduction(html404Size.original, html404Size.minified) + ')');
+    } else {
+        console.log('   ⚠️ 找不到 templates/404.template.html，跳过生成');
+    }
 
     // 压缩统计
     const stats = {

@@ -13,7 +13,7 @@ const http = require('http');
  * @param {number} timeout - 超时时间（毫秒）
  * @returns {Promise<string>} RSS XML 内容
  */
-function fetchRSS(url, timeout = 10000) {
+function fetchRSS(url, timeout = 20000) {
     return new Promise((resolve, reject) => {
         const client = url.startsWith('https') ? https : http;
 

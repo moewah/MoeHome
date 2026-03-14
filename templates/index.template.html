@@ -422,102 +422,7 @@
         <!-- Skip Link - 键盘用户快速跳转到主内容 -->
         <a href="#actual-content" class="skip-link">跳到主要内容</a>
 
-        <!-- Navigation Bar -->
-        <nav class="navbar" id="navbar">
-            <div class="navbar-inner">
-                <!-- Brand -->
-                <a href="#" class="navbar-brand" id="navbar-brand">
-                    <span class="prompt">$</span>
-                    <span class="brand-name">{{NAME}}</span>
-                </a>
-
-                <!-- Desktop Nav Links -->
-                <div class="navbar-menu" id="navbar-menu">
-                    <a href="#actual-content" class="nav-link active" data-section="actual-content">主页</a>
-                    {{NAV_POSTS_LINK}}
-                    {{NAV_PROJECTS_LINK}}
-                    {{NAV_LINKS_LINK}}
-                    {{NAV_CUSTOM_MENUS}}
-                </div>
-
-                <!-- Right Actions -->
-                <div class="navbar-actions">
-                    <!-- Theme Menu Toggle - 统一的主题设置按钮 -->
-                    <button class="nav-theme-toggle" id="nav-theme-toggle" aria-label="主题设置" title="主题设置">
-                        <i class="fa-solid fa-palette"></i>
-                    </button>
-                    <!-- Mobile Menu Toggle -->
-                    <button class="navbar-toggle" id="navbar-toggle" aria-label="菜单">
-                        <i class="fa-solid fa-bars"></i>
-                    </button>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Theme Dropdown Menu - 统一的主题设置下拉菜单 -->
-        <div class="theme-dropdown" id="theme-dropdown" aria-hidden="true">
-            <!-- 模式选择区 -->
-            <div class="theme-section">
-                <div class="theme-section-label">主题模式</div>
-                <div class="theme-mode-list" id="theme-mode-list" role="listbox">
-                    <button class="theme-mode-item" data-mode="auto" role="option" tabindex="0">
-                        <i class="fa-solid fa-desktop"></i>
-                        <span>跟随系统</span>
-                    </button>
-                    <button class="theme-mode-item" data-mode="light" role="option" tabindex="0">
-                        <i class="fa-solid fa-sun"></i>
-                        <span>浅色</span>
-                    </button>
-                    <button class="theme-mode-item" data-mode="dark" role="option" tabindex="0">
-                        <i class="fa-solid fa-moon"></i>
-                        <span>暗色</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- 分割线 -->
-            <div class="theme-divider"></div>
-
-            <!-- 配色方案区 -->
-            <div class="theme-section">
-                <div class="theme-section-label">配色方案</div>
-                <div class="theme-scheme-list" id="theme-scheme-list" role="listbox">
-                    <!-- 由 JS 动态生成 -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Mobile Sidebar Overlay -->
-        <div class="nav-overlay" id="nav-overlay"></div>
-
-        <!-- Mobile Sidebar -->
-        <aside class="nav-sidebar" id="nav-sidebar">
-            <div class="nav-sidebar-header">
-                <span class="nav-sidebar-title">菜单</span>
-                <button class="nav-sidebar-close" id="nav-sidebar-close" aria-label="关闭菜单">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <nav class="nav-sidebar-body">
-                <a href="#actual-content" class="nav-sidebar-link" data-section="actual-content">主页</a>
-                {{NAV_POSTS_LINK_MOBILE}}
-                {{NAV_PROJECTS_LINK_MOBILE}}
-                {{NAV_LINKS_LINK_MOBILE}}
-                {{NAV_CUSTOM_MENUS_MOBILE}}
-            </nav>
-            <div class="nav-sidebar-footer">
-                <button class="nav-sidebar-theme" id="nav-sidebar-theme" aria-label="主题模式">
-                    <i class="fa-solid fa-desktop"></i>
-                    <span>主题模式</span>
-                </button>
-            </div>
-        </aside>
-
-        <!-- Custom cursor -->
-        <div class="cursor"></div>
-
-        <!-- Background effects -->
-        <div class="grid-bg"></div>
+        {{> navbar}}
 
         <!-- Main content -->
         <div class="container">
@@ -581,6 +486,7 @@
                             <span class="command">cat interests.txt</span>
                         </div>
                         <div class="output">{{INTERESTS}}</div>
+                        {{GEAR_SECTION}}
                         <div class="prompt-line" style="margin-top: 8px;">
                             <span class="prompt">$ </span>
                             <span class="command">./wisdom.sh</span>
@@ -601,13 +507,7 @@
 
                 {{NOTICE}}
 
-                <!-- Divider -->
-                <div class="divider divider-subtle lazy-load" data-delay="5"></div>
-
-                <!-- Footer -->
-                <footer class="footer lazy-load" id="footer-content" data-delay="5">
-                    {{FOOTER_CONTENT}}
-                </footer>
+                {{> footer}}
             </div>
         </div>
 

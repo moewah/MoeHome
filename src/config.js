@@ -96,6 +96,15 @@ window.HOMEPAGE_CONFIG = {
     "Google SEO",
   ],
 
+  // ========== 装备列表 ==========
+  // 填写你的装备，会在终端显示 `cat gear.txt` 命令
+  // 留空数组 [] 则不显示此命令
+  gear: [
+    // "Nikon Z5II（Z24-70 F4S）",
+    // "Mac mini M4 Pro 48G",
+    // "Synology DS920+",
+  ],
+
   // ========== 终端配置 ==========
   terminal: {
     title: "🐾 meow@tribe:~|",
@@ -107,6 +116,10 @@ window.HOMEPAGE_CONFIG = {
       {
         command: "cat interests.txt",
         output: "interests", // 自动从 interests 数组生成
+      },
+      {
+        command: "cat gear.txt",
+        output: "gear", // 自动从 gear 数组生成（留空则不显示）
       },
       {
         command: "./wisdom.sh",
@@ -352,17 +365,10 @@ window.HOMEPAGE_CONFIG = {
         name: "爱发电",
         key: "afdian",
         icon: "fa-solid fa-heart",
-        url: "https://afdian.com/a/yourname",
+        url: "https://ifdian.net/a/yourname",
         enabled: true,
       },
     ],
-  },
-
-  // ========== 滚动进度按钮配置 ==========
-  scrollProgress: {
-    enabled: true, // 是否启用滚动进度按钮
-    showThreshold: 30, // 显示阈值（px），滚动超过此距离即显示
-    smoothScroll: true, // 点击是否平滑滚动返回顶部
   },
 
   // ========== 页脚配置 ==========

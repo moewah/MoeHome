@@ -1,0 +1,82 @@
+<!-- Navigation Bar -->
+<nav class="navbar" id="navbar">
+    <div class="navbar-inner">
+        <!-- Brand -->
+        <a href="{{NAV_HOME_URL}}" class="navbar-brand" id="navbar-brand">
+            <span class="prompt">$</span>
+            <span class="brand-name">{{NAME}}</span>
+        </a>
+
+        <!-- Desktop Nav Links -->
+        <div class="navbar-menu" id="navbar-menu">
+            {{NAV_LINKS}}
+        </div>
+
+        <!-- Right Actions -->
+        <div class="navbar-actions">
+            <!-- Theme Menu Toggle - 统一的主题设置按钮 -->
+            <button class="nav-theme-toggle" id="nav-theme-toggle" aria-label="主题设置" title="主题设置">
+                <i class="fa-solid fa-palette"></i>
+            </button>
+            <!-- Mobile Menu Toggle -->
+            <button class="navbar-toggle" id="navbar-toggle" aria-label="菜单">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Theme Dropdown Menu - 统一的主题设置下拉菜单 -->
+<div class="theme-dropdown" id="theme-dropdown" aria-hidden="true">
+    <!-- 模式选择区 -->
+    <div class="theme-section">
+        <div class="theme-section-label">主题模式</div>
+        <div class="theme-mode-list" id="theme-mode-list" role="listbox">
+            <button class="theme-mode-item" data-mode="auto" role="option" tabindex="0">
+                <i class="fa-solid fa-desktop"></i>
+                <span>跟随系统</span>
+            </button>
+            <button class="theme-mode-item" data-mode="light" role="option" tabindex="0">
+                <i class="fa-solid fa-sun"></i>
+                <span>浅色</span>
+            </button>
+            <button class="theme-mode-item" data-mode="dark" role="option" tabindex="0">
+                <i class="fa-solid fa-moon"></i>
+                <span>暗色</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 分割线 -->
+    <div class="theme-divider"></div>
+
+    <!-- 配色方案区 -->
+    <div class="theme-section">
+        <div class="theme-section-label">配色方案</div>
+        <div class="theme-scheme-list" id="theme-scheme-list" role="listbox">
+            <!-- 由 JS 动态生成 -->
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Sidebar Overlay -->
+<div class="nav-overlay" id="nav-overlay"></div>
+
+<!-- Mobile Sidebar -->
+<aside class="nav-sidebar" id="nav-sidebar">
+    <div class="nav-sidebar-header">
+        <span class="nav-sidebar-title">菜单</span>
+        <button class="nav-sidebar-close" id="nav-sidebar-close" aria-label="关闭菜单">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <nav class="nav-sidebar-body">
+        {{NAV_LINKS_MOBILE}}
+    </nav>
+    <div class="nav-sidebar-footer">
+        <button class="nav-sidebar-theme" id="nav-sidebar-theme" aria-label="主题模式">
+            <i class="fa-solid fa-desktop"></i>
+            <span>主题模式</span>
+        </button>
+    </div>
+</aside>

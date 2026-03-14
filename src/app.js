@@ -30,7 +30,10 @@ function initPage() {
     // 初始化动画（语录循环）
     initAnimations();
 
-    // 初始化交互效果
+    // 初始化全局效果（光标、视差、回到顶部）
+    initGlobalEffects();
+
+    // 初始化页面特定效果
     initInteractions();
 
     // 初始化捐赠模态框
@@ -41,9 +44,6 @@ function initPage() {
 
     // 初始化项目轮播
     initProjectsCarousel();
-
-    // 初始化滚动进度按钮
-    initScrollProgressButton();
 
     // 初始化音乐播放器
     initMusicPlayer();
@@ -172,12 +172,6 @@ function initNavbarBrandEffect() {
     });
 
     startCycle();
-
-    // 点击回到顶部
-    brand.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
 }
 
 // 当前区域高亮（Intersection Observer + 滚动检测）
@@ -188,10 +182,26 @@ function initNavbarActiveSection() {
     const sections = document.querySelectorAll('#actual-content, #rss-section, #projects-section, #links-container');
     if (sections.length === 0) return;
 
+    // 从链接 href 提取 section ID
+    function getSectionIdFromLink(link) {
+        const href = link.getAttribute('href') || '';
+        // 处理 index.html#section 格式
+        const hashMatch = href.match(/#([\w-]+)/);
+        if (hashMatch) {
+            return hashMatch[1];
+        }
+        // 如果是 index.html 且没有 hash，则是首页链接
+        if (href === 'index.html' || href === '/' || href === '') {
+            return 'actual-content';
+        }
+        return null;
+    }
+
     // 更新导航高亮状态
     function updateActiveNav(sectionId) {
         navLinks.forEach(link => {
-            link.classList.toggle('active', link.dataset.section === sectionId);
+            const linkSectionId = getSectionIdFromLink(link);
+            link.classList.toggle('active', linkSectionId === sectionId);
         });
     }
 
@@ -204,7 +214,7 @@ function initNavbarActiveSection() {
 
     // 使用 IntersectionObserver 检测当前可见的 section
     const observer = new IntersectionObserver((entries) => {
-        // 如果在页面顶部，强制高亮 Home
+        // 如果在页面顶部，强制高亮首页
         if (isNearTop()) {
             updateActiveNav('actual-content');
             return;
@@ -252,7 +262,7 @@ function initNavbarActiveSection() {
     // 点击导航链接后立即更新高亮状态
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
-            const targetSection = link.dataset.section;
+            const targetSection = getSectionIdFromLink(link);
             if (targetSection) {
                 updateActiveNav(targetSection);
             }
@@ -906,6 +916,7 @@ function hideSkeleton() {
         skeleton.querySelectorAll('.skeleton').forEach(el => {
             el.style.animation = 'none';
         });
+
         skeleton.style.opacity = '0';
         skeleton.style.visibility = 'hidden';
         // 延迟移除DOM，等待过渡完成
@@ -1247,133 +1258,311 @@ function initTheme() {
     }
 }
 
-// ========== 自定义光标 ==========
-function initInteractions() {
-    const cursor = document.querySelector(".cursor");
-    let mouseX = 0, mouseY = 0;
-    let cursorX = 0, cursorY = 0;
-    let cursorAnimationId = null;
-
-    document.addEventListener("mousemove", (e) => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-    });
-
-    function animateCursor() {
-        cursorX += (mouseX - cursorX) * 0.15;
-        cursorY += (mouseY - cursorY) * 0.15;
-        cursor.style.transform = `translate(${cursorX - 10}px, ${cursorY - 10}px)`;
-        cursorAnimationId = requestAnimationFrame(animateCursor);
+// ========== 全局效果模块 ==========
+/**
+ * CustomCursor - 自定义光标效果
+ * 自动创建元素，全局可用
+ */
+class CustomCursor {
+    constructor() {
+        this.cursor = null;
+        this.mouseX = 0;
+        this.mouseY = 0;
+        this.cursorX = 0;
+        this.cursorY = 0;
+        this.animationId = null;
     }
-    animateCursor();
 
-    // 页面可见性变化时停止/重启光标动画
-    document.addEventListener("visibilitychange", () => {
-        if (document.hidden) {
-            if (cursorAnimationId) {
-                cancelAnimationFrame(cursorAnimationId);
-                cursorAnimationId = null;
+    init() {
+        // 自动创建元素（如果不存在）
+        this.cursor = document.querySelector('.cursor');
+        if (!this.cursor) {
+            this.cursor = document.createElement('div');
+            this.cursor.className = 'cursor';
+            document.body.appendChild(this.cursor);
+        }
+
+        this.bindEvents();
+        this.animate();
+    }
+
+    bindEvents() {
+        // 鼠标移动跟踪
+        document.addEventListener('mousemove', (e) => {
+            this.mouseX = e.clientX;
+            this.mouseY = e.clientY;
+        });
+
+        // 页面可见性变化
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.stopAnimation();
+            } else {
+                this.animate();
             }
-        } else {
-            if (!cursorAnimationId && cursor) {
-                animateCursor();
+        });
+
+        // 鼠标离开/进入窗口
+        document.addEventListener('mouseleave', () => {
+            this.cursor.style.opacity = '0';
+        });
+        document.addEventListener('mouseenter', () => {
+            this.cursor.style.opacity = '1';
+        });
+
+        // 可交互元素悬停效果
+        const interactiveSelectors = 'a, button, input, textarea, [role="button"], [tabindex]';
+        document.addEventListener('mouseover', (e) => {
+            if (e.target.closest(interactiveSelectors)) {
+                this.cursor.classList.add('hover');
+            } else {
+                this.cursor.classList.remove('hover');
             }
+        });
+        document.addEventListener('mouseout', (e) => {
+            if (e.target.closest(interactiveSelectors)) {
+                this.cursor.classList.remove('hover');
+            }
+        });
+    }
+
+    animate() {
+        this.cursorX += (this.mouseX - this.cursorX) * 0.15;
+        this.cursorY += (this.mouseY - this.cursorY) * 0.15;
+        this.cursor.style.transform = `translate(${this.cursorX - 10}px, ${this.cursorY - 10}px)`;
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+
+    stopAnimation() {
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
         }
-    });
+    }
+}
 
-    // 鼠标离开窗口隐藏光标
-    document.addEventListener("mouseleave", () => {
-        cursor.style.opacity = '0';
-    });
+/**
+ * GridParallax - 背景网格视差效果
+ * 自动创建元素，全局可用
+ */
+class GridParallax {
+    constructor() {
+        this.gridBg = null;
+    }
 
-    document.addEventListener("mouseenter", () => {
-        cursor.style.opacity = '1';
-    });
+    init() {
+        // 自动创建元素（如果不存在）
+        this.gridBg = document.querySelector('.grid-bg');
+        if (!this.gridBg) {
+            this.gridBg = document.createElement('div');
+            this.gridBg.className = 'grid-bg';
+            document.body.insertBefore(this.gridBg, document.body.firstChild);
+        }
 
-    // 可交互元素选择器
-    const interactiveSelectors = 'a, button, input, textarea, [role="button"], [tabindex]';
+        this.bindEvents();
+    }
 
-    // 光标悬停效果
-    document.addEventListener("mouseover", (e) => {
-        if (e.target.closest(interactiveSelectors)) {
-            cursor.classList.add("hover");
+    bindEvents() {
+        document.addEventListener('mousemove', (e) => {
+            const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
+            const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
+            this.gridBg.style.transform = `perspective(500px) rotateX(60deg) translateY(${moveY}px) translateX(${moveX}px)`;
+        });
+    }
+}
+
+/**
+ * ScrollProgress - 回到顶部按钮
+ * 自动创建元素，全局可用
+ */
+class ScrollProgress {
+    constructor(options = {}) {
+        this.button = null;
+        this.ringProgress = null;
+        this.circumference = 0;
+        this.showThreshold = options.showThreshold || 100;
+        this.smoothScroll = options.smoothScroll !== false;
+    }
+
+    init() {
+        // 自动创建元素（如果不存在）
+        this.button = document.querySelector('.scroll-progress-btn');
+        if (!this.button) {
+            this.createButton();
+        }
+        this.bindEvents();
+    }
+
+    createButton() {
+        const buttonSize = window.innerWidth <= 768 ? 44 : 48;
+        const ringRadius = buttonSize <= 44 ? 20.2 : 22;
+        this.circumference = 2 * Math.PI * ringRadius;
+
+        // 创建按钮
+        this.button = document.createElement('button');
+        this.button.className = 'scroll-progress-btn';
+        this.button.setAttribute('aria-label', '返回顶部');
+        this.button.setAttribute('title', '返回顶部');
+
+        // 创建 SVG
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'scroll-progress-btn__ring');
+        svg.setAttribute('viewBox', `0 0 ${buttonSize} ${buttonSize}`);
+
+        // 背景圆环
+        const ringBg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        ringBg.setAttribute('class', 'scroll-progress-btn__ring-bg');
+        ringBg.setAttribute('cx', buttonSize / 2);
+        ringBg.setAttribute('cy', buttonSize / 2);
+        ringBg.setAttribute('r', ringRadius);
+
+        // 进度圆环
+        this.ringProgress = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        this.ringProgress.setAttribute('class', 'scroll-progress-btn__ring-progress');
+        this.ringProgress.setAttribute('cx', buttonSize / 2);
+        this.ringProgress.setAttribute('cy', buttonSize / 2);
+        this.ringProgress.setAttribute('r', ringRadius);
+        this.ringProgress.style.strokeDasharray = this.circumference;
+        this.ringProgress.style.strokeDashoffset = this.circumference;
+
+        svg.appendChild(ringBg);
+        svg.appendChild(this.ringProgress);
+
+        // 创建图标
+        const icon = document.createElement('i');
+        icon.className = 'scroll-progress-btn__icon fa-solid fa-chevron-up';
+
+        this.button.appendChild(svg);
+        this.button.appendChild(icon);
+        document.body.appendChild(this.button);
+    }
+
+    bindEvents() {
+        // 点击返回顶部
+        this.button.addEventListener('click', () => {
+            if (this.smoothScroll) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.scrollTo(0, 0);
+            }
+        });
+
+        // 滚动事件
+        let ticking = false;
+        window.addEventListener('scroll', () => {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    this.updateProgress();
+                    this.updateVisibility();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }, { passive: true });
+
+        // 窗口大小变化
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => this.handleResize(), 150);
+        });
+    }
+
+    calculateProgress() {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight;
+        const winHeight = window.innerHeight;
+        const viewedContent = scrollTop + winHeight;
+        return Math.min(viewedContent / docHeight, 1);
+    }
+
+    updateProgress() {
+        if (!this.ringProgress) return;
+        const progress = this.calculateProgress();
+        const offset = this.circumference * (1 - progress);
+        this.ringProgress.style.strokeDashoffset = offset;
+    }
+
+    updateVisibility() {
+        if (window.scrollY > this.showThreshold) {
+            this.button.classList.add('is-visible');
         } else {
-            cursor.classList.remove("hover");
+            this.button.classList.remove('is-visible');
         }
-    });
+    }
 
-    document.addEventListener("mouseout", (e) => {
-        if (e.target.closest(interactiveSelectors)) {
-            cursor.classList.remove("hover");
-        }
-    });
+    handleResize() {
+        const newSize = window.innerWidth <= 768 ? 44 : 48;
+        const newRadius = newSize <= 44 ? 20.2 : 22;
+        this.circumference = 2 * Math.PI * newRadius;
 
-    // 视差效果
-    document.addEventListener("mousemove", (e) => {
-        const moveX = (e.clientX - window.innerWidth / 2) * 0.01;
-        const moveY = (e.clientY - window.innerHeight / 2) * 0.01;
+        const svg = this.button.querySelector('svg');
+        svg.setAttribute('viewBox', `0 0 ${newSize} ${newSize}`);
 
-        const gridBg = document.querySelector(".grid-bg");
-        if (gridBg) {
-            gridBg.style.transform = `perspective(500px) rotateX(60deg) translateY(${moveY}px) translateX(${moveX}px)`;
-        }
-    });
-
-    // 链接鼠标位置跟踪（用于光晕效果）
-    document.querySelectorAll('.link').forEach(linkElement => {
-        linkElement.addEventListener("mousemove", (e) => {
-            const rect = linkElement.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 100;
-            const y = ((e.clientY - rect.top) / rect.height) * 100;
-            linkElement.style.setProperty("--mouse-x", `${x}%`);
-            linkElement.style.setProperty("--mouse-y", `${y}%`);
+        const circles = svg.querySelectorAll('circle');
+        circles.forEach(circle => {
+            circle.setAttribute('cx', newSize / 2);
+            circle.setAttribute('cy', newSize / 2);
+            circle.setAttribute('r', newRadius);
         });
-    });
 
-    // 项目卡片鼠标位置跟踪（用于光晕效果）
-    document.querySelectorAll('.project-card').forEach(cardElement => {
-        cardElement.addEventListener("mousemove", (e) => {
-            const rect = cardElement.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 100;
-            const y = ((e.clientY - rect.top) / rect.height) * 100;
-            cardElement.style.setProperty("--mouse-x", `${x}%`);
-            cardElement.style.setProperty("--mouse-y", `${y}%`);
-        });
-    });
+        this.ringProgress.style.strokeDasharray = this.circumference;
+        this.updateProgress();
+    }
+}
 
-    // 贡献图格子悬停动效
-    document.querySelectorAll('.contribution-cell').forEach(cell => {
-        cell.addEventListener("mouseenter", () => {
-            cell.style.transform = "scale(1.2)";
-        });
-        cell.addEventListener("mouseleave", () => {
-            cell.style.transform = "scale(1)";
-        });
-    });
+/**
+ * ElementGlow - 元素光晕效果
+ * 鼠标位置跟踪，用于 CSS 光晕效果
+ */
+class ElementGlow {
+    constructor() {
+        this.selectors = [
+            '.link',
+            '.project-card',
+            '.rss-card-container',
+            '.donation__btn'
+        ];
+    }
 
-    // RSS 文章卡片容器鼠标位置跟踪（用于光晕效果）
-    document.querySelectorAll('.rss-card-container').forEach(containerElement => {
-        containerElement.addEventListener("mousemove", (e) => {
-            const rect = containerElement.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 100;
-            const y = ((e.clientY - rect.top) / rect.height) * 100;
-            containerElement.style.setProperty("--mouse-x", `${x}%`);
-            containerElement.style.setProperty("--mouse-y", `${y}%`);
+    init() {
+        this.selectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(el => {
+                el.addEventListener('mousemove', (e) => this.trackMouse(e, el));
+            });
         });
-    });
 
-    // 捐赠按钮鼠标位置跟踪（用于光晕效果）
-    document.querySelectorAll('.donation__btn').forEach(btnElement => {
-        btnElement.addEventListener("mousemove", (e) => {
-            const rect = btnElement.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 100;
-            const y = ((e.clientY - rect.top) / rect.height) * 100;
-            btnElement.style.setProperty("--mouse-x", `${x}%`);
-            btnElement.style.setProperty("--mouse-y", `${y}%`);
+        // 贡献图格子悬停动效
+        document.querySelectorAll('.contribution-cell').forEach(cell => {
+            cell.addEventListener('mouseenter', () => {
+                cell.style.transform = 'scale(1.2)';
+            });
+            cell.addEventListener('mouseleave', () => {
+                cell.style.transform = 'scale(1)';
+            });
         });
-    });
+    }
 
-    // 初始化RSS卡片自动翻转功能
+    trackMouse(e, element) {
+        const rect = element.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        element.style.setProperty('--mouse-x', `${x}%`);
+        element.style.setProperty('--mouse-y', `${y}%`);
+    }
+}
+
+// ========== 全局效果统一初始化 ==========
+function initGlobalEffects() {
+    new CustomCursor().init();
+    new GridParallax().init();
+    new ScrollProgress().init();
+    new ElementGlow().init();
+}
+
+// ========== 页面特定效果 ==========
+function initInteractions() {
+    // RSS 卡片自动翻转
     initRSSCardAutoFlip();
 }
 
@@ -1827,152 +2016,6 @@ function initProjectsCarousel() {
 function initRssFlipCarousel() {
     // RSS卡片已简化为静态布局，无需复杂的翻转逻辑
     // 鼠标跟踪光晕效果已在initInteractions中处理
-}
-
-// ========== 滚动进度按钮 ==========
-/**
- * ScrollProgressButton - 滚动进度按钮组件
- * 集成进度环与返回顶部功能
- */
-function initScrollProgressButton() {
-    const config = window.HOMEPAGE_CONFIG;
-
-    // 检查配置是否启用
-    if (!config?.scrollProgress?.enabled) return;
-
-    // 创建按钮元素
-    const button = document.createElement('button');
-    button.className = 'scroll-progress-btn';
-    button.setAttribute('aria-label', '返回顶部');
-    button.setAttribute('title', '返回顶部');
-
-    // 计算尺寸
-    const buttonSize = window.innerWidth <= 768 ? 44 : 48;
-    const ringRadius = buttonSize <= 44 ? 20.2 : 22;
-    const circumference = 2 * Math.PI * ringRadius;
-
-    // 创建 SVG
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('class', 'scroll-progress-btn__ring');
-    svg.setAttribute('viewBox', `0 0 ${buttonSize} ${buttonSize}`);
-
-    // 背景圆环
-    const ringBg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    ringBg.setAttribute('class', 'scroll-progress-btn__ring-bg');
-    ringBg.setAttribute('cx', buttonSize / 2);
-    ringBg.setAttribute('cy', buttonSize / 2);
-    ringBg.setAttribute('r', ringRadius);
-
-    // 进度圆环
-    const ringProgress = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    ringProgress.setAttribute('class', 'scroll-progress-btn__ring-progress');
-    ringProgress.setAttribute('cx', buttonSize / 2);
-    ringProgress.setAttribute('cy', buttonSize / 2);
-    ringProgress.setAttribute('r', ringRadius);
-    ringProgress.style.strokeDasharray = circumference;
-    ringProgress.style.strokeDashoffset = circumference;
-
-    svg.appendChild(ringBg);
-    svg.appendChild(ringProgress);
-
-    // 创建图标
-    const icon = document.createElement('i');
-    icon.className = 'scroll-progress-btn__icon fa-solid fa-chevron-up';
-
-    // 组装按钮
-    button.appendChild(svg);
-    button.appendChild(icon);
-
-    // 插入到 body
-    document.body.appendChild(button);
-
-    const showThreshold = config.scrollProgress.showThreshold || 100;
-
-    // 计算滚动进度（已查看内容比例）
-    function calculateProgress() {
-        const scrollTop = window.scrollY;
-        const docHeight = document.documentElement.scrollHeight;
-        const winHeight = window.innerHeight;
-
-        // 已查看内容 = 滚动距离 + 视口高度
-        // 总内容 = 文档总高度
-        const viewedContent = scrollTop + winHeight;
-        return Math.min(viewedContent / docHeight, 1);
-    }
-
-    // 更新进度环
-    function updateProgressRing(progress) {
-        const offset = circumference * (1 - progress);
-        ringProgress.style.strokeDashoffset = offset;
-    }
-
-    // 更新按钮可见性
-    function updateButtonVisibility() {
-        const scrollTop = window.scrollY;
-
-        if (scrollTop > showThreshold) {
-            button.classList.add('is-visible');
-        } else {
-            button.classList.remove('is-visible');
-        }
-    }
-
-    // 滚动事件处理
-    let ticking = false;
-    function handleScroll() {
-        if (!ticking) {
-            requestAnimationFrame(() => {
-                const progress = calculateProgress();
-                updateProgressRing(progress);
-                updateButtonVisibility();
-                ticking = false;
-            });
-            ticking = true;
-        }
-    }
-
-    // 点击返回顶部
-    button.addEventListener('click', () => {
-        if (config.scrollProgress.smoothScroll !== false) {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            window.scrollTo(0, 0);
-        }
-    });
-
-    // 监听滚动
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    // 监听窗口大小变化
-    let resizeTimeout;
-    window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-            const newSize = window.innerWidth <= 768 ? 44 : 48;
-            const newRadius = newSize <= 44 ? 20.2 : 22;
-            const newCircumference = 2 * Math.PI * newRadius;
-
-            // 更新 SVG viewBox
-            svg.setAttribute('viewBox', `0 0 ${newSize} ${newSize}`);
-
-            // 更新圆心
-            [ringBg, ringProgress].forEach(circle => {
-                circle.setAttribute('cx', newSize / 2);
-                circle.setAttribute('cy', newSize / 2);
-                circle.setAttribute('r', newRadius);
-            });
-
-            // 更新进度环样式
-            ringProgress.style.strokeDasharray = newCircumference;
-
-            // 重新计算进度
-            const progress = calculateProgress();
-            updateProgressRing(progress);
-        }, 150);
-    });
-
-    // 初始化时执行一次
-    handleScroll();
 }
 
 // ========== 音乐播放器模块 ==========

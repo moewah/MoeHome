@@ -173,16 +173,24 @@ favicon: {
 ```javascript
 identity: ['开源爱好者', 'Astro爱好者', 'AI探索者'],
 interests: ['Astro & 前端开发', 'Docker & 容器技术'],
+gear: ['Nikon Z5II', 'Mac mini M4 Pro', 'Synology DS920+'],  // 装备列表（可选）
 
 terminal: {
     title: '🐾 meow@tribe:~|',
     prompts: [
         { command: 'whoami', output: 'identity' },
         { command: 'cat interests.txt', output: 'interests' },
+        { command: 'cat gear.txt', output: 'gear' },      // 装备列表
         { command: './wisdom.sh', output: 'dynamic' }
     ]
 }
 ```
+
+| 配置 | 说明 |
+|------|------|
+| `identity` | 身份标签数组 |
+| `interests` | 兴趣领域数组 |
+| `gear` | 装备列表数组，留空则不显示 `cat gear.txt` 命令 |
 
 ### 名人语录
 
@@ -343,7 +351,7 @@ donation: {
     methods: [
         { name: '微信支付', key: 'wechat', icon: 'fa-brands fa-weixin', qrImage: 'images/wechat.png', enabled: true },
         { name: '支付宝', key: 'alipay', icon: 'fa-brands fa-alipay', qrImage: 'images/alipay.png', enabled: true },
-        { name: '爱发电', key: 'afdian', icon: 'fa-solid fa-heart', url: 'https://afdian.com/a/yourname', enabled: true },
+        { name: '爱发电', key: 'afdian', icon: 'fa-solid fa-heart', url: 'https://ifdian.net/a/yourname', enabled: true },
         { name: 'PayPal', key: 'paypal', icon: 'fa-brands fa-paypal', url: 'https://www.paypal.com/paypalme/yourname', enabled: false },
     ],
 },
@@ -357,24 +365,6 @@ donation: {
 **图标颜色**：默认使用主题 `accent` 配色，悬停时背景变品牌色、图标变白色。
 
 > **建议**：启用 2-3 个支付方式为宜，骨架屏加载时最多显示 3 个按钮占位。
-
-### 滚动进度按钮
-
-右下角固定按钮，集成滚动进度环和返回顶部功能：
-
-```javascript
-scrollProgress: {
-    enabled: true,       // 是否启用
-    showThreshold: 30,   // 显示阈值（px），滚动超过此距离即显示
-    smoothScroll: true,  // 点击是否平滑滚动返回顶部
-}
-```
-
-| 配置 | 说明 |
-|------|------|
-| `enabled` | 是否启用滚动进度按钮 |
-| `showThreshold` | 显示阈值，滚动超过此距离后按钮出现 |
-| `smoothScroll` | 点击时是否使用平滑滚动 |
 
 ### 页脚
 
@@ -437,15 +427,21 @@ MoeHome/
 │   ├── music/              # 本地音乐文件（可选）
 │   └── images/             # 图片资源
 │       ├── avatar.webp     # 默认头像
-│       ├── screenshot-full.png  # 预览截图
+│       ├── screenshot-dark.png   # 暗色主题预览
+│       ├── screenshot-light.png  # 亮色主题预览
 │       └── wechat.png      # 微信赞赏码
 ├── scripts/
 │   ├── build.js            # 构建脚本
 │   ├── contribution-fetcher.js  # GitHub 贡献数据获取
 │   ├── github-fetcher.js   # GitHub 项目数据获取
+│   ├── minify.js           # 压缩优化模块
 │   └── rss-parser.js       # RSS 解析器
 ├── templates/
-│   └── index.template.html # HTML 模板
+│   ├── index.template.html # 首页模板
+│   ├── 404.template.html   # 404 页面模板
+│   └── partials/           # 模板片段
+│       ├── navbar.html     # 导航栏
+│       └── footer.html     # 页脚
 ├── dist/                   # 构建输出（部署用）
 ├── package.json
 └── README.md

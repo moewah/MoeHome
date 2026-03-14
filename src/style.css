@@ -1408,25 +1408,25 @@ body {
     margin: 0;
 }
 
-/* 播放器外层容器 */
+/* 播放器外层容器 - 使用 grid-template-rows 实现流畅的高度动画 */
 .music-player-wrapper {
     display: grid;
     grid-template-rows: 0fr;
     opacity: 0;
     transition:
-        grid-template-rows var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1),
-        opacity var(--duration-slow) ease-out 0.05s;
-}
-
-/* 内层容器：撑开 grid 行 */
-.music-player-inner {
-    overflow: hidden;
+        grid-template-rows 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.4s ease-out 0.05s;
 }
 
 /* 展开时播放器容器展开 */
 .music-area.is-expanded .music-player-wrapper {
     grid-template-rows: 1fr;
     opacity: 1;
+}
+
+/* 内层容器撑开 grid 行 */
+.music-player-inner {
+    overflow: hidden;
 }
 
 /* 播放器主体：从中心展开，与分割线同步 */
@@ -1617,6 +1617,34 @@ body {
         width: 20px;
         height: 20px;
         font-size: 10px;
+    }
+}
+
+/* 减少动画偏好 - 音乐播放器 */
+@media (prefers-reduced-motion: reduce) {
+    .music-player-wrapper {
+        transition: opacity 0.01ms;
+    }
+
+    .music-player {
+        transition: none;
+    }
+
+    .music-area.is-expanded .music-btn--prev,
+    .music-area.is-expanded .music-btn--play,
+    .music-area.is-expanded .music-btn--next,
+    .music-area.is-expanded .music-progress {
+        animation: none;
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+    }
+
+    .music-area.is-expanded .music-progress {
+        transform: scaleX(1);
+    }
+
+    .music-divider {
+        transition: opacity 0.01ms;
     }
 }
 
@@ -4004,6 +4032,12 @@ body.skeleton-active .cursor {
     contain: layout style;
 }
 
+/* 骨架屏隐藏时停止动画，节省资源 */
+.skeleton-container[style*="display: none"] .skeleton,
+.skeleton-container[style*="visibility: hidden"] .skeleton {
+    animation: none;
+}
+
 @keyframes skeleton-loading {
     0% {
         background-position: 200% 0;
@@ -4011,12 +4045,6 @@ body.skeleton-active .cursor {
     100% {
         background-position: -200% 0;
     }
-}
-
-/* 骨架屏隐藏时停止动画，节省资源 */
-.skeleton-container[style*="display: none"] .skeleton,
-.skeleton-container[style*="visibility: hidden"] .skeleton {
-    animation: none;
 }
 
 .skeleton-avatar {
@@ -4259,6 +4287,7 @@ button:focus-visible,
 .navbar-toggle:focus-visible,
 .nav-sidebar-close:focus-visible,
 .nav-sidebar-theme:focus-visible,
+.nav-sidebar-dropdown-toggle:focus-visible,
 .nav-dropdown-toggle:focus-visible,
 .donation__btn:focus-visible,
 .donation__modal-close:focus-visible,
@@ -4322,6 +4351,27 @@ a:focus-visible,
         animation: none;
     }
 
+    /* RSS 卡片翻转 - 禁用 3D 变换 */
+    .rss-card-container {
+        transform-style: flat;
+        transition: none;
+    }
+
+    .rss-card-container.flipped {
+        transform: none;
+    }
+
+    .rss-card-container.flipped .rss-article:not(.rss-article-back) {
+        visibility: hidden;
+        opacity: 0;
+    }
+
+    .rss-card-container.flipped .rss-article.rss-article-back {
+        visibility: visible;
+        opacity: 1;
+        transform: none;
+    }
+
     /* 光标跟随效果 */
     .cursor {
         transition: none;
@@ -4354,41 +4404,7 @@ a:focus-visible,
 
     /* RSS 卡片翻转 */
     .rss-card-container {
-        transform-style: flat;
         transition: none;
-    }
-
-    .rss-card-container.flipped {
-        transform: none;
-    }
-
-    .rss-card-container.flipped .rss-article:not(.rss-article-back) {
-        visibility: hidden;
-        opacity: 0;
-    }
-
-    .rss-card-container.flipped .rss-article.rss-article-back {
-        visibility: visible;
-        opacity: 1;
-        transform: none;
-    }
-
-    /* 音乐播放器 */
-    .music-player-wrapper {
-        transition: opacity var(--duration-instant);
-    }
-
-    .music-player {
-        transition: none;
-    }
-
-    .music-area.is-expanded .music-btn--prev,
-    .music-area.is-expanded .music-btn--play,
-    .music-area.is-expanded .music-btn--next,
-    .music-area.is-expanded .music-progress {
-        animation: none;
-        opacity: 1;
-        transform: translateX(-50%) translateY(0) scale(1);
     }
 
     /* 项目卡片悬停效果 */

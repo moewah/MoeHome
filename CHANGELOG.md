@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v1.2.0] - 2026-03-14
+
+### 新功能
+
+- **终端装备列表** - 新增 `gear` 配置项，支持 `cat gear.txt` 命令展示个人装备
+- **全局效果封装** - 将光标、背景视差、回到顶部、元素光晕封装为独立类（CustomCursor、GridParallax、ScrollProgress、ElementGlow），自动创建元素，多页面复用
+- **404 页面优化** - 容器结构与首页统一，文案优化
+
+### 优化
+
+- **导航链接** - 统一使用 `/` 路径，适配部署环境
+- **RSS 获取** - 超时时间从 10s 增加到 20s，提高稳定性
+- **代码结构** - 移除 config.js 中 scrollProgress 配置项，全局效果默认启用
+
+### 其他
+
+- 爱发电地址更新为 ifdian.net
+- README 文档更新项目结构和配置说明
+
 ## [v1.1.0] - 2026-03-13
 
 ### 新功能
