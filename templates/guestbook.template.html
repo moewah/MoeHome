@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, shrink-to-fit=no" />
+
+        <!-- Page Title -->
+        <title>{{PAGE_TITLE}}</title>
+
+        <!-- SEO Meta Tags -->
+        {{SEO_META}}
+
+        <!-- Favicon -->
+        {{FAVICON_LINKS}}
+
+        <!-- 主题初始化脚本 -->
+        {{THEME_INIT_SCRIPT}}
+
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.cn" />
+        <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin />
+        <link
+            href="https://fonts.googleapis.cn/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Font Awesome Icons -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+            integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
+
+        <!-- Critical CSS: 留言板页面特定样式 -->
+        <style>
+            /* ========== 防止 FOUC 的通用隐藏样式 ========== */
+            .theme-dropdown {
+                position: fixed;
+                top: calc(var(--navbar-height) + 8px);
+                z-index: 100;
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .theme-dropdown.is-active {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+
+            .nav-sidebar {
+                position: fixed;
+                top: 0;
+                right: 0;
+                height: 100vh;
+                transform: translateX(100%);
+                z-index: 1002;
+            }
+            .nav-sidebar.open {
+                transform: translateX(0);
+            }
+            .nav-overlay {
+                position: fixed;
+                inset: 0;
+                opacity: 0;
+                visibility: hidden;
+                z-index: 1001;
+            }
+            .nav-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            /* ========== 留言板容器 ========== */
+            .guestbook-wrapper {
+                width: 100%;
+                max-width: 600px;
+                text-align: center;
+            }
+
+            /* ========== 页面头部 ========== */
+            .guestbook-page-header {
+                padding: var(--space-10, 40px) 0 var(--space-6, 24px);
+            }
+
+            .guestbook-page-header h1 {
+                font-family: "JetBrains Mono", monospace;
+                font-size: clamp(2rem, 6vw, 3.5rem);
+                font-weight: 700;
+                margin: 0;
+                letter-spacing: -0.02em;
+                background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+            .guestbook-page-header p {
+                color: var(--text-secondary);
+                margin-top: var(--space-2);
+                font-size: 1rem;
+                font-weight: 300;
+                line-height: 1.6;
+                letter-spacing: 0.02em;
+            }
+
+            /* ========== 分割线 ========== */
+            .divider {
+                width: 100%;
+                height: 1px;
+                background: linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    var(--divider-glow, var(--border)) 15%,
+                    var(--divider-glow, var(--border)) 50%,
+                    var(--divider-glow, var(--border)) 85%,
+                    transparent 100%
+                );
+                margin: var(--space-6) 0;
+            }
+
+            /* ========== 弹幕终端窗口（独立板块一） ========== */
+            .signal-terminal {
+                background: var(--bg-secondary);
+                border: none;
+                border-radius: var(--radius-lg, 16px);
+                overflow: hidden;
+                text-align: left;
+                margin-bottom: var(--space-8, 32px);
+                /* 玻璃光泽效果 */
+                box-shadow:
+                    inset 0 1px 0 0 var(--glass-border-top),
+                    inset 0 -1px 0 0 var(--glass-border-bottom),
+                    inset 1px 0 0 0 var(--glass-border-side),
+                    inset -1px 0 0 0 var(--glass-border-side),
+                    0 4px 20px -4px var(--glass-outer-shadow);
+            }
+
+            /* 终端标题栏 */
+            .signal-terminal-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: var(--space-2, 8px) var(--space-3, 12px);
+                background: var(--bg-primary);
+                border-bottom: none;
+                box-shadow: inset 0 -1px 0 0 var(--glass-border-bottom);
+                font-family: var(--font-mono);
+            }
+
+            .signal-terminal-left {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .terminal-dots {
+                display: flex;
+                gap: 6px;
+            }
+
+            .terminal-dot {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+            }
+
+            .terminal-dot.red { background: #ff5f57; }
+            .terminal-dot.yellow { background: #febc2e; }
+            .terminal-dot.green { background: #28c840; }
+
+            .signal-terminal-title {
+                color: var(--text-secondary);
+                font-size: 0.875rem; /* 14px */
+                font-weight: 500;
+            }
+
+            .signal-terminal-status {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                color: var(--accent);
+                font-size: 0.875rem; /* 14px */
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .signal-terminal-status::before {
+                content: '';
+                width: 6px;
+                height: 6px;
+                background: var(--accent);
+                border-radius: 50%;
+                animation: signal-pulse 1.5s ease-in-out infinite;
+            }
+
+            @keyframes signal-pulse {
+                0%, 100% { opacity: 1; transform: scale(1); }
+                50% { opacity: 0.5; transform: scale(0.8); }
+            }
+
+            /* 弹幕画布 - 固定高度策略 */
+            /* PC端：固定 240px，移动端：320px（通过媒体查询预先设置） */
+            /* 不随窗口大小变化，只在移动端/PC端模式切换时改变 */
+            .signal-stream {
+                position: relative;
+                width: 100%;
+                height: 240px;
+                min-height: 240px;
+                max-height: 240px;
+                overflow: hidden;
+                flex-shrink: 0;
+            }
+
+            /* 移动端高度：通过媒体查询预先设置，避免 JS 动态添加类名导致的布局偏移 */
+            @media (max-width: 640px) {
+                .signal-stream {
+                    height: 320px;
+                    min-height: 320px;
+                    max-height: 320px;
+                }
+            }
+
+            .signal-canvas {
+                position: absolute;
+                inset: 0;
+                overflow: hidden;
+                /* PC端：水平滚动，左右两侧渐变淡出 */
+                -webkit-mask-image: linear-gradient(
+                    to right,
+                    transparent 0%,
+                    black 50px,
+                    black calc(100% - 50px),
+                    transparent 100%
+                );
+                mask-image: linear-gradient(
+                    to right,
+                    transparent 0%,
+                    black 50px,
+                    black calc(100% - 50px),
+                    transparent 100%
+                );
+            }
+
+            /* 终端分隔线 */
+            .signal-terminal-divider {
+                height: 1px;
+                background: linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    var(--border) 20%,
+                    var(--accent) 50%,
+                    var(--border) 80%,
+                    transparent 100%
+                );
+                margin: 0 var(--space-3);
+            }
+
+            /* 编辑器容器 */
+            .signal-editor {
+                padding: 0;
+                box-shadow: inset 0 1px 0 0 var(--glass-border-top);
+            }
+
+            /* ========== 编辑器骨架屏 - 与实际编辑器精确匹配 ========== */
+            /* 使用与 comments-standalone.js 相同的类名和布局 */
+
+            /* 标签占位 - 模拟实际 label */
+            .editor-skeleton-label {
+                display: block;
+                font-size: 0.75rem;
+                color: var(--text-secondary);
+                margin-bottom: var(--space-1);
+                height: 12px;
+                line-height: 12px;
+                border-radius: 2px;
+            }
+
+            /* 输入框占位 - 精确匹配 input 高度 */
+            /* 实际 input: padding: 10px 14px, font-size: 0.875rem */
+            .editor-skeleton-input {
+                width: 100%;
+                height: 38px;
+                background: var(--bg-primary);
+                border: 1px dashed var(--border);
+                border-radius: var(--radius-sm);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .editor-skeleton-input::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    color-mix(in srgb, var(--accent) 8%, transparent) 50%,
+                    transparent 100%
+                );
+                animation: skeleton-scan 2s ease-in-out infinite;
+            }
+
+            /* Textarea 占位 - 精确匹配 min-height: 120px */
+            .editor-skeleton-textarea {
+                width: 100%;
+                min-height: 120px;
+                background: var(--bg-primary);
+                border: 1px dashed var(--border);
+                border-radius: var(--radius-sm);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .editor-skeleton-textarea::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    color-mix(in srgb, var(--accent) 8%, transparent) 50%,
+                    transparent 100%
+                );
+                animation: skeleton-scan 2s ease-in-out infinite;
+                animation-delay: 0.2s;
+            }
+
+            /* Footer 提示文本占位 - 精确匹配 font-size: 0.75rem */
+            .editor-skeleton-tip {
+                height: 14px;
+                width: 90px;
+                border-radius: 2px;
+            }
+
+            /* 按钮占位 - 精确匹配 .comments-btn: height: 38px */
+            .editor-skeleton-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                height: 38px;
+                padding: 0 20px;
+                font-size: 0.875rem;
+                font-weight: 600;
+                font-family: var(--font-mono);
+                border-radius: var(--radius-sm);
+                position: relative;
+                overflow: hidden;
+                background: var(--accent);
+                color: var(--bg-primary);
+            }
+
+            .editor-skeleton-btn::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    rgba(255, 255, 255, 0.15) 50%,
+                    transparent 100%
+                );
+                animation: skeleton-scan 2s ease-in-out infinite;
+                animation-delay: 0.4s;
+            }
+
+            @keyframes skeleton-scan {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(100%); }
+            }
+
+            /* 减少动画偏好 */
+            @media (prefers-reduced-motion: reduce) {
+                .editor-skeleton-input::after,
+                .editor-skeleton-textarea::after,
+                .editor-skeleton-btn::after,
+                .skeleton::after {
+                    animation: none;
+                }
+            }
+
+            /* 骨架屏淡出过渡 */
+            .editor-skeleton.skeleton-fade-out {
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+            .signal-editor .comments-form {
+                border: none;
+                border-radius: 0;
+                background: transparent;
+            }
+
+            .signal-editor .comments-form-title {
+                background: transparent;
+                border-bottom: none;
+                padding: var(--space-3) var(--space-4) var(--space-2);
+            }
+
+            .signal-editor .comments-form-header {
+                padding: 0 var(--space-4) var(--space-3);
+            }
+
+            .signal-editor .comments-form-body {
+                padding: 0 var(--space-4) var(--space-2);
+            }
+
+            .signal-editor .comments-form-footer {
+                padding: var(--space-2) var(--space-4) var(--space-4);
+            }
+
+            /* 回复指示器激活状态 - 终端风格 */
+            .signal-editor .comments-reply-indicator.active {
+                background: var(--accent-dim);
+                border-top: 1px dashed var(--accent);
+            }
+
+            /* 编辑器高亮动画 - 回复时 */
+            .signal-editor .comments-form.is-replying {
+                animation: editor-pulse 0.6s ease-out;
+            }
+
+            @keyframes editor-pulse {
+                0% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb, 198, 97, 63), 0.4); }
+                50% { box-shadow: 0 0 0 8px rgba(var(--accent-rgb, 198, 97, 63), 0); }
+                100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb, 198, 97, 63), 0); }
+            }
+
+            /* 弹幕项 - 终端风格 */
+            /* 基础样式：透明背景 + 边框 */
+            /* 弹幕文字统一 13px (0.8125rem) */
+            .signal-item {
+                position: absolute;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 4px 10px;
+                height: 22px;
+                background: transparent;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                font-size: 0.8125rem; /* 13px */
+                font-family: var(--font-mono);
+                cursor: pointer;
+                transition: border-color 0.15s ease, background 0.15s ease;
+                white-space: nowrap;
+            }
+
+            .signal-item:hover {
+                border-color: var(--accent);
+            }
+
+            /* 置顶类型：PIN 标记 + 无背景 + 强调边框 */
+            .signal-item.pinned {
+                border-color: var(--accent);
+            }
+
+            /* 热门类型：HOT 标记 + 有背景 + 边框 */
+            .signal-item.hot {
+                background: var(--accent-dim);
+                border-color: var(--accent);
+            }
+
+            .signal-item-content {
+                color: var(--text-primary);
+            }
+
+            .signal-item-author {
+                color: var(--text-secondary);
+                font-size: 11px;
+            }
+
+            .signal-item-author::before {
+                content: '> ';
+                color: var(--accent);
+            }
+
+            /* 标签样式 - 置顶用实心，热门用空心 */
+            .signal-item-tag {
+                font-size: 9px;
+                padding: 1px 4px;
+                background: var(--accent);
+                color: var(--bg-primary);
+                border-radius: 2px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+            }
+
+            .signal-item-tag.hot {
+                background: transparent;
+                color: var(--accent);
+                border: 1px solid var(--accent);
+            }
+
+            .signal-item-likes {
+                display: flex;
+                align-items: center;
+                gap: 3px;
+                color: var(--accent);
+                font-size: 10px;
+                font-weight: 600;
+            }
+
+            .signal-item-badge {
+                font-size: 9px;
+                padding: 1px 5px;
+                background: var(--accent);
+                color: var(--bg-primary);
+                border-radius: 4px;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            /* 加载状态 */
+            .signal-loading {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: var(--bg-secondary);
+                z-index: 10;
+                transition: opacity 0.3s ease;
+            }
+
+            .signal-loading.fade-out {
+                opacity: 0;
+                transition: opacity 0.4s ease;
+            }
+
+            .signal-loading-content {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: var(--space-3, 12px);
+            }
+
+            .signal-loading-dots {
+                display: flex;
+                gap: 8px;
+            }
+
+            .signal-loading-dot {
+                width: 60px;
+                height: 8px;
+                background: var(--border);
+                border-radius: 4px;
+                animation: loading-pulse 1s ease-in-out infinite;
+            }
+
+            .signal-loading-dot:nth-child(2) { animation-delay: 0.15s; }
+            .signal-loading-dot:nth-child(3) { animation-delay: 0.3s; }
+
+            @keyframes loading-pulse {
+                0%, 100% { opacity: 0.3; }
+                50% { opacity: 1; }
+            }
+
+            .signal-loading-text {
+                font-family: var(--font-mono);
+                font-size: 0.875rem; /* 14px */
+                color: var(--text-secondary);
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                transition: color 0.3s ease;
+            }
+
+            /* 加载完成状态 - 文字变为主题色 */
+            .signal-loading.is-ready .signal-loading-text {
+                color: var(--accent);
+            }
+
+            /* 加载完成状态 - 点变为主题色并停止动画 */
+            .signal-loading.is-ready .signal-loading-dot {
+                background: var(--accent);
+                animation: none;
+                opacity: 1;
+            }
+
+            /* ========== 评论区（独立板块二） ========== */
+            /* 与 signal-terminal 视觉等宽，样式由 style.css 控制 */
+            .comments-section {
+                text-align: left;
+            }
+
+            #comments-container {
+                min-height: 300px;
+            }
+
+            /* 评论加载状态 */
+            .comments-loading {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 200px;
+            }
+
+            .comments-loading-spinner {
+                width: 24px;
+                height: 24px;
+                border: 2px solid var(--border);
+                border-top-color: var(--accent);
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+                margin-bottom: var(--space-3, 12px);
+            }
+
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+
+            .comments-loading-text {
+                font-family: var(--font-mono);
+                font-size: 0.875rem; /* 14px */
+                color: var(--text-secondary);
+            }
+
+            /* 评论错误状态 */
+            .comments-error {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 200px;
+                padding: var(--space-6, 24px);
+                text-align: center;
+            }
+
+            .comments-error-icon {
+                font-size: 28px;
+                color: var(--text-secondary);
+                margin-bottom: var(--space-3, 12px);
+            }
+
+            .comments-error-message {
+                color: var(--text-secondary);
+                font-size: 0.875rem; /* 14px */
+                margin-bottom: var(--space-4, 16px);
+            }
+
+            .comments-error-retry {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 8px 16px;
+                background: var(--accent);
+                color: var(--bg-primary);
+                border: none;
+                border-radius: var(--radius-sm, 8px);
+                font-size: 0.875rem; /* 14px */
+                font-weight: 600;
+                cursor: pointer;
+                transition: opacity 0.15s ease;
+            }
+
+            .comments-error-retry:hover {
+                opacity: 0.9;
+            }
+
+            /* ========== 移动端弹幕布局 ========== */
+            /* 移动端 canvas 布局：垂直滚动 */
+            @media (max-width: 640px) {
+                .signal-canvas {
+                    display: flex;
+                    flex-direction: column;
+                    padding: var(--space-3, 12px);
+                    /* 移动端：垂直滚动，上下两侧渐变淡出 */
+                    -webkit-mask-image: linear-gradient(
+                        to bottom,
+                        transparent 0%,
+                        black 40px,
+                        black calc(100% - 40px),
+                        transparent 100%
+                    );
+                    mask-image: linear-gradient(
+                        to bottom,
+                        transparent 0%,
+                        black 40px,
+                        black calc(100% - 40px),
+                        transparent 100%
+                    );
+                }
+            }
+
+            /* 弹幕滚动容器 */
+            .mobile-signals-scroller {
+                display: flex;
+                flex-direction: column;
+                gap: var(--space-4, 16px);
+                /* 动画由 JS 动态设置 */
+            }
+
+            /* 移动端弹幕项 - 内容与作者作为文本流自然排列 */
+            /* 基础样式：透明背景 + 边框 */
+            /* 弹幕文字统一 13px (0.8125rem) */
+            .mobile-signal-item {
+                display: inline;
+                padding: 5px 8px;
+                background: transparent;
+                border: 1px solid var(--border);
+                border-radius: 4px;
+                flex-shrink: 0;
+                align-self: flex-start;
+                max-width: 100%;
+                box-sizing: border-box;
+                transition: border-color 0.15s ease, transform 0.15s ease;
+                font-family: var(--font-mono);
+                font-size: 0.8125rem; /* 13px */
+                line-height: 1.8;
+                -webkit-box-decoration-break: clone;
+                box-decoration-break: clone;
+            }
+
+            .mobile-signal-item:active {
+                transform: scale(0.98);
+            }
+
+            /* 置顶类型：无背景 + 强调边框 */
+            .mobile-signal-item.mobile-signal-pinned {
+                border-color: var(--accent);
+            }
+
+            /* 热门类型：有背景 + 边框 */
+            .mobile-signal-item.mobile-signal-liked {
+                background: var(--accent-dim);
+                border-color: var(--accent);
+            }
+
+            /* 评论内容 - 全文展示 */
+            .mobile-signal-content {
+                color: var(--text-primary);
+            }
+
+            /* 作者昵称 */
+            .mobile-signal-author {
+                color: var(--text-secondary);
+            }
+
+            .mobile-signal-author::before {
+                content: '> ';
+                color: var(--accent);
+            }
+
+            /* ========== 页脚 ========== */
+            .footer {
+                text-align: center;
+                margin-top: var(--space-8, 32px);
+            }
+
+            /* ========== 减少动画偏好 ========== */
+            @media (prefers-reduced-motion: reduce) {
+                .signal-terminal-status::before,
+                .comments-loading-spinner,
+                .signal-loading-dot {
+                    animation: none;
+                }
+            }
+
+            /* ========== 响应式适配 ========== */
+            @media (max-width: 768px) {
+                .guestbook-page-header {
+                    padding: var(--space-6, 24px) 0 var(--space-4, 16px);
+                }
+
+                .guestbook-page-header p {
+                    font-size: 0.875rem;
+                }
+
+                .signal-terminal-header {
+                    padding: var(--space-1, 4px) var(--space-2, 8px);
+                }
+
+                .signal-terminal-title {
+                    display: none;
+                }
+
+                /* 终端分隔线移动端调整 */
+                .signal-terminal-divider {
+                    margin: 0 var(--space-2);
+                }
+
+                /* 编辑器移动端调整 */
+                .signal-editor .comments-form-title {
+                    padding: var(--space-2) var(--space-3) var(--space-1);
+                    font-size: 0.875rem; /* 14px */
+                }
+
+                .signal-editor .comments-form-header {
+                    padding: 0 var(--space-3) var(--space-2);
+                }
+
+                .signal-editor .comments-form-body {
+                    padding: 0 var(--space-3) var(--space-1);
+                }
+
+                .signal-editor .comments-form-footer {
+                    padding: var(--space-1) var(--space-3) var(--space-3);
+                }
+
+                /* 独立评论区移动端调整 */
+                .comments-section {
+                    margin-top: var(--space-4);
+                }
+
+                /* 编辑器骨架屏移动端调整 - 与实际编辑器一致 */
+                .editor-skeleton .comments-form-title {
+                    padding: var(--space-2) var(--space-3) var(--space-1);
+                    font-size: 0.875rem;
+                }
+
+                .editor-skeleton .comments-form-header {
+                    padding: 0 var(--space-3) var(--space-2);
+                }
+
+                .editor-skeleton .comments-form-body {
+                    padding: 0 var(--space-3) var(--space-1);
+                }
+
+                .editor-skeleton .comments-form-footer {
+                    padding: var(--space-1) var(--space-3) var(--space-3);
+                }
+
+                /* 评论列表骨架屏移动端 */
+                .comments-skeleton-item {
+                    padding: var(--space-2);
+                }
+
+                .comments-skeleton-avatar {
+                    width: 28px;
+                    height: 28px;
+                }
+            }
+
+            /* 小屏幕进一步优化 */
+            @media (max-width: 480px) {
+                .guestbook-wrapper {
+                    padding: 0 var(--space-2, 8px);
+                }
+
+                /* 编辑器内边距调整 */
+                .signal-editor .comments-form-title {
+                    padding: var(--space-2);
+                }
+
+                .signal-editor .comments-form-header {
+                    padding: 0 var(--space-2) var(--space-2);
+                }
+
+                .signal-editor .comments-form-body {
+                    padding: 0 var(--space-2);
+                }
+
+                .signal-editor .comments-form-footer {
+                    padding: var(--space-1) var(--space-2) var(--space-2);
+                }
+            }
+        </style>
+
+        <!-- Main Stylesheet -->
+        <link rel="preload" href="../style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="../style.css"></noscript>
+
+        <!-- JS Files -->
+        <script src="../config.js" defer></script>
+        <script src="../theme-utils.js" defer></script>
+    </head>
+    <body>
+        {{> navbar}}
+
+        <div class="container">
+            <div class="guestbook-wrapper">
+                <!-- 页面标题 -->
+                <div class="guestbook-page-header">
+                    <h1>{{PAGE_TITLE_TEXT}}</h1>
+                    <p>{{PAGE_TAGLINE}}</p>
+                </div>
+
+                <!-- 分割线 -->
+                <div class="divider"></div>
+
+                <!-- 板块一：弹幕终端 + 编辑器 -->
+                <div class="signal-terminal">
+                    <div class="signal-terminal-header">
+                        <div class="signal-terminal-left">
+                            <div class="terminal-dots">
+                                <span class="terminal-dot red"></span>
+                                <span class="terminal-dot yellow"></span>
+                                <span class="terminal-dot green"></span>
+                            </div>
+                            <span class="signal-terminal-title">signal-station</span>
+                        </div>
+                        <span class="signal-terminal-status">LIVE</span>
+                    </div>
+                    <div class="signal-stream" id="signal-stream">
+                        <div class="signal-canvas" id="signal-canvas"></div>
+                    </div>
+                    <!-- 终端分隔线 -->
+                    <div class="signal-terminal-divider"></div>
+                    <!-- 编辑器容器 -->
+                    <div class="signal-editor" id="signal-editor">
+                        <!-- 骨架屏：JS 加载后被真实表单替换 -->
+                        <!-- 结构与 comments-standalone.js renderForm() 精确匹配 -->
+                        <form class="comments-form editor-skeleton" id="comments-form-skeleton">
+                            <div class="comments-form-title">
+                                <span class="editor-skeleton-title-text">发射信号</span>
+                            </div>
+                            <div class="comments-form-header">
+                                <div class="comments-form-field">
+                                    <label class="editor-skeleton-label skeleton">昵称</label>
+                                    <div class="editor-skeleton-input skeleton"></div>
+                                </div>
+                                <div class="comments-form-field">
+                                    <label class="editor-skeleton-label skeleton">邮箱</label>
+                                    <div class="editor-skeleton-input skeleton"></div>
+                                </div>
+                                <div class="comments-form-field">
+                                    <label class="editor-skeleton-label skeleton">网站</label>
+                                    <div class="editor-skeleton-input skeleton"></div>
+                                </div>
+                            </div>
+                            <div class="comments-form-body">
+                                <div class="editor-skeleton-textarea skeleton"></div>
+                            </div>
+                            <div class="comments-form-footer">
+                                <span class="editor-skeleton-tip skeleton">支持 Markdown</span>
+                                <div class="comments-form-actions">
+                                    <div class="editor-skeleton-btn skeleton">[TRANSMIT]</div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 板块二：评论列表 -->
+                <section class="comments-section">
+                    <div id="comments-container">
+                        <!-- 评论列表骨架屏 - JS 加载后被真实列表替换 -->
+                        <!-- 结构与 comments-standalone.js renderSkeleton() 精确匹配 -->
+                        <div class="comments-list" id="comments-list">
+                            <div class="comments-skeleton">
+                                <div class="comments-skeleton-item">
+                                    <div class="comments-skeleton-avatar skeleton"></div>
+                                    <div class="comments-skeleton-content">
+                                        <div class="comments-skeleton-header">
+                                            <div class="comments-skeleton-nick skeleton"></div>
+                                            <div class="comments-skeleton-date skeleton"></div>
+                                        </div>
+                                        <div class="comments-skeleton-line skeleton" style="width:100%;"></div>
+                                        <div class="comments-skeleton-line skeleton short"></div>
+                                    </div>
+                                </div>
+                                <div class="comments-skeleton-item">
+                                    <div class="comments-skeleton-avatar skeleton"></div>
+                                    <div class="comments-skeleton-content">
+                                        <div class="comments-skeleton-header">
+                                            <div class="comments-skeleton-nick skeleton"></div>
+                                            <div class="comments-skeleton-date skeleton"></div>
+                                        </div>
+                                        <div class="comments-skeleton-line skeleton" style="width:90%;"></div>
+                                        <div class="comments-skeleton-line skeleton short"></div>
+                                    </div>
+                                </div>
+                                <div class="comments-skeleton-item">
+                                    <div class="comments-skeleton-avatar skeleton"></div>
+                                    <div class="comments-skeleton-content">
+                                        <div class="comments-skeleton-header">
+                                            <div class="comments-skeleton-nick skeleton"></div>
+                                            <div class="comments-skeleton-date skeleton"></div>
+                                        </div>
+                                        <div class="comments-skeleton-line skeleton" style="width:95%;"></div>
+                                        <div class="comments-skeleton-line skeleton short"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {{> footer}}
+            </div>
+        </div>
+
+        <!-- 评论系统 SDK（由构建脚本注入） -->
+        {{COMMENT_SDK}}
+
+        <!-- Guestbook Module -->
+        <script src="../guestbook.js" defer></script>
+        <!-- Main Application -->
+        <script src="../app.js" defer></script>
+    </body>
+</html>

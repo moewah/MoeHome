@@ -54,12 +54,31 @@ async function minifyJS(code) {
         const { minify } = require('terser');
         const result = await minify(code, {
             compress: {
-                drop_console: false,  // 保留 console
+                drop_console: false,  // 不全部移除，使用 pure_funcs 精细控制
                 drop_debugger: true,
                 dead_code: true,
-                unused: true
+                unused: true,
+                passes: 2,  // 多 pass 优化
+                // 移除 console.log/info/debug/trace，保留 error/warn 用于生产环境错误追踪
+                pure_funcs: [
+                    'console.log',
+                    'console.info',
+                    'console.debug',
+                    'console.trace',
+                    'console.table',
+                    'console.time',
+                    'console.timeEnd',
+                    'console.group',
+                    'console.groupEnd',
+                    'console.groupCollapsed'
+                ]
             },
-            mangle: false,  // 不混淆变量名，保持可读性
+            mangle: {
+                reserved: ['Comments', 'Guestbook', 'BaseAdapter', 'ArtalkAdapter', 'WalineAdapter'],  // 保留全局 API 名称
+                properties: {
+                    regex: /^_/  // 混淆以 _ 开头的属性名
+                }
+            },
             format: {
                 comments: false  // 移除注释
             }
@@ -161,6 +180,48 @@ function processInlineCSS(html, config) {
         const minifiedCSS = minifyCSS(css.trim());
         return `<style${attrs}>${minifiedCSS}</style>`;
     });
+}
+
+/**
+ * 压缩 HTML 中的内联 JS（<script> 标签内的 JS）
+ * @param {string} html - HTML 代码
+ * @param {object} config - 压缩配置
+ * @returns {Promise<string>} 处理后的 HTML
+ */
+async function processInlineJS(html, config) {
+    if (!config.minifyJS || !config.minify) {
+        return html;
+    }
+
+    // 匹配所有 <script> 标签（排除 src 属性的外部脚本）
+    const scriptRegex = /<script([^>]*)>([\s\S]*?)<\/script>/gi;
+    const matches = [];
+    let match;
+
+    // 收集所有匹配
+    while ((match = scriptRegex.exec(html)) !== null) {
+        const [fullMatch, attrs, js] = match;
+        // 跳过外部脚本和已压缩的（没有换行符的内容）
+        if (attrs.includes('src=') || !js.trim() || !js.includes('\n')) {
+            continue;
+        }
+        matches.push({ fullMatch, attrs, js, index: match.index });
+    }
+
+    // 从后往前替换，避免索引偏移问题
+    for (let i = matches.length - 1; i >= 0; i--) {
+        const { fullMatch, attrs, js, index } = matches[i];
+        try {
+            const minifiedJS = await minifyJS(js.trim());
+            const replacement = `<script${attrs}>${minifiedJS}</script>`;
+            html = html.slice(0, index) + replacement + html.slice(index + fullMatch.length);
+        } catch (e) {
+            // 压缩失败保持原样
+            console.warn('  ⚠️ 内联 JS 压缩失败:', e.message);
+        }
+    }
+
+    return html;
 }
 
 // ========== 图片压缩 ==========
@@ -487,6 +548,7 @@ module.exports = {
     minifyCSS,
     minifyHTML,
     processInlineCSS,
+    processInlineJS,
     compressImage,
     processJSFile,
     processCSSFile,

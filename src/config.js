@@ -4,31 +4,68 @@
  */
 
 window.HOMEPAGE_CONFIG = {
-  // ========== SEO 配置（由 build.js 注入到 HTML） ==========
+  // ========== 站点基础配置 ==========
+  // 这些是网站的核心信息，会被所有页面引用
+  site: {
+    name: "YourName", // 站点名称（用于标题后缀）
+    tagline: "技术博主 / 开源爱好者 / AI 探索者", // 站点标语（用于首页标题）
+    url: "", // 站点完整 URL（用于 OG 图片等绝对路径）- 空值使用相对路径
+    ogImage: "/images/avatar.webp", // 默认 OG 图片（所有页面共用）
+  },
+
+  // ========== SEO 配置（首页专用） ==========
+  // 首页使用完整的自定义 SEO 内容
+  // 内页会自动生成标准格式的标题和描述
   seo: {
-    title: "MoeWah - 技术博主 / 开源爱好者 / AI 探索者",
-    description:
-      "Hi，欢迎访问 MoeWah 的个人主页。这里是我的数字实验室，与我一起探索技术边界：从 Proxmox 虚拟化到 Docker 容器编排。记录 MoeWah 的自动化实践之路，涵盖 Astro 静态建站、AI 绘图流与 Google SEO 优化方案。",
+    title: "YourName - 技术博主 / 开源爱好者 / AI 探索者",
+    description: "Hi，欢迎访问我的个人主页。这里是技术分享与生活记录的空间。",
     keywords: [
-      "MoeWah",
+      "YourName",
       "技术博客",
       "Astro",
       "Docker",
-      "Proxmox",
       "NAS",
       "私有云",
       "AI工具",
-      "ComfyUI",
       "自动化部署",
-      "Google SEO",
-      "前端开发",
-      "虚拟化",
     ],
     og: {
-      title: "MoeWah - 个人主页",
-      description: "开源爱好者 / Astro爱好者 / AI探索者 - 与我一起探索技术边界",
-      image: "images/avatar.webp",
+      title: "YourName - 个人主页",
+      description: "开源爱好者 / AI探索者 - 与我一起探索技术边界",
+      image: "https://example.com/images/avatar.webp",
     },
+  },
+
+  // ========== 独立页面 SEO 配置 ==========
+  // 每个独立页面可以定义自己的 SEO 信息
+  // 标题格式自动生成为: "{{page.title}} | {{site.name}}"
+  // 描述格式自动生成为: "{{page.description}} - {{site.name}}"（如果未定义 description）
+  pages: {
+    // 404 页面
+    404: {
+      title: "页面未找到",
+      description: "抱歉，您访问的页面不存在或已被删除",
+      robots: "noindex, nofollow", // 特殊配置：不索引
+    },
+    // 动态页面
+    moments: {
+      title: "动态",
+      tagline: "我的碎片化分享，这里记录分享实用经验、生活点滴、瞬间感悟。",
+      description: "个人动态，记录生活点滴与瞬间感悟",
+      keywords: ["动态", "瞬间", "生活记录"],
+    },
+    // 留言板页面
+    guestbook: {
+      title: "留言",
+      tagline: "欢迎在这里留下你的足迹，分享你的想法和建议。",
+      description: "留言板，欢迎留下你的信号",
+      keywords: ["留言板", "评论", "交流"],
+    },
+    // 未来可继续添加其他独立页面...
+    // about: {
+    //   title: "关于",
+    //   description: "关于我",
+    // },
   },
 
   // ========== 主题配色 ==========
@@ -56,24 +93,15 @@ window.HOMEPAGE_CONFIG = {
     },
 
     // 自定义二级菜单
-    menus: [], // 默认空，示例：
-    // menus: [
-    //   {
-    //     name: 'Resources',
-    //     items: [
-    //       { name: '工具推荐', url: 'https://...', external: true },
-    //       { name: '友情链接', url: 'https://...', external: true },
-    //     ]
-    //   }
-    // ],
+    menus: [], // 默认空
   },
 
   // ========== 个人信息 ==========
   profile: {
-    name: "MoeWah",
+    name: "YourName",
     tagline: {
       prefix: "🐾",
-      highlight: "万物皆可萌！",
+      highlight: "欢迎来到我的主页！",
     },
     avatar: "images/avatar.webp",
   },
@@ -84,30 +112,23 @@ window.HOMEPAGE_CONFIG = {
   },
 
   // ========== 身份标签 ==========
-  identity: ["开源爱好者", "AI探索者", "自动化实践者", "技术博主"],
+  identity: ["Hi, I'm YourName.", "开源爱好者", "AI探索者", "自动化实践者"],
 
   // ========== 兴趣领域 ==========
-  interests: [
-    "Docker & 容器技术",
-    "Proxmox & 虚拟化",
-    "NAS & 私有云",
-    "AI工具 & ComfyUI",
-    "自动化部署",
-    "Google SEO",
-  ],
+  interests: ["Docker & 容器技术", "NAS & 私有云", "AI工具", "自动化部署"],
 
   // ========== 装备列表 ==========
   // 填写你的装备，会在终端显示 `cat gear.txt` 命令
   // 留空数组 [] 则不显示此命令
   gear: [
-    // "Nikon Z5II（Z24-70 F4S）",
-    // "Mac mini M4 Pro 48G",
-    // "Synology DS920+",
+    // "设备1",
+    // "设备2",
+    // "设备3",
   ],
 
   // ========== 终端配置 ==========
   terminal: {
-    title: "🐾 meow@tribe:~|",
+    title: "🐾 user@host:~|",
     prompts: [
       {
         command: "whoami",
@@ -142,14 +163,6 @@ window.HOMEPAGE_CONFIG = {
     "You have to compete within your own area of competence.",
   ],
 
-  // ========== 动画配置 ==========
-  animation: {
-    fadeInDelay: 1000, // ms
-    typingSpeed: 60, // ms per character（打字速度）
-    quoteDisplayTime: 4000, // ms（每条语录显示时间）
-    quoteDeleteSpeed: 42, // ms per character（删除速度，比打字快）
-  },
-
   // ========== 音乐播放器配置 ==========
   music: {
     enabled: false, // 是否启用音乐播放器（启用后替换头像与终端之间的分割线）
@@ -174,7 +187,6 @@ window.HOMEPAGE_CONFIG = {
       apis: [
         "https://api.i-meto.com/meting/api?server=:server&type=:type&id=:id&r=:r",
         "https://api.injahow.cn/meting/?server=:server&type=:type&id=:id",
-        "https://api.moeyao.cn/meting/?server=:server&type=:type&id=:id",
       ],
     },
 
@@ -184,6 +196,14 @@ window.HOMEPAGE_CONFIG = {
       // "music/song1.mp3",
       // "music/song2.mp3",
     ],
+  },
+
+  // ========== 动画配置 ==========
+  animation: {
+    fadeInDelay: 1000, // ms
+    typingSpeed: 60, // ms per character（打字速度）
+    quoteDisplayTime: 4000, // ms（每条语录显示时间）
+    quoteDeleteSpeed: 42, // ms per character（删除速度，比打字快）
   },
 
   // ========== RSS 文章配置 ==========
@@ -211,6 +231,7 @@ window.HOMEPAGE_CONFIG = {
       icon: "fa-solid fa-folder-open",
     },
     // GitHub 用户主页地址，构建时自动获取公开仓库
+    // 支持格式：https://github.com/username 或 github.com/username
     githubUser: "https://github.com/yourusername", // 替换为你的 GitHub 主页
     // 显示数量限制（按 star 数排序后取前 N 个）
     count: 5,
@@ -224,6 +245,54 @@ window.HOMEPAGE_CONFIG = {
     useRealData: true, // true=真实数据, false=随机数据
     // GitHub 用户名（留空则从 projects.githubUser 自动提取）
     githubUser: "",
+  },
+
+  // ========== 个人动态配置 ==========
+  moments: {
+    enabled: false, // 是否启用动态模块
+    memosUrl: "https://your-memos-instance.com/", // Memos 实例地址
+    count: 10, // 获取数量
+    tags: [], // 标签过滤（可选，留空获取所有公开动态）
+    showSkeleton: true, // 显示骨架屏
+  },
+
+  // ========== 留言板配置 ==========
+  // 极简配置：只需指定评论系统和服务器地址
+  // 其他选项均使用合理默认值，由系统自动处理
+  guestbook: {
+    // 是否启用留言板功能
+    enabled: false,
+
+    // 评论系统: 'artalk' | 'waline'
+    provider: "waline",
+
+    // 服务器地址（必填）
+    // Artalk: 如 "http://localhost:23366"
+    // Waline: 如 "https://your-waline.vercel.app"
+    server: "https://your-waline.vercel.app",
+
+    // 站点名称（仅 Artalk 需要，Waline 忽略此项）
+    site: "MoeHome",
+
+    // 可选：评论框占位文字（留空使用默认）
+    placeholder: "欢迎留下你的信号...",
+
+    // ========== 数量限制配置 ==========
+    // 控制评论列表和弹幕的显示数量，优化性能
+    // 注意：comments 限制是指"总评论数"（根评论 + 嵌套回复），而非仅根评论数
+    limits: {
+      // 评论列表限制（总评论数 = 根评论 + 回复）
+      comments: {
+        newest: 30, // 默认列表（按时间降序）最多显示总评论数
+        hot: 30, // 热门列表（按点赞降序）最多显示总评论数
+      },
+      // 弹幕限制（从评论数据中筛选）
+      barrage: {
+        pinned: 5, // 置顶弹幕最多条数
+        hot: 10, // 热门弹幕最多条数（点赞 ≥ 10 的评论）
+        latest: 5, // 最新弹幕最多条数
+      },
+    },
   },
 
   // ========== 链接模块配置 ==========
@@ -248,6 +317,16 @@ window.HOMEPAGE_CONFIG = {
       enabled: true,
     },
     {
+      name: "Photos",
+      description: "摄影作品",
+      url: "#",
+      icon: "fa-solid fa-images",
+      brand: "photos",
+      external: true,
+      color: "#FF9500",
+      enabled: true,
+    },
+    {
       name: "GitHub",
       description: "开源项目 & 代码",
       url: "https://github.com/yourid",
@@ -258,14 +337,13 @@ window.HOMEPAGE_CONFIG = {
       enabled: true,
     },
     {
-      name: "Email",
-      description: "联系 & 合作",
-      url: "mailto:example@email.com",
-      icon: "fa-solid fa-envelope",
-      brand: "email",
-      external: false,
-      color: "#ea4335",
-      antiCrawler: true, // 反爬虫保护，对邮箱地址编码防止被抓取
+      name: "X",
+      description: "X (Twitter)",
+      url: "https://x.com/yourid",
+      icon: "fa-brands fa-x-twitter",
+      brand: "x",
+      external: true,
+      color: "#C0C0C0",
       enabled: true,
     },
     {
@@ -299,16 +377,6 @@ window.HOMEPAGE_CONFIG = {
       enabled: true,
     },
     {
-      name: "Photos",
-      description: "摄影作品",
-      url: "https://yourphotos.com",
-      icon: "fa-solid fa-images",
-      brand: "photos",
-      external: true,
-      color: "#FF9500",
-      enabled: true,
-    },
-    {
       name: "Weibo",
       description: "微博",
       url: "https://weibo.com/yourid",
@@ -319,13 +387,14 @@ window.HOMEPAGE_CONFIG = {
       enabled: true,
     },
     {
-      name: "X",
-      description: "X (Twitter)",
-      url: "https://x.com/yourid",
-      icon: "fa-brands fa-x-twitter",
-      brand: "x",
-      external: true,
-      color: "#C0C0C0",
+      name: "Email",
+      description: "联系 & 合作",
+      url: "mailto:example@email.com",
+      icon: "fa-solid fa-envelope",
+      brand: "email",
+      external: false,
+      color: "#ea4335",
+      antiCrawler: true, // 反爬虫保护，对邮箱地址编码防止被抓取
       enabled: true,
     },
   ],
@@ -355,18 +424,18 @@ window.HOMEPAGE_CONFIG = {
         enabled: true,
       },
       {
-        name: "PayPal",
-        key: "paypal",
-        icon: "fa-brands fa-paypal",
-        url: "https://www.paypal.com/paypalme/yourname",
-        enabled: true,
-      },
-      {
         name: "爱发电",
         key: "afdian",
         icon: "fa-solid fa-heart",
         url: "https://ifdian.net/a/yourname",
         enabled: true,
+      },
+      {
+        name: "PayPal",
+        key: "paypal",
+        icon: "fa-brands fa-paypal",
+        url: "https://www.paypal.com/paypalme/yourname",
+        enabled: false,
       },
     ],
   },
@@ -389,7 +458,7 @@ window.HOMEPAGE_CONFIG = {
 
   // ========== 安全提示配置 ==========
   notice: {
-    enabled: true,
+    enabled: false,
     type: "warning", // warning | info | success
     icon: "fa-solid fa-shield-halved",
     text: "声明：本人不会主动邀请或联系任何人，任何冒用本人名义的一切事物，请务必谨防受骗！",

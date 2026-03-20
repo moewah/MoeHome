@@ -4,15 +4,17 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, shrink-to-fit=no" />
 
+        <!-- Page Title (SEO: 尽早声明) -->
+        <title>{{PAGE_TITLE}}</title>
+
+        <!-- SEO Meta Tags (由 build.js 从 config.pages['404'] 生成) -->
+        {{SEO_META}}
+
         <!-- Favicon -->
         {{FAVICON_LINKS}}
 
-        <!-- SEO Meta Tags -->
-        <meta name="description" content="页面未找到 - {{NAME}}" />
-        <meta name="robots" content="noindex, nofollow" />
-
-        <!-- Page Title -->
-        <title>404 - 页面未找到 | {{NAME}}</title>
+        <!-- 主题初始化脚本（必须在所有 CSS 之前执行，防止闪烁）-->
+        {{THEME_INIT_SCRIPT}}
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.cn" />
@@ -31,13 +33,76 @@
             referrerpolicy="no-referrer"
         />
 
-        {{THEME_INITIAL}}
-
-        <!-- Critical CSS: 404页面特定样式 -->
+        <!-- Critical CSS: 默认隐藏元素 + 404页面特定样式 -->
         <style>
+            /* ========== 防止 FOUC 的通用隐藏样式 ========== */
+            /* 所有"默认隐藏"元素必须在 CSS 加载前就有正确的隐藏状态 */
+
+            /* Theme Dropdown */
+            .theme-dropdown {
+                position: fixed;
+                top: calc(var(--navbar-height) + 8px);
+                z-index: 100;
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .theme-dropdown.is-active {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+
+            /* Mobile Sidebar */
+            .nav-sidebar {
+                position: fixed;
+                top: 0;
+                right: 0;
+                height: 100vh;
+                transform: translateX(100%);
+                z-index: 1002;
+            }
+            .nav-sidebar.open {
+                transform: translateX(0);
+            }
+            .nav-overlay {
+                position: fixed;
+                inset: 0;
+                opacity: 0;
+                visibility: hidden;
+                z-index: 1001;
+            }
+            .nav-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            /* Donation Modal */
+            .donation__modal-overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 2000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .donation__modal-overlay.is-active {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+
+            /* ========== 404 页面特定样式 ========== */
+            .error-wrapper {
+                width: 100%;
+                max-width: 600px;
+            }
+
             .error-content {
                 text-align: center;
-                max-width: 480px;
                 flex: 1;
                 display: flex;
                 flex-direction: column;
@@ -119,6 +184,10 @@
                 color: var(--accent);
             }
 
+            .footer {
+                text-align: center;
+            }
+
             @media (max-width: 768px) {
                 .error-actions { flex-direction: column; width: 100%; max-width: 240px; }
                 .btn-home, .btn-back { width: 100%; justify-content: center; }
@@ -138,23 +207,25 @@
 
         <!-- 404 Content -->
         <div class="container">
-            <div class="error-content">
-                <div class="error-code">404</div>
-                <h1 class="error-title">页面走丢了</h1>
-                <p class="error-message">抱歉，您访问的页面不存在或已被删除。</p>
-                <div class="error-actions">
-                    <a href="/" class="btn-home">
-                        <i class="fa-solid fa-home"></i>
-                        返回首页
-                    </a>
-                    <button class="btn-back" id="btn-back">
-                        <i class="fa-solid fa-arrow-left"></i>
-                        返回上页
-                    </button>
+            <div class="error-wrapper">
+                <div class="error-content">
+                    <div class="error-code">404</div>
+                    <h1 class="error-title">页面走丢了</h1>
+                    <p class="error-message">抱歉，您访问的页面不存在或已被删除。</p>
+                    <div class="error-actions">
+                        <a href="/" class="btn-home">
+                            <i class="fa-solid fa-home"></i>
+                            返回首页
+                        </a>
+                        <button class="btn-back" id="btn-back">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            返回上页
+                        </button>
+                    </div>
                 </div>
-            </div>
 
-            {{> footer}}
+                {{> footer}}
+            </div>
         </div>
 
         <!-- Main Application Script: 复用首页脚本 -->

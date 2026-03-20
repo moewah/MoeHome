@@ -14,12 +14,26 @@ const {
     processCSSFile,
     processHTML,
     processInlineCSS,
+    processInlineJS,
     processImageFile,
     isImage,
     formatSize,
     calcReduction,
-    generateFavicon
+    generateFavicon,
+    minifyJS
 } = require('./minify');
+
+// 引入共享主题数据
+const {
+    builtinSchemes,
+    deriveConfig,
+    hexToRgb,
+    darkenColor,
+    getSchemeColors,
+    isSchemeCompatible,
+    getDefaultColors,
+    buildCSSVariablesArray
+} = require('../src/theme-data.js');
 
 // 压缩配置
 const minifyConfig = getMinifyConfig();
@@ -50,7 +64,7 @@ function readPartial(name) {
  * @returns {string} 渲染后的内容
  */
 function renderPartials(content) {
-    return content.replace(/\{\{>\s*(\w+)\}\}/g, (match, name) => {
+    return content.replace(/\{\{>\s*([\w-]+)\}\}/g, (match, name) => {
         return readPartial(name);
     });
 }
@@ -68,28 +82,46 @@ function generateNavLinks(options) {
     const links = [];
     const linkClass = isMobile ? 'nav-sidebar-link' : 'nav-link';
 
+    // 检查是否有独立页面（排除404，404永远不在菜单中显示）
+    const hasMoments = config.moments && config.moments.enabled;
+    const hasGuestbook = config.guestbook && config.guestbook.enabled;
+    const hasStandalonePages = hasMoments || hasGuestbook;
+
     // 首页
     const homeActive = activePage === 'home' ? ' active' : '';
     links.push(`<a href="/" class="${linkClass}${homeActive}">首页</a>`);
 
-    // 文章页（RSS 启用时）
-    if (config.rss && config.rss.enabled) {
-        const postsActive = activePage === 'posts' ? ' active' : '';
-        // 文章页暂时还是锚点跳转（后续可改为独立页面）
-        links.push(`<a href="/#rss-section" class="${linkClass}${postsActive}">文章</a>`);
-    }
+    if (hasStandalonePages) {
+        // 有独立页面时：只显示首页和独立页面链接，不显示锚点链接
+        // 动态页（Moments 启用时）
+        if (hasMoments) {
+            const momentsActive = activePage === 'moments' ? ' active' : '';
+            links.push(`<a href="/moments/" class="${linkClass}${momentsActive}">动态</a>`);
+        }
+        // 留言板（Guestbook 启用时）
+        if (hasGuestbook) {
+            const guestbookActive = activePage === 'guestbook' ? ' active' : '';
+            links.push(`<a href="/guestbook/" class="${linkClass}${guestbookActive}">留言</a>`);
+        }
+    } else {
+        // 只有 index 主页时：显示锚点链接（文章、项目、链接）
+        // 文章页（RSS 启用时）- 锚点链接
+        if (config.rss && config.rss.enabled) {
+            const postsActive = activePage === 'posts' ? ' active' : '';
+            links.push(`<a href="/#rss-section" class="${linkClass}${postsActive}">文章</a>`);
+        }
 
-    // 项目页（Projects 启用时）
-    if (config.projects && config.projects.enabled) {
-        const projectsActive = activePage === 'projects' ? ' active' : '';
-        // 项目页暂时还是锚点跳转（后续可改为独立页面）
-        links.push(`<a href="/#projects-section" class="${linkClass}${projectsActive}">项目</a>`);
-    }
+        // 项目页（Projects 启用时）- 锚点链接
+        if (config.projects && config.projects.enabled) {
+            const projectsActive = activePage === 'projects' ? ' active' : '';
+            links.push(`<a href="/#projects-section" class="${linkClass}${projectsActive}">项目</a>`);
+        }
 
-    // 链接导航（Links 启用时）
-    if (config.linksConfig && config.linksConfig.enabled) {
-        const linksActive = activePage === 'links' ? ' active' : '';
-        links.push(`<a href="/#links-container" class="${linkClass}${linksActive}">链接</a>`);
+        // 链接导航（Links 启用时）- 锚点链接
+        if (config.linksConfig && config.linksConfig.enabled) {
+            const linksActive = activePage === 'links' ? ' active' : '';
+            links.push(`<a href="/#links-container" class="${linkClass}${linksActive}">链接</a>`);
+        }
     }
 
     // 自定义菜单
@@ -283,7 +315,8 @@ function extractStringValue(content, key) {
 
     for (const pattern of patterns) {
         const match = content.match(pattern);
-        if (match && match[1]) {
+        // 修改：使用 match[1] !== undefined 而不是 match[1] 来支持空字符串
+        if (match && match[1] !== undefined) {
             return match[1].replace(/\\(['"`\\])/g, '$1').trim();
         }
     }
@@ -385,38 +418,7 @@ function extractDonationConfig() {
     };
 }
 
-// ========== 主题配色提取 ==========
-
-/**
- * Hex 转 RGB 字符串
- * @param {string} hex - #00ff9f 或 #fff
- * @returns {string} - "0, 255, 159"
- */
-function hexToRgb(hex) {
-    // 标准 6 位格式
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-        return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
-    }
-    // 短格式 #fff
-    const shortResult = /^#?([a-f\d])([a-f\d])([a-f\d])$/i.exec(hex);
-    if (shortResult) {
-        return `${parseInt(shortResult[1] + shortResult[1], 16)}, ${parseInt(shortResult[2] + shortResult[2], 16)}, ${parseInt(shortResult[3] + shortResult[3], 16)}`;
-    }
-    return '0, 255, 159'; // fallback
-}
-
-/**
- * 将 hex 颜色加深指定比例
- * @param {string} hex - #00ff9f 或 #fff
- * @param {number} amount - 加深比例 (0-1)
- * @returns {string} - 加深后的 hex 颜色
- */
-function darkenColor(hex, amount) {
-    const rgb = hexToRgb(hex).split(', ').map(Number);
-    const darkened = rgb.map(channel => Math.max(0, Math.round(channel * (1 - amount))));
-    return `#${darkened.map(c => c.toString(16).padStart(2, '0')).join('')}`;
-}
+// ========== 主题配置提取 ==========
 
 /**
  * 从 theme 配置块中提取单个颜色值
@@ -445,320 +447,264 @@ function extractThemeConfig() {
     const defaultMatch = themeBlock.match(/default:\s*['"`](light|dark|auto)['"`]/);
     const defaultMode = defaultMatch ? defaultMatch[1] : 'auto';
 
-    // 默认值
-    const lightDefaults = {
-        accent: '#D97706',
-        bgPrimary: '#FBF8F3',
-        bgSecondary: '#F5F2ED',
-        textPrimary: '#1C1917',
-        textSecondary: '#57534E',
-        border: '#E7E5E4',
-    };
-
-    const darkDefaults = {
-        accent: '#00ff9f',
-        bgPrimary: '#0a0a0a',
-        bgSecondary: '#111111',
-        textPrimary: '#e8e8e8',
-        textSecondary: '#888888',
-        border: '#222222',
-    };
-
-    // 检测新版格式（defaults 子对象）
-    const defaultsMatch = themeBlock.match(/defaults:\s*\{([\s\S]*?)\n\s*\},?\s*\n/);
-    if (defaultsMatch) {
-        // 新版格式
-        const defaultsBlock = defaultsMatch[1];
-
-        // 匹配 light 子对象
-        const lightMatch = defaultsBlock.match(/light:\s*\{([^}]+)\}/);
-        const lightBlock = lightMatch ? lightMatch[1] : null;
-
-        // 匹配 dark 子对象
-        const darkMatch = defaultsBlock.match(/dark:\s*\{([^}]+)\}/);
-        const darkBlock = darkMatch ? darkMatch[1] : null;
-
-        const result = {
-            default: defaultMode,
-            light: lightBlock ? {
-                accent: extractThemeColor(lightBlock, 'accent', lightDefaults.accent),
-                bgPrimary: extractThemeColor(lightBlock, 'bgPrimary', lightDefaults.bgPrimary),
-                bgSecondary: extractThemeColor(lightBlock, 'bgSecondary', lightDefaults.bgSecondary),
-                textPrimary: extractThemeColor(lightBlock, 'textPrimary', lightDefaults.textPrimary),
-                textSecondary: extractThemeColor(lightBlock, 'textSecondary', lightDefaults.textSecondary),
-                border: extractThemeColor(lightBlock, 'border', lightDefaults.border),
-            } : { ...lightDefaults },
-            dark: darkBlock ? {
-                accent: extractThemeColor(darkBlock, 'accent', darkDefaults.accent),
-                bgPrimary: extractThemeColor(darkBlock, 'bgPrimary', darkDefaults.bgPrimary),
-                bgSecondary: extractThemeColor(darkBlock, 'bgSecondary', darkDefaults.bgSecondary),
-                textPrimary: extractThemeColor(darkBlock, 'textPrimary', darkDefaults.textPrimary),
-                textSecondary: extractThemeColor(darkBlock, 'textSecondary', darkDefaults.textSecondary),
-                border: extractThemeColor(darkBlock, 'border', darkDefaults.border),
-            } : { ...darkDefaults },
+    // 提取 defaultScheme 配置
+    let defaultScheme = null;
+    const defaultSchemeMatch = themeBlock.match(/defaultScheme:\s*\{([^}]+)\}/);
+    if (defaultSchemeMatch) {
+        const defaultSchemeBlock = defaultSchemeMatch[1];
+        const lightSchemeMatch = defaultSchemeBlock.match(/light:\s*['"`]([^'"`]+)['"`]/);
+        const darkSchemeMatch = defaultSchemeBlock.match(/dark:\s*['"`]([^'"`]+)['"`]/);
+        defaultScheme = {
+            light: lightSchemeMatch ? lightSchemeMatch[1] : null,
+            dark: darkSchemeMatch ? darkSchemeMatch[1] : null,
         };
-
-        // 提取 locked 配置
-        const lockedMatch = themeBlock.match(/locked:\s*\{([^}]+)\}/);
-        if (lockedMatch) {
-            const lockedBlock = lockedMatch[1];
-            const lightLockedMatch = lockedBlock.match(/light:\s*['"`]([^'"`]+)['"`]/);
-            const darkLockedMatch = lockedBlock.match(/dark:\s*['"`]([^'"`]+)['"`]/);
-            result.locked = {
-                light: lightLockedMatch ? lightLockedMatch[1] : null,
-                dark: darkLockedMatch ? darkLockedMatch[1] : null,
-            };
-        }
-
-        return result;
     }
 
-    // 旧版格式（直接 light/dark）
-    const lightMatch = themeBlock.match(/light:\s*\{([^}]+)\}/);
-    const lightBlock = lightMatch ? lightMatch[1] : null;
-
-    const darkMatch = themeBlock.match(/dark:\s*\{([^}]+)\}/);
-    const darkBlock = darkMatch ? darkMatch[1] : null;
+    // 提取 locked 配置（旧版兼容）
+    let locked = null;
+    const lockedMatch = themeBlock.match(/locked:\s*\{([^}]+)\}/);
+    if (lockedMatch) {
+        const lockedBlock = lockedMatch[1];
+        const lightLockedMatch = lockedBlock.match(/light:\s*['"`]([^'"`]+)['"`]/);
+        const darkLockedMatch = lockedBlock.match(/dark:\s*['"`]([^'"`]+)['"`]/);
+        locked = {
+            light: lightLockedMatch ? lightLockedMatch[1] : null,
+            dark: darkLockedMatch ? darkLockedMatch[1] : null,
+        };
+    }
 
     return {
         default: defaultMode,
-        light: {
-            accent: extractThemeColor(lightBlock, 'accent', lightDefaults.accent),
-            bgPrimary: extractThemeColor(lightBlock, 'bgPrimary', lightDefaults.bgPrimary),
-            bgSecondary: extractThemeColor(lightBlock, 'bgSecondary', lightDefaults.bgSecondary),
-            textPrimary: extractThemeColor(lightBlock, 'textPrimary', lightDefaults.textPrimary),
-            textSecondary: extractThemeColor(lightBlock, 'textSecondary', lightDefaults.textSecondary),
-            border: extractThemeColor(lightBlock, 'border', lightDefaults.border),
-        },
-        dark: {
-            accent: extractThemeColor(darkBlock, 'accent', darkDefaults.accent),
-            bgPrimary: extractThemeColor(darkBlock, 'bgPrimary', darkDefaults.bgPrimary),
-            bgSecondary: extractThemeColor(darkBlock, 'bgSecondary', darkDefaults.bgSecondary),
-            textPrimary: extractThemeColor(darkBlock, 'textPrimary', darkDefaults.textPrimary),
-            textSecondary: extractThemeColor(darkBlock, 'textSecondary', darkDefaults.textSecondary),
-            border: extractThemeColor(darkBlock, 'border', darkDefaults.border),
-        },
+        defaultScheme,
+        locked,
     };
 }
 
 /**
- * 内置配色方案（构建时使用）
+ * 获取指定模式的配色（考虑 defaultScheme 优先级）
+ * @param {object} theme - 主题配置对象
+ * @param {string} mode - 'light' 或 'dark'
+ * @returns {object|null} 颜色配置对象
  */
-const builtinSchemes = {
-    cyber: {
-        modes: ['dark'],
-        colors: {
-            accent: '#00ff9f',
-            bgPrimary: '#0a0a0a',
-            bgSecondary: '#111111',
-            textPrimary: '#e8e8e8',
-            textSecondary: '#888888',
-            border: '#222222',
-        }
-    },
-    ocean: {
-        modes: ['dark'],
-        colors: {
-            accent: '#0ea5e9',
-            bgPrimary: '#0c1222',
-            bgSecondary: '#111827',
-            textPrimary: '#e2e8f0',
-            textSecondary: '#94a3b8',
-            border: '#1e293b',
-        }
-    },
-    sakura: {
-        modes: ['light'],
-        colors: {
-            accent: '#f472b6',
-            bgPrimary: '#fdf2f8',
-            bgSecondary: '#fce7f3',
-            textPrimary: '#831843',
-            textSecondary: '#9d174d',
-            border: '#fbcfe8',
-        }
-    },
-    forest: {
-        modes: ['light', 'dark'],
-        colors: {
-            light: {
-                accent: '#22c55e',
-                bgPrimary: '#f0fdf4',
-                bgSecondary: '#dcfce7',
-                textPrimary: '#14532d',
-                textSecondary: '#166534',
-                border: '#bbf7d0',
-            },
-            dark: {
-                accent: '#22c55e',
-                bgPrimary: '#052e16',
-                bgSecondary: '#14532d',
-                textPrimary: '#ecfdf5',
-                textSecondary: '#86efac',
-                border: '#166534',
-            }
-        }
-    },
-    sunset: {
-        modes: ['light', 'dark'],
-        colors: {
-            light: {
-                accent: '#f97316',
-                bgPrimary: '#fffbeb',
-                bgSecondary: '#fef3c7',
-                textPrimary: '#451a03',
-                textSecondary: '#78350f',
-                border: '#fde68a',
-            },
-            dark: {
-                accent: '#f97316',
-                bgPrimary: '#1c1917',
-                bgSecondary: '#292524',
-                textPrimary: '#fef3c7',
-                textSecondary: '#d6d3d1',
-                border: '#44403c',
-            }
+function getModeColors(theme, mode) {
+    // 优先级：defaultScheme > locked > 系统默认
+    let colors = null;
+
+    // 1. 首先检查 defaultScheme
+    if (theme.defaultScheme && theme.defaultScheme[mode]) {
+        const scheme = builtinSchemes[theme.defaultScheme[mode]];
+        if (scheme && isSchemeCompatible(scheme, mode)) {
+            colors = getSchemeColors(scheme, mode);
         }
     }
-};
+
+    // 2. 其次检查 locked（旧版兼容）
+    if (!colors && theme.locked && theme.locked[mode]) {
+        const scheme = builtinSchemes[theme.locked[mode]];
+        if (scheme && isSchemeCompatible(scheme, mode)) {
+            colors = getSchemeColors(scheme, mode);
+        }
+    }
+
+    // 3. 最后使用系统默认
+    if (!colors) {
+        colors = getDefaultColors(mode);
+    }
+
+    return colors;
+}
 
 /**
- * 从配色方案获取颜色
+ * 生成主题初始化脚本（防闪烁）
  */
-function getSchemeColors(schemeId, mode) {
-    const scheme = builtinSchemes[schemeId];
-    if (!scheme) return null;
+function generateThemeInitScript() {
+    // 将配色方案数据序列化为 JSON
+    var schemesJson = JSON.stringify(builtinSchemes);
+    var deriveConfigJson = JSON.stringify(deriveConfig);
+    var themeConfig = extractThemeConfig();
+    var defaultMode = themeConfig && themeConfig.default || 'auto';
+    var defaultSchemeJson = JSON.stringify(themeConfig && themeConfig.defaultScheme || { light: null, dark: null });
 
-    // 检查是否兼容
-    if (scheme.modes && !scheme.modes.includes(mode)) {
-        return null;
-    }
-
-    // 如果有按模式的颜色定义
-    if (scheme.colors && typeof scheme.colors.light === 'object') {
-        return scheme.colors[mode] || scheme.colors.dark || null;
-    }
-
-    return scheme.colors;
+    return '<script id="theme-init-script">\n' +
+'(function() {\n' +
+'    "use strict";\n' +
+'\n' +
+'    var SCHEMES = ' + schemesJson + ';\n' +
+'    var DERIVE_CONFIG = ' + deriveConfigJson + ';\n' +
+'    var DEFAULT_MODE = "' + defaultMode + '";\n' +
+'    var DEFAULT_SCHEME = ' + defaultSchemeJson + ';\n' +
+'    var STORAGE_KEY = "homepage_theme";\n' +
+'\n' +
+'    function hexToRgb(hex) {\n' +
+'        var result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex);\n' +
+'        if (result) {\n' +
+'            return parseInt(result[1], 16) + ", " + parseInt(result[2], 16) + ", " + parseInt(result[3], 16);\n' +
+'        }\n' +
+'        var shortResult = /^#?([a-f\\d])([a-f\\d])([a-f\\d])$/i.exec(hex);\n' +
+'        if (shortResult) {\n' +
+'            return parseInt(shortResult[1] + shortResult[1], 16) + ", " +\n' +
+'                   parseInt(shortResult[2] + shortResult[2], 16) + ", " +\n' +
+'                   parseInt(shortResult[3] + shortResult[3], 16);\n' +
+'        }\n' +
+'        return "0, 0, 0";\n' +
+'    }\n' +
+'\n' +
+'    function darkenColor(hex, amount) {\n' +
+'        var rgb = hexToRgb(hex).split(", ").map(Number);\n' +
+'        var darkened = rgb.map(function(c) { return Math.max(0, Math.round(c * (1 - amount))); });\n' +
+'        return "#" + darkened.map(function(c) { return c.toString(16).padStart(2, "0"); }).join("");\n' +
+'    }\n' +
+'\n' +
+'    function getSchemeColors(scheme, mode) {\n' +
+'        if (scheme.colors && typeof scheme.colors.light === "object") {\n' +
+'            return scheme.colors[mode] || scheme.colors.dark || scheme.colors;\n' +
+'        }\n' +
+'        return scheme.colors;\n' +
+'    }\n' +
+'\n' +
+'    function isSchemeCompatible(scheme, mode) {\n' +
+'        return !scheme.modes || scheme.modes.indexOf(mode) !== -1;\n' +
+'    }\n' +
+'\n' +
+'    function buildCSSVariables(colors, mode) {\n' +
+'        var derive = DERIVE_CONFIG[mode];\n' +
+'        var accentRgb = hexToRgb(colors.accent);\n' +
+'        var bgPrimaryRgb = hexToRgb(colors.bgPrimary);\n' +
+'        var isLight = mode === "light";\n' +
+'\n' +
+'        var vars = [\n' +
+'            "--bg-primary:" + colors.bgPrimary,\n' +
+'            "--bg-secondary:" + colors.bgSecondary,\n' +
+'            "--text-primary:" + colors.textPrimary,\n' +
+'            "--text-secondary:" + colors.textSecondary,\n' +
+'            "--accent:" + colors.accent,\n' +
+'            "--accent-deep:" + darkenColor(colors.accent, 0.2),\n' +
+'            "--border:" + colors.border,\n' +
+'            "--accent-dim:rgba(" + accentRgb + "," + derive.accentDim + ")",\n' +
+'            "--grid-color:rgba(" + accentRgb + "," + derive.gridColor + ")",\n' +
+'            "--notice-bg-warning:rgba(255,149,0," + derive.notice + ")",\n' +
+'            "--notice-bg-info:rgba(0,161,255," + derive.notice + ")",\n' +
+'            "--notice-bg-success:rgba(39,201,63," + derive.notice + ")",\n' +
+'            "--hover-bg:rgba(" + accentRgb + "," + derive.hover + ")",\n' +
+'            "--active-bg:rgba(" + accentRgb + "," + derive.active + ")",\n' +
+'            "--focus-ring:" + colors.accent,\n' +
+'            "--shadow-sm:rgba(0,0,0," + derive.shadowSm + ")",\n' +
+'            "--shadow-md:rgba(0,0,0," + derive.shadowMd + ")",\n' +
+'            "--glow:rgba(" + accentRgb + "," + derive.glow + ")",\n' +
+'            "--glow-subtle:rgba(" + accentRgb + ",0.08)",\n' +
+'            "--navbar-bg-scrolled:rgba(" + bgPrimaryRgb + "," + derive.navbarScrolled + ")",\n' +
+'            "--contribution-1:rgba(" + accentRgb + ",0.2)",\n' +
+'            "--contribution-2:rgba(" + accentRgb + ",0.4)",\n' +
+'            "--contribution-3:rgba(" + accentRgb + ",0.6)",\n' +
+'            "--contribution-4:" + colors.accent,\n' +
+'            "--divider-glow:rgba(" + accentRgb + ",0.4)",\n' +
+'            "--card-border-strong:rgba(" + accentRgb + "," + derive.cardBorderStrong + ")",\n' +
+'            "--card-border-muted:rgba(" + accentRgb + "," + derive.cardBorderMuted + ")",\n' +
+'            "--glass-border-top:" + (isLight ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)"),\n' +
+'            "--glass-border-bottom:" + (isLight ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.5)"),\n' +
+'            "--glass-border-side:" + (isLight ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.03)"),\n' +
+'            "--glass-outer-shadow:" + (isLight ? "rgba(0,0,0,0.1)" : "rgba(0,0,0,0.4)"),\n' +
+'            "--glass-hover-border:rgba(" + accentRgb + "," + (isLight ? "0.25" : "0.15") + ")",\n' +
+'            "--btn-glass-border-top:" + (isLight ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.08)"),\n' +
+'            "--btn-glass-border-bottom:" + (isLight ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.5)"),\n' +
+'            "--btn-glass-shadow:" + (isLight ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.4)"),\n' +
+'            "--btn-glass-inner-tint:" + (isLight ? "rgba(0,0,0,0.03)" : "rgba(" + accentRgb + ",0.03)"),\n' +
+'            "--btn-glass-hover-border:" + (isLight ? "rgba(0,0,0,0.2)" : "rgba(" + accentRgb + ",0.15)"),\n' +
+'            "--btn-glass-active-glow:" + (isLight ? "rgba(0,0,0,0.06)" : "rgba(" + accentRgb + ",0.05)"),\n' +
+'            "--terminal-bg:" + colors.bgSecondary,\n' +
+'            "--terminal-text:" + colors.textSecondary,\n' +
+'            "--terminal-prompt:" + colors.accent,\n' +
+'            "--terminal-cursor:" + colors.accent\n' +
+'        ];\n' +
+'\n' +
+'        return vars.join(";");\n' +
+'    }\n' +
+'\n' +
+'    function getEffectiveTheme(mode) {\n' +
+'        if (mode === "auto") {\n' +
+'            return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";\n' +
+'        }\n' +
+'        return mode;\n' +
+'    }\n' +
+'\n' +
+'    function getActiveScheme(mode, stored) {\n' +
+'        var schemeId = null;\n' +
+'\n' +
+'        if (stored && stored.schemes && stored.schemes[mode] !== undefined) {\n' +
+'            schemeId = stored.schemes[mode];\n' +
+'        } else if (DEFAULT_SCHEME[mode]) {\n' +
+'            schemeId = DEFAULT_SCHEME[mode];\n' +
+'        }\n' +
+'\n' +
+'        if (schemeId === null) return null;\n' +
+'        if (!schemeId) return null;\n' +
+'\n' +
+'        var scheme = SCHEMES[schemeId];\n' +
+'        if (scheme && isSchemeCompatible(scheme, mode)) {\n' +
+'            return scheme;\n' +
+'        }\n' +
+'        return null;\n' +
+'    }\n' +
+'\n' +
+'    function getDefaultColors(mode) {\n' +
+'        for (var id in SCHEMES) {\n' +
+'            if (SCHEMES[id].isDefault && SCHEMES[id].modes && SCHEMES[id].modes.indexOf(mode) !== -1) {\n' +
+'                return SCHEMES[id].colors;\n' +
+'            }\n' +
+'        }\n' +
+'        return null;\n' +
+'    }\n' +
+'\n' +
+'    var stored = null;\n' +
+'    try {\n' +
+'        var storedStr = localStorage.getItem(STORAGE_KEY);\n' +
+'        if (storedStr) {\n' +
+'            stored = JSON.parse(storedStr);\n' +
+'        }\n' +
+'    } catch (e) {}\n' +
+'\n' +
+'    var mode = (stored && stored.mode) || DEFAULT_MODE;\n' +
+'    var effectiveTheme = getEffectiveTheme(mode);\n' +
+'\n' +
+'    var scheme = getActiveScheme(effectiveTheme, stored);\n' +
+'    var colors;\n' +
+'\n' +
+'    if (scheme) {\n' +
+'        colors = getSchemeColors(scheme, effectiveTheme);\n' +
+'    } else {\n' +
+'        colors = getDefaultColors(effectiveTheme);\n' +
+'    }\n' +
+'\n' +
+'    if (colors) {\n' +
+'        var cssVars = buildCSSVariables(colors, effectiveTheme);\n' +
+'        var style = document.createElement("style");\n' +
+'        style.id = "theme-user-pref";\n' +
+'        style.textContent = ":root{" + cssVars + "}";\n' +
+'        document.head.appendChild(style);\n' +
+'        document.documentElement.setAttribute("data-theme", effectiveTheme);\n' +
+'    }\n' +
+'    // 将配色数据暴露为全局变量，供 ThemeManager 使用\n' +
+'    window.THEME_SCHEMES = SCHEMES;\n' +
+'    window.THEME_DERIVE_CONFIG = DERIVE_CONFIG;\n' +
+'    window.THEME_DEFAULT_MODE = DEFAULT_MODE;\n' +
+'    window.THEME_DEFAULT_SCHEME = DEFAULT_SCHEME;\n' +
+'})();\n' +
+'</script>';
 }
 
 /**
  * 生成首屏主题 CSS
- * 在 JS 加载前应用正确的主题颜色，避免闪烁
- * 支持 locked 配置，首屏使用锁定的配色方案
+ *
+ * 已废弃：theme-init-script 完全处理了主题初始化逻辑，包括：
+ * - 读取 localStorage 用户偏好
+ * - 无偏好时使用 DEFAULT_MODE 和 DEFAULT_SCHEME
+ * - 动态创建 <style id="theme-user-pref"> 并应用 CSS 变量
+ *
+ * 保留函数签名以兼容模板，始终返回空字符串
  */
 function generateInitialThemeCSS() {
-    const theme = extractThemeConfig();
-    if (!theme) return '';
-
-    // 确定默认主题
-    let defaultMode = theme.default;
-    if (defaultMode === 'auto') {
-        defaultMode = 'dark'; // auto 时使用 dark 作为首屏默认
-    }
-
-    // 获取颜色配置（优先使用 locked 方案）
-    let colors = theme[defaultMode];
-
-    if (theme.locked && theme.locked[defaultMode]) {
-        const schemeColors = getSchemeColors(theme.locked[defaultMode], defaultMode);
-        if (schemeColors) {
-            colors = schemeColors;
-        }
-    }
-
-    if (!colors) return '';
-
-    const accentRgb = hexToRgb(colors.accent);
-    const bgPrimaryRgb = hexToRgb(colors.bgPrimary);
-    const isLight = defaultMode === 'light';
-
-    // 衍生色透明度配置
-    const derive = isLight ? {
-        accentDim: 0.1,
-        gridColor: 0.05,
-        notice: 0.08,
-        hover: 0.08,
-        active: 0.15,
-        shadowSm: 0.05,
-        shadowMd: 0.1,
-        glow: 0.2,
-        navbarScrolled: 1,
-        cardBorderStrong: 0.5,
-        cardBorderMuted: 0.25,
-    } : {
-        accentDim: 0.1,
-        gridColor: 0.03,
-        notice: 0.05,
-        hover: 0.1,
-        active: 0.2,
-        shadowSm: 0.3,
-        shadowMd: 0.5,
-        glow: 0.3,
-        navbarScrolled: 0.98,
-        cardBorderStrong: 0.4,
-        cardBorderMuted: 0.2,
-    };
-
-    return `<style id="theme-initial">
-      :root {
-        /* 核心 */
-        --bg-primary: ${colors.bgPrimary};
-        --bg-secondary: ${colors.bgSecondary};
-        --text-primary: ${colors.textPrimary};
-        --text-secondary: ${colors.textSecondary};
-        --accent: ${colors.accent};
-        --accent-deep: ${darkenColor(colors.accent, 0.2)};
-        --border: ${colors.border};
-
-        /* 衍生 */
-        --accent-dim: rgba(${accentRgb}, ${derive.accentDim});
-        --grid-color: rgba(${accentRgb}, ${derive.gridColor});
-        --notice-bg-warning: rgba(255, 149, 0, ${derive.notice});
-        --notice-bg-info: rgba(0, 161, 255, ${derive.notice});
-        --notice-bg-success: rgba(39, 201, 63, ${derive.notice});
-
-        /* P0 交互状态 */
-        --hover-bg: rgba(${accentRgb}, ${derive.hover});
-        --active-bg: rgba(${accentRgb}, ${derive.active});
-        --focus-ring: ${colors.accent};
-
-        /* P1 阴影深度 */
-        --shadow-sm: rgba(0, 0, 0, ${derive.shadowSm});
-        --shadow-md: rgba(0, 0, 0, ${derive.shadowMd});
-        --glow: rgba(${accentRgb}, ${derive.glow});
-        --glow-subtle: rgba(${accentRgb}, 0.08);
-        --navbar-bg-scrolled: rgba(${bgPrimaryRgb}, ${derive.navbarScrolled});
-
-        /* P3 贡献图格子 */
-        --contribution-1: rgba(${accentRgb}, 0.2);
-        --contribution-2: rgba(${accentRgb}, 0.4);
-        --contribution-3: rgba(${accentRgb}, 0.6);
-        --contribution-4: ${colors.accent};
-
-        /* P4 分割线 */
-        --divider-glow: rgba(${accentRgb}, 0.4);
-
-        /* 卡片边框层次 */
-        --card-border-strong: rgba(${accentRgb}, ${derive.cardBorderStrong});
-        --card-border-muted: rgba(${accentRgb}, ${derive.cardBorderMuted});
-
-        /* 玻璃光泽系统 */
-        --glass-border-top: ${isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.08)'};
-        --glass-border-bottom: ${isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(0, 0, 0, 0.5)'};
-        --glass-border-side: ${isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.03)'};
-        --glass-outer-shadow: ${isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.4)'};
-        --glass-inner-glow: rgba(${accentRgb}, 0.03);
-        --glass-hover-border: rgba(${accentRgb}, ${isLight ? 0.25 : 0.15});
-        --glass-hover-glow: rgba(${accentRgb}, 0.05);
-
-        /* P2 终端（默认跟随主主题） */
-        --terminal-bg: ${colors.bgSecondary};
-        --terminal-text: ${colors.textSecondary};
-        --terminal-prompt: ${colors.accent};
-        --terminal-cursor: ${colors.accent};
-      }
-    </style>`;
+    // theme-init-script 已完整处理主题逻辑，此函数不再需要
+    return '';
 }
 
 // 提取 analytics 子配置值
@@ -1515,6 +1461,284 @@ function extractContributionConfig() {
     };
 }
 
+// 提取 Moments 配置
+function extractMomentsConfig() {
+    // 找到 "// ========== 个人动态配置 ==========" 注释后的 moments 块
+    // 避免匹配到 pages.moments
+    const momentsStart = configContent.indexOf('// ========== 个人动态配置 ==========');
+    if (momentsStart === -1) {
+        return {
+            enabled: false,
+            memosUrl: '',
+            count: 10,
+            tags: [],
+            showSkeleton: true,
+        };
+    }
+
+    // 从注释位置开始查找 moments:
+    const momentsKeyPos = configContent.indexOf('moments:', momentsStart);
+    if (momentsKeyPos === -1) {
+        return {
+            enabled: false,
+            memosUrl: '',
+            count: 10,
+            tags: [],
+            showSkeleton: true,
+        };
+    }
+
+    // 找到第一个 { 的位置
+    const startBrace = configContent.indexOf('{', momentsKeyPos);
+    if (startBrace === -1) {
+        return {
+            enabled: false,
+            memosUrl: '',
+            count: 10,
+            tags: [],
+            showSkeleton: true,
+        };
+    }
+
+    // 使用括号匹配找到对应的 }
+    let depth = 0;
+    let endBrace = -1;
+    for (let i = startBrace; i < configContent.length; i++) {
+        if (configContent[i] === '{') depth++;
+        else if (configContent[i] === '}') {
+            depth--;
+            if (depth === 0) {
+                endBrace = i;
+                break;
+            }
+        }
+    }
+
+    if (endBrace === -1) {
+        return {
+            enabled: false,
+            memosUrl: '',
+            count: 10,
+            tags: [],
+            showSkeleton: true,
+        };
+    }
+
+    const momentsContent = configContent.substring(startBrace + 1, endBrace);
+
+    const enabledMatch = momentsContent.match(/enabled:\s*(true|false)/);
+    const memosUrlMatch = momentsContent.match(/memosUrl:\s*['"`]([^'"`]+)['"`]/);
+    const countMatch = momentsContent.match(/count:\s*(\d+)/);
+    const showSkeletonMatch = momentsContent.match(/showSkeleton:\s*(true|false)/);
+    const tagsMatch = momentsContent.match(/tags:\s*\[([\s\S]*?)\]/);
+
+    let tags = [];
+    if (tagsMatch) {
+        const tagsContent = tagsMatch[1];
+        const tagMatches = tagsContent.match(/['"`]([^'"`]+)['"`]/g);
+        if (tagMatches) {
+            tags = tagMatches.map(t => t.replace(/['"`]/g, '').trim());
+        }
+    }
+
+    return {
+        enabled: enabledMatch ? enabledMatch[1] === 'true' : false,
+        memosUrl: memosUrlMatch ? memosUrlMatch[1].trim() : '',
+        count: countMatch ? parseInt(countMatch[1], 10) : 10,
+        tags: tags,
+        showSkeleton: showSkeletonMatch ? showSkeletonMatch[1] === 'true' : true,
+    };
+}
+
+// 提取 Guestbook 配置
+function extractGuestbookConfig() {
+    // 找到 "// ========== 留言板配置 ==========" 注释后的 guestbook 块
+    // 避免匹配到 pages.guestbook
+    const guestbookStart = configContent.indexOf('// ========== 留言板配置 ==========');
+    if (guestbookStart === -1) {
+        return {
+            enabled: false,
+            provider: 'waline',
+            title: '留言板',
+            description: '欢迎留下你的足迹',
+            waline: {},
+            artalk: {},
+            signalStream: {
+                enabled: true,
+                tracks: 2,
+                maxChars: 50,
+            },
+        };
+    }
+
+    // 从注释位置开始查找 guestbook:
+    const guestbookKeyPos = configContent.indexOf('guestbook:', guestbookStart);
+    if (guestbookKeyPos === -1) {
+        return {
+            enabled: false,
+            provider: 'waline',
+            title: '留言板',
+            description: '欢迎留下你的足迹',
+            waline: {},
+            artalk: {},
+            signalStream: {
+                enabled: true,
+                tracks: 2,
+                maxChars: 50,
+            },
+        };
+    }
+
+    // 找到第一个 { 的位置
+    const startBrace = configContent.indexOf('{', guestbookKeyPos);
+    if (startBrace === -1) {
+        return {
+            enabled: false,
+            provider: 'waline',
+            title: '留言板',
+            description: '欢迎留下你的足迹',
+            waline: {},
+            artalk: {},
+            signalStream: {
+                enabled: true,
+                tracks: 2,
+                maxChars: 50,
+            },
+        };
+    }
+
+    // 使用括号匹配找到对应的 }
+    let depth = 0;
+    let endBrace = -1;
+    for (let i = startBrace; i < configContent.length; i++) {
+        if (configContent[i] === '{') depth++;
+        else if (configContent[i] === '}') {
+            depth--;
+            if (depth === 0) {
+                endBrace = i;
+                break;
+            }
+        }
+    }
+
+    if (endBrace === -1) {
+        return {
+            enabled: false,
+            provider: 'waline',
+            title: '留言板',
+            description: '欢迎留下你的足迹',
+            waline: {},
+            artalk: {},
+            signalStream: {
+                enabled: true,
+                tracks: 2,
+                maxChars: 50,
+            },
+        };
+    }
+
+    const guestbookContent = configContent.substring(startBrace + 1, endBrace);
+
+    // 基础配置
+    const enabledMatch = guestbookContent.match(/enabled:\s*(true|false)/);
+    const providerMatch = guestbookContent.match(/provider:\s*['"`](waline|artalk)['"`]/);
+    const titleMatch = guestbookContent.match(/title:\s*['"`]([^'"`]+)['"`]/);
+    const descriptionMatch = guestbookContent.match(/description:\s*['"`]([^'"`]+)['"`]/);
+
+    // 提取 Waline 配置
+    const walineMatch = guestbookContent.match(/waline:\s*\{([\s\S]*?)\n\s*\}/);
+    let walineConfig = {};
+    if (walineMatch) {
+        const walineContent = walineMatch[1];
+        const serverURLMatch = walineContent.match(/serverURL:\s*['"`]([^'"`]+)['"`]/);
+        const placeholderMatch = walineContent.match(/placeholder:\s*['"`]([^'"`]+)['"`]/);
+        const avatarMatch = walineContent.match(/avatar:\s*['"`]([^'"`]+)['"`]/);
+        const visitorMatch = walineContent.match(/visitor:\s*(true|false)/);
+        const langMatch = walineContent.match(/lang:\s*['"`]([^'"`]+)['"`]/);
+
+        walineConfig = {
+            serverURL: serverURLMatch ? serverURLMatch[1].trim() : '',
+            placeholder: placeholderMatch ? placeholderMatch[1].trim() : '欢迎留言...',
+            avatar: avatarMatch ? avatarMatch[1].trim() : 'monsterid',
+            visitor: visitorMatch ? visitorMatch[1] === 'true' : true,
+            lang: langMatch ? langMatch[1].trim() : 'zh-CN',
+        };
+    }
+
+    // 提取 Artalk 配置
+    const artalkMatch = guestbookContent.match(/artalk:\s*\{([\s\S]*?)\n\s*\}/);
+    let artalkConfig = {};
+    if (artalkMatch) {
+        const artalkContent = artalkMatch[1];
+        const serverMatch = artalkContent.match(/server:\s*['"`]([^'"`]+)['"`]/);
+        const siteMatch = artalkContent.match(/site:\s*['"`]([^'"`]+)['"`]/);
+        const pageKeyMatch = artalkContent.match(/pageKey:\s*['"`]([^'"`]+)['"`]/);
+        const pageTitleMatch = artalkContent.match(/pageTitle:\s*['"`]([^'"`]+)['"`]/);
+        const placeholderMatch = artalkContent.match(/placeholder:\s*['"`]([^'"`]+)['"`]/);
+        const useBackendConfMatch = artalkContent.match(/useBackendConf:\s*(true|false)/);
+        const nestMaxMatch = artalkContent.match(/nestMax:\s*(\d+)/);
+        const pvMatch = artalkContent.match(/pv:\s*(true|false)/);
+        const langMatch = artalkContent.match(/lang:\s*['"`]([^'"`]+)['"`]/);
+
+        artalkConfig = {
+            server: serverMatch ? serverMatch[1].trim() : '',
+            site: siteMatch ? siteMatch[1].trim() : '',
+            pageKey: pageKeyMatch ? pageKeyMatch[1].trim() : '/guestbook',
+            pageTitle: pageTitleMatch ? pageTitleMatch[1].trim() : '留言板',
+            placeholder: placeholderMatch ? placeholderMatch[1].trim() : '欢迎留言...',
+            useBackendConf: useBackendConfMatch ? useBackendConfMatch[1] === 'true' : true,
+            nestMax: nestMaxMatch ? parseInt(nestMaxMatch[1], 10) : 2,
+            pv: pvMatch ? pvMatch[1] === 'true' : true,
+            lang: langMatch ? langMatch[1].trim() : 'zh-CN',
+        };
+    }
+
+    // 提取 signalStream 配置
+    const signalStreamMatch = guestbookContent.match(/signalStream:\s*\{([\s\S]*?)\n\s*\}/);
+    let signalStreamConfig = {
+        enabled: true,
+        tracks: 2,
+        maxChars: 50,
+    };
+    if (signalStreamMatch) {
+        const ssContent = signalStreamMatch[1];
+        const ssEnabledMatch = ssContent.match(/enabled:\s*(true|false)/);
+        const tracksMatch = ssContent.match(/tracks:\s*(\d+)/);
+        const maxCharsMatch = ssContent.match(/maxChars:\s*(\d+)/);
+
+        signalStreamConfig = {
+            enabled: ssEnabledMatch ? ssEnabledMatch[1] === 'true' : true,
+            tracks: tracksMatch ? parseInt(tracksMatch[1], 10) : 2,
+            maxChars: maxCharsMatch ? parseInt(maxCharsMatch[1], 10) : 50,
+        };
+    }
+
+    return {
+        enabled: enabledMatch ? enabledMatch[1] === 'true' : false,
+        provider: providerMatch ? providerMatch[1] : 'waline',
+        title: titleMatch ? titleMatch[1].trim() : '留言板',
+        description: descriptionMatch ? descriptionMatch[1].trim() : '欢迎留下你的足迹',
+        waline: walineConfig,
+        artalk: artalkConfig,
+        signalStream: signalStreamConfig,
+    };
+}
+
+/**
+ * 生成评论系统 SDK 引用
+ * @param {object} guestbookConfig - 留言板配置
+ * @returns {string} SDK HTML
+ */
+function generateCommentSDK(guestbookConfig) {
+    if (!guestbookConfig || !guestbookConfig.enabled) {
+        return '';
+    }
+
+    // 新架构：使用自建 UI，不再加载外部 SDK
+    // 外部 SDK 的 CSS 样式不再需要，使用项目自己的 CSS 变量
+    return '';
+}
+
 // 提取 Music 配置
 function extractMusicConfig() {
     const musicMatch = configContent.match(/music:\s*\{([\s\S]*?)(?=\n\s*\},?\s*\n\s*\/\/ =|\n\s*\},?\s*$)/);
@@ -2022,15 +2246,179 @@ function escapeHTML(str) {
         .replace(/'/g, '&#039;');
 }
 
+// 提取 site 配置块
+function extractSiteConfig() {
+    const siteMatch = configContent.match(/site:\s*\{([\s\S]*?)\n\s*\},?\n/);
+    if (!siteMatch) {
+        return {
+            name: 'MoeWah',
+            tagline: '技术博主 / 开源爱好者 / AI 探索者',
+            url: '',
+            ogImage: '/images/avatar.webp',
+        };
+    }
+    const content = siteMatch[1];
+    const urlValue = extractStringValue(content, 'url');
+    return {
+        name: extractStringValue(content, 'name') || 'MoeWah',
+        tagline: extractStringValue(content, 'tagline') || '技术博主 / 开源爱好者 / AI 探索者',
+        // 空字符串表示使用相对路径，undefined/null 才使用默认值
+        url: urlValue !== undefined && urlValue !== null ? urlValue : '',
+        ogImage: extractStringValue(content, 'ogImage') || '/images/avatar.webp',
+    };
+}
+
+// 提取 pages 配置块
+function extractPagesConfig() {
+    // 找到 pages: 的位置
+    const pagesStart = configContent.indexOf('pages:');
+    if (pagesStart === -1) {
+        console.warn('⚠️ 无法找到 pages 配置');
+        return {};
+    }
+
+    // 找到第一个 { 的位置
+    const startBrace = configContent.indexOf('{', pagesStart);
+    if (startBrace === -1) {
+        console.warn('⚠️ pages 配置格式错误');
+        return {};
+    }
+
+    // 使用括号匹配找到对应的 }
+    let depth = 0;
+    let endBrace = -1;
+    for (let i = startBrace; i < configContent.length; i++) {
+        if (configContent[i] === '{') depth++;
+        else if (configContent[i] === '}') {
+            depth--;
+            if (depth === 0) {
+                endBrace = i;
+                break;
+            }
+        }
+    }
+
+    if (endBrace === -1) {
+        console.warn('⚠️ pages 配置括号不匹配');
+        return {};
+    }
+
+    const pagesContent = configContent.substring(startBrace + 1, endBrace);
+    const pages = {};
+
+    // 手动解析页面对象，更可靠
+    let i = 0;
+    while (i < pagesContent.length) {
+        // 跳过空白和注释
+        while (i < pagesContent.length && /[\s\n]/.test(pagesContent[i])) i++;
+        if (i >= pagesContent.length) break;
+
+        // 跳过单行注释
+        if (pagesContent[i] === '/' && pagesContent[i + 1] === '/') {
+            while (i < pagesContent.length && pagesContent[i] !== '\n') i++;
+            continue;
+        }
+
+        // 提取键名
+        let key = '';
+        if (pagesContent[i] === "'" || pagesContent[i] === '"') {
+            const quote = pagesContent[i];
+            i++;
+            while (i < pagesContent.length && pagesContent[i] !== quote) {
+                key += pagesContent[i];
+                i++;
+            }
+            i++; // 跳过结束引号
+        } else if (/[a-zA-Z0-9_]/.test(pagesContent[i])) {
+            while (i < pagesContent.length && /[a-zA-Z0-9_]/.test(pagesContent[i])) {
+                key += pagesContent[i];
+                i++;
+            }
+        } else {
+            i++;
+            continue;
+        }
+
+        // 跳过冒号和空白
+        while (i < pagesContent.length && /[\s:\n]/.test(pagesContent[i])) i++;
+
+        // 检查是否是对象开始
+        if (pagesContent[i] !== '{') {
+            continue;
+        }
+
+        // 找到对象结束位置（处理嵌套）
+        let objDepth = 1;
+        const objectStart = i;
+        i++;
+        while (i < pagesContent.length && objDepth > 0) {
+            if (pagesContent[i] === '{') objDepth++;
+            else if (pagesContent[i] === '}') objDepth--;
+            i++;
+        }
+
+        const objectContent = pagesContent.substring(objectStart + 1, i - 1);
+
+        // 提取对象属性
+        if (key) {
+            pages[key] = {
+                title: extractStringValue(objectContent, 'title') || key,
+                tagline: extractStringValue(objectContent, 'tagline') || '',
+                description: extractStringValue(objectContent, 'description') || '',
+                keywords: extractArrayFromContent(objectContent, 'keywords'),
+                robots: extractStringValue(objectContent, 'robots') || '',
+            };
+        }
+
+        // 跳过逗号
+        while (i < pagesContent.length && /[\s,\n]/.test(pagesContent[i])) i++;
+    }
+
+    console.log('📋 提取到 pages 配置:', Object.keys(pages).join(', '));
+    return pages;
+}
+
+// 从页面内容中提取数组
+function extractArrayFromContent(content, key) {
+    const pattern = new RegExp(key + ':\\s*\\[([\\s\\S]*?)\\]');
+    const match = content.match(pattern);
+    if (!match || !match[1]) {
+        return [];
+    }
+
+    const arrayContent = match[1];
+    const items = [];
+
+    // 匹配三种引号类型
+    const stringPattern = /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`/g;
+
+    let stringMatch;
+    while ((stringMatch = stringPattern.exec(arrayContent)) !== null) {
+        const str = stringMatch[0];
+        const content = str.slice(1, -1);
+        items.push(content.replace(/\\(['"`\\])/g, '$1').trim());
+    }
+
+    return items;
+}
+
 // 从 config.js 提取所有配置
 const config = {
-    // SEO
+    // Site - 站点核心信息
+    site: extractSiteConfig(),
+    // 兼容旧字段（从 site.url 同步）
+    siteUrl: extractSiteConfig().url,
+
+    // SEO（首页专用）
     title: extractString(/title:\s*['"`]([^'"`]+)['"`]/, 'MoeWah - 技术博主 / 开源爱好者 / AI 探索者'),
     description: extractString(/description:\s*['"`]([^'"`]+)['"`]/, 'Hi，欢迎访问 MoeWah 的个人主页'),
     keywords: extractArray(/keywords:\s*\[([\s\S]*?)\]/, ['MoeWah', '技术博客', 'Astro', 'Docker']),
     ogTitle: extractNestedString(/og:\s*\{([\s\S]*?)\}/, 'title', 'MoeWah - 个人主页'),
     ogDescription: extractNestedString(/og:\s*\{([\s\S]*?)\}/, 'description', '开源爱好者 / Astro爱好者 / AI探索者'),
     ogImage: extractNestedString(/og:\s*\{([\s\S]*?)\}/, 'image', 'https://www.moewah.com/images/avatar.webp'),
+
+    // Pages - 独立页面配置
+    pages: extractPagesConfig(),
 
     // Profile
     name: extractNestedString(/profile:\s*\{([\s\S]*?)\}/, 'name', 'MoeWah'),
@@ -2080,6 +2468,12 @@ const config = {
     // Contribution
     contribution: extractContributionConfig(),
 
+    // Moments
+    moments: extractMomentsConfig(),
+
+    // Guestbook
+    guestbook: extractGuestbookConfig(),
+
     // Music
     music: extractMusicConfig(),
 
@@ -2094,6 +2488,208 @@ const config = {
     umami: extractUmamiScript(),
     customScripts: extractCustomScripts()
 };
+
+/**
+ * 页面 SEO 生成函数
+ * 根据页面类型生成统一的 SEO 元数据
+ * @param {string} pageKey - 页面标识（'home' | '404' | 'moments' 等）
+ * @returns {object} - SEO 配置对象
+ */
+function generatePageSEO(pageKey) {
+    const siteName = config.site.name;
+    const siteTagline = config.site.tagline;
+    const siteOgImage = config.site.ogImage;
+
+    // 首页使用完整自定义配置
+    if (pageKey === 'home') {
+        return {
+            title: config.title,
+            description: config.description,
+            keywords: config.keywords.join(', '),
+            ogTitle: config.ogTitle,
+            ogDescription: config.ogDescription,
+            ogImage: config.ogImage,
+            robots: ''
+        };
+    }
+
+    // 独立页面 - 从 pages 配置读取
+    const pageConfig = config.pages[pageKey];
+    if (pageConfig) {
+        // 标题格式: "页面标题 | 站点名称"
+        const pageTitle = pageConfig.title || pageKey;
+        const title = `${pageTitle} | ${siteName}`;
+
+        // 描述: 使用页面描述，或生成默认描述
+        const description = pageConfig.description || `${pageTitle} - ${siteName}`;
+
+        // 关键词: 页面关键词 + 站点名称（避免重复）
+        let keywords = siteName;
+        if (pageConfig.keywords && pageConfig.keywords.length > 0) {
+            // 如果站点名称不在关键词列表中，则添加
+            const keywordsList = pageConfig.keywords.includes(siteName)
+                ? pageConfig.keywords
+                : [...pageConfig.keywords, siteName];
+            keywords = keywordsList.join(', ');
+        }
+
+        // OG 信息: 使用页面标题，共用站点 OG 图片
+        const ogTitle = title;
+        const ogDescription = description;
+        const ogImage = siteOgImage;
+
+        return {
+            title,
+            description,
+            keywords,
+            ogTitle,
+            ogDescription,
+            ogImage,
+            robots: pageConfig.robots || ''
+        };
+    }
+
+    // 默认回退
+    return {
+        title: `${siteName}`,
+        description: siteTagline,
+        keywords: siteName,
+        ogTitle: `${siteName} - ${siteTagline}`,
+        ogDescription: siteTagline,
+        ogImage: siteOgImage,
+        robots: ''
+    };
+}
+
+/**
+ * 生成 SEO meta 标签 HTML
+ * @param {object} seo - SEO 配置对象
+ * @param {string} pageUrl - 页面完整 URL（用于 og:url）
+ * @returns {string} - SEO meta 标签 HTML
+ */
+function generateSEOMetaHTML(seo, pageUrl = '') {
+    let html = `<meta name="description" content="${seo.description}" />\n`;
+
+    if (seo.keywords) {
+        html += `        <meta name="keywords" content="${seo.keywords}" />\n`;
+    }
+
+    if (seo.robots) {
+        html += `        <meta name="robots" content="${seo.robots}" />\n`;
+    }
+
+    // Open Graph
+    html += `\n        <!-- Open Graph / Facebook -->\n`;
+    html += `        <meta property="og:type" content="website" />\n`;
+    if (pageUrl) {
+        html += `        <meta property="og:url" content="${pageUrl}" />\n`;
+    }
+    html += `        <meta property="og:title" content="${seo.ogTitle}" />\n`;
+    html += `        <meta property="og:description" content="${seo.ogDescription}" />\n`;
+    html += `        <meta property="og:image" content="${seo.ogImage}" />\n`;
+
+    // Twitter
+    html += `\n        <!-- Twitter -->\n`;
+    html += `        <meta property="twitter:card" content="summary_large_image" />\n`;
+    if (pageUrl) {
+        html += `        <meta property="twitter:url" content="${pageUrl}" />\n`;
+    }
+    html += `        <meta property="twitter:title" content="${seo.ogTitle}" />\n`;
+    html += `        <meta property="twitter:description" content="${seo.ogDescription}" />\n`;
+    html += `        <meta property="twitter:image" content="${seo.ogImage}" />`;
+
+    return html;
+}
+
+/**
+ * URL 辅助函数 - 根据 siteUrl 配置生成资源路径
+ * @param {string} path - 相对路径（如 "style.css", "images/avatar.webp"）
+ * @returns {string} - 完整 URL 或相对路径
+ */
+function url(path) {
+    if (!config.siteUrl) {
+        return path;
+    }
+    // 确保 siteUrl 不以 / 结尾，path 以 / 开头时处理正确
+    const baseUrl = config.siteUrl.replace(/\/$/, '');
+    // 如果 path 已经以 / 开头，直接拼接；否则添加 /
+    if (path.startsWith('/')) {
+        return baseUrl + path;
+    }
+    return baseUrl + '/' + path;
+}
+
+/**
+ * 重写 HTML 中的资源 URL
+ * 当 siteUrl 配置时，将相对路径转换为绝对路径
+ * @param {string} html - HTML 内容
+ * @param {string} basePath - 基础路径（用于子目录页面，如 moments/ 使用 '../'）- 当 siteUrl 配置时忽略
+ * @returns {string} - 重写后的 HTML
+ */
+function rewriteAssetUrls(html, basePath = '') {
+    if (!config.siteUrl) {
+        return html;
+    }
+
+    const baseUrl = config.siteUrl.replace(/\/$/, '');
+
+    // 规范化路径：移除 ./ 和 ../ 前缀（当使用绝对 URL 时不需要这些）
+    const normalizePath = (url) => {
+        // 移除 ./ 前缀
+        if (url.startsWith('./')) {
+            return url.slice(2);
+        }
+        // 移除 ../ 前缀（可能有多个）
+        if (url.startsWith('../')) {
+            return url.replace(/^(\.\.\/)+/, '');
+        }
+        return url;
+    };
+
+    // 匹配需要重写的资源属性
+    // 排除：外部链接、站点根路径、hash 链接、data URI、mailto:、tel: 等
+    const shouldRewrite = (url) => {
+        if (!url) return false;
+        // 排除已经是绝对路径的
+        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')) return false;
+        // 排除站点根路径（以 / 开头但不以 // 开头）
+        if (url.startsWith('/') && !url.startsWith('//')) return false;
+        // 排除特殊协议
+        if (url.startsWith('data:') || url.startsWith('mailto:') || url.startsWith('tel:') || url.startsWith('javascript:')) return false;
+        // 排除 hash 链接
+        if (url.startsWith('#')) return false;
+        return true;
+    };
+
+    // 重写 href 属性
+    html = html.replace(/href="([^"]*)"/g, (match, url) => {
+        if (shouldRewrite(url)) {
+            const normalizedPath = normalizePath(url);
+            return `href="${baseUrl}/${normalizedPath}"`;
+        }
+        return match;
+    });
+
+    // 重写 src 属性
+    html = html.replace(/src="([^"]*)"/g, (match, url) => {
+        if (shouldRewrite(url)) {
+            const normalizedPath = normalizePath(url);
+            return `src="${baseUrl}/${normalizedPath}"`;
+        }
+        return match;
+    });
+
+    // 重写 CSS 中的 url()（在 style 属性和 <style> 标签中）
+    html = html.replace(/url\(['"]?([^'")\s]+)['"]?\)/g, (match, url) => {
+        if (shouldRewrite(url)) {
+            const normalizedPath = normalizePath(url);
+            return `url('${baseUrl}/${normalizedPath}')`;
+        }
+        return match;
+    });
+
+    return html;
+}
 
 // 读取模板
 const templatePath = path.join(__dirname, '../templates/index.template.html');
@@ -2119,6 +2715,13 @@ async function build() {
         console.log('   图片: ' + (minifyConfig.compressImages ? '✓ (质量: ' + minifyConfig.imageQuality + '%)' : '✗'));
     } else {
         console.log('📦 压缩: 已禁用');
+    }
+
+    // 显示站点 URL 配置
+    if (config.siteUrl) {
+        console.log('🌐 静态资源 URL: ' + config.siteUrl + ' (绝对路径模式)');
+    } else {
+        console.log('🌐 静态资源 URL: 相对路径模式');
     }
 
     // 获取 RSS 文章
@@ -2165,7 +2768,9 @@ async function build() {
 
     // 替换所有占位符
     let html = template
-        // Theme Initial CSS (首屏主题，避免闪烁)
+        // Theme Init Script (必须在所有 CSS 之前执行，防止闪烁)
+        .replace(/{{THEME_INIT_SCRIPT}}/g, generateThemeInitScript())
+        // Theme Initial CSS (作为 fallback)
         .replace(/{{THEME_INITIAL}}/g, generateInitialThemeCSS())
 
         // SEO
@@ -2287,26 +2892,42 @@ async function build() {
         }
     }
 
-    // 生成 favicon HTML 链接（必须）
-    let faviconLinks = '';
-    if (faviconPath) {
+    // 生成 favicon HTML 链接
+    // basePath: 对于根目录页面为 ''，对于子目录页面（如 moments/）为 '../'
+    // 当 siteUrl 配置时，使用绝对路径
+    function generateFaviconLinks(basePath = '') {
+        if (!faviconPath) return '';
+        const iconUrl = config.siteUrl ? `${config.siteUrl.replace(/\/$/, '')}/${faviconPath}` : `${basePath}${faviconPath}`;
         if (appleTouchPath) {
-            faviconLinks = `<link rel="icon" type="image/x-icon" href="${faviconPath}" />
-        <link rel="apple-touch-icon" href="${appleTouchPath}" />`;
-        } else {
-            faviconLinks = `<link rel="icon" type="image/x-icon" href="${faviconPath}" />`;
+            const appleUrl = config.siteUrl ? `${config.siteUrl.replace(/\/$/, '')}/${appleTouchPath}` : `${basePath}${appleTouchPath}`;
+            return `<link rel="icon" type="image/x-icon" href="${iconUrl}" />
+        <link rel="apple-touch-icon" href="${appleUrl}" />`;
         }
+        return `<link rel="icon" type="image/x-icon" href="${iconUrl}" />`;
     }
 
-    // 将 favicon 链接注入 HTML
-    html = html.replace(/{{FAVICON_LINKS}}/g, faviconLinks);
+    // 将 favicon 链接注入 HTML（首页使用根路径）
+    html = html.replace(/{{FAVICON_LINKS}}/g, generateFaviconLinks(''));
 
-    // 压缩内联 CSS（<style> 标签内的 CSS，包括 theme-initial 和 Critical CSS）
+    // 重写静态资源 URL（当 siteUrl 配置时）
+    if (config.siteUrl) {
+        html = rewriteAssetUrls(html, '');
+    }
+
+    // 压缩内联 CSS（<style> 标签内的 CSS，包括 Critical CSS）
     const htmlBeforeInlineCSS = Buffer.byteLength(html, 'utf8');
     html = processInlineCSS(html, minifyConfig);
     const htmlAfterInlineCSS = Buffer.byteLength(html, 'utf8');
     if (minifyConfig.minifyCSS && minifyConfig.minify) {
         console.log('📋 内联 CSS: ' + formatSize(htmlBeforeInlineCSS) + ' → ' + formatSize(htmlAfterInlineCSS) + ' (节省 ' + calcReduction(htmlBeforeInlineCSS, htmlAfterInlineCSS) + ')');
+    }
+
+    // 压缩内联 JS（<script> 标签内的 JS，包括 theme-init-script）
+    const htmlBeforeInlineJS = Buffer.byteLength(html, 'utf8');
+    html = await processInlineJS(html, minifyConfig);
+    const htmlAfterInlineJS = Buffer.byteLength(html, 'utf8');
+    if (minifyConfig.minifyJS && minifyConfig.minify) {
+        console.log('📜 内联 JS: ' + formatSize(htmlBeforeInlineJS) + ' → ' + formatSize(htmlAfterInlineJS) + ' (节省 ' + calcReduction(htmlBeforeInlineJS, htmlAfterInlineJS) + ')');
     }
 
     // 压缩并写入首页 HTML
@@ -2325,18 +2946,33 @@ async function build() {
         // 读取并渲染 partials
         let html404 = renderPartials(fs.readFileSync(template404Path, 'utf8'));
 
+        // 生成 404 页面 SEO
+        const seo404 = generatePageSEO('404');
+
         // 替换模板变量
         html404 = html404
+            .replace(/{{THEME_INIT_SCRIPT}}/g, generateThemeInitScript())
             .replace(/{{THEME_INITIAL}}/g, generateInitialThemeCSS())
             .replace(/{{NAME}}/g, config.name)
             .replace(/{{NAV_HOME_URL}}/g, '/')
             .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: '', isMobile: false, config }))
             .replace(/{{NAV_LINKS_MOBILE}}/g, generateNavLinks({ activePage: '', isMobile: true, config }))
             .replace(/{{FOOTER_CONTENT}}/g, generateFooterHTML(config))
-            .replace(/{{FAVICON_LINKS}}/g, faviconLinks);
+            .replace(/{{FAVICON_LINKS}}/g, generateFaviconLinks(''))
+            // SEO 替换
+            .replace(/{{PAGE_TITLE}}/g, seo404.title)
+            .replace(/{{SEO_META}}/g, generateSEOMetaHTML(seo404));
+
+        // 重写静态资源 URL（当 siteUrl 配置时）
+        if (config.siteUrl) {
+            html404 = rewriteAssetUrls(html404, '');
+        }
 
         // 压缩内联 CSS
         html404 = processInlineCSS(html404, minifyConfig);
+
+        // 压缩内联 JS
+        html404 = await processInlineJS(html404, minifyConfig);
 
         // 压缩并写入
         const processed404HTML = await processHTML(html404, minifyConfig);
@@ -2348,6 +2984,133 @@ async function build() {
         console.log('📄 404.html: ' + formatSize(html404Size.original) + ' → ' + formatSize(html404Size.minified) + ' (节省 ' + calcReduction(html404Size.original, html404Size.minified) + ')');
     } else {
         console.log('   ⚠️ 找不到 templates/404.template.html，跳过生成');
+    }
+
+    // ========== 生成动态页面 ==========
+    if (config.moments && config.moments.enabled) {
+        console.log('📄 生成动态页面...');
+        const templateMomentsPath = path.join(templatesDir, 'moments.template.html');
+        if (fs.existsSync(templateMomentsPath)) {
+            // 读取并渲染 partials
+            let htmlMoments = renderPartials(fs.readFileSync(templateMomentsPath, 'utf8'));
+
+            // 生成 moments 页面 SEO
+            const seoMoments = generatePageSEO('moments');
+            const pageUrl = config.siteUrl ? `${config.siteUrl}/moments/` : '';
+
+            // 页面内容变量
+            const pageTitleText = config.pages?.moments?.title || '动态';
+            const pageTagline = config.pages?.moments?.tagline || '记录生活点滴与瞬间感悟';
+
+            // 替换模板变量
+            htmlMoments = htmlMoments
+                .replace(/{{THEME_INIT_SCRIPT}}/g, generateThemeInitScript())
+                .replace(/{{THEME_INITIAL}}/g, generateInitialThemeCSS())
+                .replace(/{{NAME}}/g, config.name)
+                .replace(/{{NAV_HOME_URL}}/g, '/')
+                .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: 'moments', isMobile: false, config }))
+                .replace(/{{NAV_LINKS_MOBILE}}/g, generateNavLinks({ activePage: 'moments', isMobile: true, config }))
+                .replace(/{{FOOTER_CONTENT}}/g, generateFooterHTML(config))
+                .replace(/{{FAVICON_LINKS}}/g, generateFaviconLinks('../'))
+                // 页面内容变量
+                .replace(/{{PAGE_TITLE_TEXT}}/g, pageTitleText)
+                .replace(/{{PAGE_TAGLINE}}/g, pageTagline)
+                // SEO 替换
+                .replace(/{{PAGE_TITLE}}/g, seoMoments.title)
+                .replace(/{{SEO_META}}/g, generateSEOMetaHTML(seoMoments, pageUrl));
+
+            // 重写静态资源 URL（当 siteUrl 配置时）
+            if (config.siteUrl) {
+                htmlMoments = rewriteAssetUrls(htmlMoments, '');
+            }
+
+            // 压缩内联 CSS
+            htmlMoments = processInlineCSS(htmlMoments, minifyConfig);
+
+            // 压缩内联 JS
+            htmlMoments = await processInlineJS(htmlMoments, minifyConfig);
+
+            // 压缩并写入
+            const processedMomentsHTML = await processHTML(htmlMoments, minifyConfig);
+            const htmlMomentsSize = {
+                original: Buffer.byteLength(htmlMoments, 'utf8'),
+                minified: Buffer.byteLength(processedMomentsHTML, 'utf8')
+            };
+
+            // 创建 moments 目录并写入
+            const momentsDir = path.join(distDir, 'moments');
+            fs.mkdirSync(momentsDir, { recursive: true });
+            fs.writeFileSync(path.join(momentsDir, 'index.html'), processedMomentsHTML, 'utf8');
+            console.log('📄 moments/index.html: ' + formatSize(htmlMomentsSize.original) + ' → ' + formatSize(htmlMomentsSize.minified) + ' (节省 ' + calcReduction(htmlMomentsSize.original, htmlMomentsSize.minified) + ')');
+        } else {
+            console.log('   ⚠️ 找不到 templates/moments.template.html，跳过生成');
+        }
+    }
+
+    // ========== 生成留言板页面 ==========
+    if (config.guestbook && config.guestbook.enabled) {
+        console.log('📄 生成留言板页面...');
+        const templateGuestbookPath = path.join(templatesDir, 'guestbook.template.html');
+        if (fs.existsSync(templateGuestbookPath)) {
+            // 读取并渲染 partials
+            let htmlGuestbook = renderPartials(fs.readFileSync(templateGuestbookPath, 'utf8'));
+
+            // 生成留言板页面 SEO
+            const seoGuestbook = generatePageSEO('guestbook');
+            const pageUrl = config.siteUrl ? `${config.siteUrl}/guestbook/` : '';
+
+            // 生成评论系统 SDK
+            const commentSDK = generateCommentSDK(config.guestbook);
+
+            // 页面内容变量
+            const pageTitleText = config.pages?.guestbook?.title || '留言板';
+            const pageTagline = config.pages?.guestbook?.tagline || '欢迎留下你的足迹';
+
+            // 替换模板变量
+            htmlGuestbook = htmlGuestbook
+                .replace(/{{THEME_INIT_SCRIPT}}/g, generateThemeInitScript())
+                .replace(/{{THEME_INITIAL}}/g, generateInitialThemeCSS())
+                .replace(/{{NAME}}/g, config.name)
+                .replace(/{{NAV_HOME_URL}}/g, '/')
+                .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: 'guestbook', isMobile: false, config }))
+                .replace(/{{NAV_LINKS_MOBILE}}/g, generateNavLinks({ activePage: 'guestbook', isMobile: true, config }))
+                .replace(/{{FOOTER_CONTENT}}/g, generateFooterHTML(config))
+                .replace(/{{FAVICON_LINKS}}/g, generateFaviconLinks('../'))
+                // 页面内容变量
+                .replace(/{{PAGE_TITLE_TEXT}}/g, pageTitleText)
+                .replace(/{{PAGE_TAGLINE}}/g, pageTagline)
+                // SEO 替换
+                .replace(/{{PAGE_TITLE}}/g, seoGuestbook.title)
+                .replace(/{{SEO_META}}/g, generateSEOMetaHTML(seoGuestbook, pageUrl))
+                // 留言板特定变量
+                .replace(/{{COMMENT_SDK}}/g, commentSDK);
+
+            // 重写静态资源 URL（当 siteUrl 配置时）
+            if (config.siteUrl) {
+                htmlGuestbook = rewriteAssetUrls(htmlGuestbook, '');
+            }
+
+            // 压缩内联 CSS
+            htmlGuestbook = processInlineCSS(htmlGuestbook, minifyConfig);
+
+            // 压缩内联 JS
+            htmlGuestbook = await processInlineJS(htmlGuestbook, minifyConfig);
+
+            // 压缩并写入
+            const processedGuestbookHTML = await processHTML(htmlGuestbook, minifyConfig);
+            const htmlGuestbookSize = {
+                original: Buffer.byteLength(htmlGuestbook, 'utf8'),
+                minified: Buffer.byteLength(processedGuestbookHTML, 'utf8')
+            };
+
+            // 创建 guestbook 目录并写入
+            const guestbookDir = path.join(distDir, 'guestbook');
+            fs.mkdirSync(guestbookDir, { recursive: true });
+            fs.writeFileSync(path.join(guestbookDir, 'index.html'), processedGuestbookHTML, 'utf8');
+            console.log('📄 guestbook/index.html: ' + formatSize(htmlGuestbookSize.original) + ' → ' + formatSize(htmlGuestbookSize.minified) + ' (节省 ' + calcReduction(htmlGuestbookSize.original, htmlGuestbookSize.minified) + ')');
+        } else {
+            console.log('   ⚠️ 找不到 templates/guestbook.template.html，跳过生成');
+        }
     }
 
     // 压缩统计
@@ -2412,6 +3175,36 @@ async function build() {
     await processFile('src/style.css', 'style.css');
     await processFile('src/config.js', 'config.js');
     await processFile('src/theme-utils.js', 'theme-utils.js');
+    await processFile('src/moments.js', 'moments.js');
+
+    // 处理留言板模块（包含评论系统）
+    // 先读取评论独立模块
+    const commentsStandalonePath = path.join(rootDir, 'src/comments-standalone.js');
+    const guestbookPath = path.join(rootDir, 'src/guestbook.js');
+    if (fs.existsSync(commentsStandalonePath) && fs.existsSync(guestbookPath)) {
+        const commentsCode = fs.readFileSync(commentsStandalonePath, 'utf8');
+        const guestbookCode = fs.readFileSync(guestbookPath, 'utf8');
+        // 合并代码：评论模块在前，guestbook 在后
+        const combinedCode = commentsCode + '\n\n' + guestbookCode;
+
+        // 处理合并后的代码
+        const distGuestbookPath = path.join(distDir, 'guestbook.js');
+        // 计算原始字节数（UTF-8 编码）
+        const originalBytes = Buffer.byteLength(combinedCode, 'utf8');
+
+        if (minifyConfig.minifyJS && minifyConfig.minify) {
+            const minifiedCode = await minifyJS(combinedCode);
+            fs.writeFileSync(distGuestbookPath, minifiedCode, 'utf8');
+            const finalSize = fs.statSync(distGuestbookPath).size;
+            console.log('📜 guestbook.js (含评论模块): ' + formatSize(originalBytes) + ' → ' + formatSize(finalSize) + ' (节省 ' + calcReduction(originalBytes, finalSize) + ')');
+        } else {
+            fs.writeFileSync(distGuestbookPath, combinedCode, 'utf8');
+            console.log('📜 guestbook.js (含评论模块): ' + formatSize(originalBytes) + ' (未压缩)');
+        }
+    } else {
+        await processFile('src/guestbook.js', 'guestbook.js');
+    }
+
     await processFile('src/images/avatar.webp', 'images/avatar.webp');
 
     // 处理捐赠二维码图片

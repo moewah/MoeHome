@@ -4,8 +4,8 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, shrink-to-fit=no" />
 
-        <!-- Favicon -->
-        {{FAVICON_LINKS}}
+        <!-- Page Title (SEO: 尽早声明) -->
+        <title>{{TITLE}}</title>
 
         <!-- SEO Meta Tags (由 build.js 从 config.js 注入) -->
         <meta name="description" content="{{DESCRIPTION}}" />
@@ -23,8 +23,11 @@
         <meta property="twitter:description" content="{{OG_DESCRIPTION}}" />
         <meta property="twitter:image" content="{{OG_IMAGE}}" />
 
-        <!-- Page Title -->
-        <title>{{TITLE}}</title>
+        <!-- Favicon -->
+        {{FAVICON_LINKS}}
+
+        <!-- 主题初始化脚本（必须在所有 CSS 之前执行，防止闪烁）-->
+        {{THEME_INIT_SCRIPT}}
 
         <!-- Fonts: 仅加载代码字体 JetBrains Mono，中文使用系统字体回退 -->
         <link rel="preconnect" href="https://fonts.googleapis.cn" />
@@ -43,12 +46,10 @@
             referrerpolicy="no-referrer"
         />
 
-        {{THEME_INITIAL}}
-
         <!-- Critical CSS for First Paint (inline ~4KB) -->
         <style>
             /* ========== Critical Base Styles ========== */
-            /* 颜色变量由上方 theme-initial 样式块动态生成 */
+            /* 颜色变量由 theme-init-script 动态生成 */
             /* 以下为布局变量（固定值，不受主题配置影响） */
             :root {
                 --navbar-height: 56px;

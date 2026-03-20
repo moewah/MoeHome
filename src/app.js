@@ -47,6 +47,9 @@ function initPage() {
 
     // 初始化音乐播放器
     initMusicPlayer();
+
+    // 初始化动态页面（如果存在）
+    initMoments();
 }
 
 // ========== 导航栏初始化 ==========
@@ -175,9 +178,23 @@ function initNavbarBrandEffect() {
 }
 
 // 当前区域高亮（Intersection Observer + 滚动检测）
+// 注意：仅在锚点导航模式下启用滚动高亮，独立页面模式由点击/服务端控制高亮
 function initNavbarActiveSection() {
     const navLinks = document.querySelectorAll('.nav-link, .nav-sidebar-link');
     if (navLinks.length === 0) return;
+
+    // 检测是否为锚点导航模式
+    // 如果存在带有 # 锚点的链接，说明是单页锚点导航，需要滚动高亮
+    // 如果所有链接都是页面路径（无 #），说明是独立页面模式，禁用滚动高亮
+    const hasAnchorLinks = Array.from(navLinks).some(link => {
+        const href = link.getAttribute('href') || '';
+        return href.includes('#');
+    });
+
+    // 独立页面模式：禁用滚动高亮，高亮由点击或服务端渲染控制
+    if (!hasAnchorLinks) {
+        return;
+    }
 
     const sections = document.querySelectorAll('#actual-content, #rss-section, #projects-section, #links-container');
     if (sections.length === 0) return;
@@ -883,18 +900,38 @@ function initSkeletonAndLazyLoad() {
     document.body.classList.add('skeleton-active');
 
     // 骨架屏最小显示时间（毫秒），避免闪烁
-    const MIN_SKELETON_TIME = 300;
+    const MIN_SKELETON_TIME = 100;
+    // 骨架屏最大显示时间（毫秒），超时强制隐藏
+    const MAX_SKELETON_TIME = 5000;
     const startTime = performance.now();
+    let skeletonHidden = false;
 
-    // 等待页面资源加载完成
-    window.addEventListener('load', () => {
+    // 隐藏骨架屏的包装函数，防止重复调用
+    const hideSkeletonOnce = () => {
+        if (skeletonHidden) return;
+        skeletonHidden = true;
+        hideSkeleton();
+    };
+
+    // 设置超时保护，确保骨架屏不会无限显示
+    const timeoutId = setTimeout(() => {
+        if (!skeletonHidden) {
+            console.warn('Skeleton screen timeout, force hiding');
+            hideSkeletonOnce();
+        }
+    }, MAX_SKELETON_TIME);
+
+    // 使用 DOMContentLoaded 替代 load 事件，首屏感知提速
+    // 检查 DOM 是否已经加载完成
+    const tryHideSkeleton = () => {
         // 计算已过时间，确保骨架屏至少显示 MIN_SKELETON_TIME
         const elapsed = performance.now() - startTime;
         const remainingTime = Math.max(0, MIN_SKELETON_TIME - elapsed);
 
         // 延迟隐藏骨架屏，确保用户能看到加载动画
         setTimeout(() => {
-            hideSkeleton();
+            clearTimeout(timeoutId);
+            hideSkeletonOnce();
         }, remainingTime);
 
         // 初始化懒加载动画
@@ -902,7 +939,14 @@ function initSkeletonAndLazyLoad() {
 
         // 初始化渐进式图片加载
         initProgressiveImage();
-    });
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryHideSkeleton);
+    } else {
+        // DOM 已经加载完成，立即执行
+        tryHideSkeleton();
+    }
 }
 
 // ========== 隐藏骨架屏 ==========
@@ -2310,6 +2354,33 @@ function initMusicPlayer() {
             toggleExpand();
         }
     });
+}
+
+// ========== 动态页面初始化 ==========
+function initMoments() {
+    // 防止重复初始化
+    if (window.__momentsInitialized) {
+        console.log('Moments: 已经初始化，跳过');
+        return;
+    }
+    window.__momentsInitialized = true;
+
+    const momentsFeed = document.getElementById('moments-feed');
+    if (!momentsFeed) return; // 不在动态页面
+
+    const config = window.HOMEPAGE_CONFIG?.moments;
+    if (!config || !config.enabled || !config.memosUrl) {
+        console.warn('Moments: 未启用或缺少配置');
+        return;
+    }
+
+    // MomentsFeed 类由 moments.js 提供
+    if (typeof MomentsFeed === 'function') {
+        const feed = new MomentsFeed(config);
+        feed.init();
+    } else {
+        console.warn('Moments: MomentsFeed 类未加载');
+    }
 }
 
 // ========== 页面加载完成后初始化 ==========

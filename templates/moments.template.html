@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="zh-CN">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, shrink-to-fit=no" />
+
+        <!-- Page Title (SEO: 尽早声明) -->
+        <title>{{PAGE_TITLE}}</title>
+
+        <!-- SEO Meta Tags (由 build.js 从 config.pages.moments 生成) -->
+        {{SEO_META}}
+
+        <!-- Favicon -->
+        {{FAVICON_LINKS}}
+
+        <!-- 主题初始化脚本（必须在所有 CSS 之前执行，防止闪烁）-->
+        {{THEME_INIT_SCRIPT}}
+
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.cn" />
+        <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin />
+        <link
+            href="https://fonts.googleapis.cn/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+
+        <!-- Font Awesome Icons -->
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+            integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer"
+        />
+
+        <!-- Critical CSS: 默认隐藏元素 + Moments页面特定样式 -->
+        <style>
+            /* ========== 防止 FOUC 的通用隐藏样式 ========== */
+            /* 所有"默认隐藏"元素必须在 CSS 加载前就有正确的隐藏状态 */
+
+            /* Theme Dropdown */
+            .theme-dropdown {
+                position: fixed;
+                top: calc(var(--navbar-height) + 8px);
+                z-index: 100;
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .theme-dropdown.is-active {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+
+            /* Mobile Sidebar */
+            .nav-sidebar {
+                position: fixed;
+                top: 0;
+                right: 0;
+                height: 100vh;
+                transform: translateX(100%);
+                z-index: 1002;
+            }
+            .nav-sidebar.open {
+                transform: translateX(0);
+            }
+            .nav-overlay {
+                position: fixed;
+                inset: 0;
+                opacity: 0;
+                visibility: hidden;
+                z-index: 1001;
+            }
+            .nav-overlay.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            /* Donation Modal */
+            .donation__modal-overlay {
+                position: fixed;
+                inset: 0;
+                z-index: 2000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .donation__modal-overlay.is-active {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+
+            /* Lightbox - 图片灯箱 */
+            .moment-lightbox {
+                position: fixed;
+                inset: 0;
+                z-index: 2000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
+            .moment-lightbox.is-active {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+
+            /* ========== Moments 页面特定样式 ========== */
+            .moments-wrapper {
+                width: 100%;
+                max-width: 600px;
+            }
+
+            .moments-page-header {
+                text-align: center;
+                padding: var(--space-10) 0 var(--space-6);
+            }
+
+            .moments-page-header h1 {
+                font-family: "JetBrains Mono", monospace;
+                font-size: clamp(2rem, 6vw, 3.5rem);
+                font-weight: 700;
+                margin: 0;
+                letter-spacing: -0.02em;
+                background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+
+            .moments-page-header p {
+                color: var(--text-secondary);
+                margin-top: var(--space-2);
+                font-size: 1rem;
+                font-weight: 300;
+                line-height: 1.6;
+                letter-spacing: 0.02em;
+            }
+
+            /* ========== 分割线 ========== */
+            .divider {
+                width: 100%;
+                height: 1px;
+                background: linear-gradient(
+                    90deg,
+                    transparent 0%,
+                    var(--divider-glow, var(--border)) 15%,
+                    var(--divider-glow, var(--border)) 50%,
+                    var(--divider-glow, var(--border)) 85%,
+                    transparent 100%
+                );
+                margin: var(--space-6) 0;
+            }
+
+            .moments-section {
+                text-align: left;
+                padding: 0 0 var(--space-8);
+                min-height: calc(100vh - 200px);
+            }
+
+            .moments-filter {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: center;
+                margin-bottom: var(--space-6);
+                padding: 0 var(--space-4);
+            }
+
+            .moments-filter .filter-tag {
+                padding: 6px 16px;
+                border-radius: 20px;
+                border: 1px solid var(--border);
+                background: var(--bg-secondary);
+                color: var(--text-secondary);
+                font-size: 0.875rem; /* 14px */
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+            .moments-filter .filter-tag:hover {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+
+            .moments-filter .filter-tag.active {
+                background: var(--accent);
+                border-color: var(--accent);
+                color: var(--bg-primary);
+            }
+
+            .moments-feed {
+                display: flex;
+                flex-direction: column;
+                gap: var(--space-4);
+            }
+
+            .load-more-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 60px;
+                margin-top: var(--space-6);
+                padding-bottom: var(--space-8);
+            }
+
+            /* 无限滚动哨兵 */
+            .infinite-scroll-sentinel {
+                width: 100%;
+                height: 1px;
+            }
+
+            /* 加载指示器 */
+            .infinite-scroll-loader {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                color: var(--text-secondary);
+                font-size: 0.875rem; /* 14px */
+            }
+
+            .infinite-scroll-loader .spinner {
+                width: 16px;
+                height: 16px;
+                border: 2px solid var(--border);
+                border-top-color: var(--accent);
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+            }
+
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+
+            .load-more-btn {
+                padding: 12px 32px;
+                border-radius: 8px;
+                border: 1px solid var(--border);
+                background: var(--bg-secondary);
+                color: var(--text-primary);
+                font-size: 0.875rem; /* 14px */
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+            .load-more-btn:hover {
+                border-color: var(--accent);
+                color: var(--accent);
+            }
+
+            .load-more-btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .footer {
+                text-align: center;
+            }
+
+            @media (max-width: 768px) {
+                .moments-page-header p {
+                    font-size: 0.875rem;
+                }
+
+                .moments-section {
+                    padding: 0 0 var(--space-6);
+                }
+
+                .moments-filter {
+                    margin-bottom: var(--space-4);
+                }
+
+                .moments-feed {
+                    gap: var(--space-3);
+                }
+            }
+        </style>
+
+        <!-- Main Stylesheet -->
+        <link rel="preload" href="../style.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+        <noscript><link rel="stylesheet" href="../style.css"></noscript>
+
+        <!-- JS Files -->
+        <script src="../config.js" defer></script>
+        <script src="../theme-utils.js" defer></script>
+    </head>
+    <body>
+        {{> navbar}}
+
+        <div class="container">
+            <div class="moments-wrapper">
+                <!-- 页面标题 -->
+                <div class="moments-page-header">
+                    <h1>{{PAGE_TITLE_TEXT}}</h1>
+                    <p>{{PAGE_TAGLINE}}</p>
+                </div>
+
+                <!-- 分割线 -->
+                <div class="divider"></div>
+
+                <!-- 动态内容区域 -->
+                <section class="moments-section">
+                    <!-- 标签筛选器（预置骨架屏） -->
+                    <div class="moments-filter" role="tablist">
+                        <div class="skeleton-filter-tag skeleton"></div>
+                        <div class="skeleton-filter-tag skeleton"></div>
+                        <div class="skeleton-filter-tag skeleton"></div>
+                    </div>
+
+                    <!-- 动态列表 -->
+                    <div id="moments-feed" class="moments-feed"></div>
+
+                    <!-- 无限滚动容器 -->
+                    <div class="load-more-container"></div>
+                </section>
+
+                {{> footer}}
+            </div>
+        </div>
+
+        <!-- Moments Module -->
+        <script src="../moments.js" defer></script>
+        <!-- Main Application -->
+        <script src="../app.js" defer></script>
+    </body>
+</html>
