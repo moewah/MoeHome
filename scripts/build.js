@@ -2642,51 +2642,43 @@ function url(path) {
 
 /**
  * 重写 HTML 中的资源 URL
- * 当 siteUrl 配置时，将相对路径转换为绝对路径
+ * - 当 siteUrl 配置时：转换为绝对路径（如 https://example.com/style.css）
+ * - 当 siteUrl 为空时：转换为根相对路径（如 /style.css）
  * @param {string} html - HTML 内容
- * @param {string} basePath - 基础路径（用于子目录页面，如 moments/ 使用 '../'）- 当 siteUrl 配置时忽略
+ * @param {string} basePath - 基础路径（已弃用，保留参数兼容性）
  * @returns {string} - 重写后的 HTML
  */
 function rewriteAssetUrls(html, basePath = '') {
-    if (!config.siteUrl) {
-        return html;
-    }
-
-    const baseUrl = config.siteUrl.replace(/\/$/, '');
-
-    // 规范化路径：移除 ./ 和 ../ 前缀（当使用绝对 URL 时不需要这些）
+    // 规范化路径：移除 ./ 和 ../ 前缀，转换为根相对路径
     const normalizePath = (url) => {
-        // 移除 ./ 前缀
         if (url.startsWith('./')) {
-            return url.slice(2);
+            return '/' + url.slice(2);
         }
-        // 移除 ../ 前缀（可能有多个）
         if (url.startsWith('../')) {
-            return url.replace(/^(\.\.\/)+/, '');
+            return '/' + url.replace(/^(\.\.\/)+/, '');
         }
-        return url;
+        if (url.startsWith('/')) {
+            return url;
+        }
+        return '/' + url;
     };
 
     // 匹配需要重写的资源属性
-    // 排除：外部链接、站点根路径、hash 链接、data URI、mailto:、tel: 等
     const shouldRewrite = (url) => {
         if (!url) return false;
-        // 排除已经是绝对路径的
         if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')) return false;
-        // 排除站点根路径（以 / 开头但不以 // 开头）
-        if (url.startsWith('/') && !url.startsWith('//')) return false;
-        // 排除特殊协议
         if (url.startsWith('data:') || url.startsWith('mailto:') || url.startsWith('tel:') || url.startsWith('javascript:')) return false;
-        // 排除 hash 链接
         if (url.startsWith('#')) return false;
         return true;
     };
 
+    // siteUrl 有值则拼接域名，为空则使用纯根相对路径
+    const pathPrefix = config.siteUrl ? config.siteUrl.replace(/\/$/, '') : '';
+
     // 重写 href 属性
     html = html.replace(/href="([^"]*)"/g, (match, url) => {
         if (shouldRewrite(url)) {
-            const normalizedPath = normalizePath(url);
-            return `href="${baseUrl}/${normalizedPath}"`;
+            return `href="${pathPrefix}${normalizePath(url)}"`;
         }
         return match;
     });
@@ -2694,17 +2686,15 @@ function rewriteAssetUrls(html, basePath = '') {
     // 重写 src 属性
     html = html.replace(/src="([^"]*)"/g, (match, url) => {
         if (shouldRewrite(url)) {
-            const normalizedPath = normalizePath(url);
-            return `src="${baseUrl}/${normalizedPath}"`;
+            return `src="${pathPrefix}${normalizePath(url)}"`;
         }
         return match;
     });
 
-    // 重写 CSS 中的 url()（在 style 属性和 <style> 标签中）
+    // 重写 CSS 中的 url()
     html = html.replace(/url\(['"]?([^'")\s]+)['"]?\)/g, (match, url) => {
         if (shouldRewrite(url)) {
-            const normalizedPath = normalizePath(url);
-            return `url('${baseUrl}/${normalizedPath}')`;
+            return `url('${pathPrefix}${normalizePath(url)}')`;
         }
         return match;
     });
@@ -2931,10 +2921,8 @@ async function build() {
     // 将 favicon 链接注入 HTML（首页使用根路径）
     html = html.replace(/{{FAVICON_LINKS}}/g, generateFaviconLinks(''));
 
-    // 重写静态资源 URL（当 siteUrl 配置时）
-    if (config.siteUrl) {
-        html = rewriteAssetUrls(html, '');
-    }
+    // 重写静态资源 URL（始终执行，siteUrl 为空时使用根相对路径）
+    html = rewriteAssetUrls(html, '');
 
     // 压缩内联 CSS（<style> 标签内的 CSS，包括 Critical CSS）
     const htmlBeforeInlineCSS = Buffer.byteLength(html, 'utf8');
@@ -2987,10 +2975,8 @@ async function build() {
             .replace(/{{PAGE_TITLE}}/g, seo404.title)
             .replace(/{{SEO_META}}/g, generateSEOMetaHTML(seo404));
 
-        // 重写静态资源 URL（当 siteUrl 配置时）
-        if (config.siteUrl) {
-            html404 = rewriteAssetUrls(html404, '');
-        }
+        // 重写静态资源 URL（始终执行，siteUrl 为空时使用根相对路径）
+        html404 = rewriteAssetUrls(html404, '');
 
         // 压缩内联 CSS
         html404 = processInlineCSS(html404, minifyConfig);
@@ -3045,10 +3031,8 @@ async function build() {
                 .replace(/{{PAGE_TITLE}}/g, seoMoments.title)
                 .replace(/{{SEO_META}}/g, generateSEOMetaHTML(seoMoments, pageUrl));
 
-            // 重写静态资源 URL（当 siteUrl 配置时）
-            if (config.siteUrl) {
-                htmlMoments = rewriteAssetUrls(htmlMoments, '');
-            }
+            // 重写静态资源 URL（始终执行，siteUrl 为空时使用根相对路径）
+            htmlMoments = rewriteAssetUrls(htmlMoments, '');
 
             // 压缩内联 CSS
             htmlMoments = processInlineCSS(htmlMoments, minifyConfig);
@@ -3113,10 +3097,8 @@ async function build() {
                 // 留言板特定变量
                 .replace(/{{COMMENT_SDK}}/g, commentSDK);
 
-            // 重写静态资源 URL（当 siteUrl 配置时）
-            if (config.siteUrl) {
-                htmlGuestbook = rewriteAssetUrls(htmlGuestbook, '');
-            }
+            // 重写静态资源 URL（始终执行，siteUrl 为空时使用根相对路径）
+            htmlGuestbook = rewriteAssetUrls(htmlGuestbook, '');
 
             // 压缩内联 CSS
             htmlGuestbook = processInlineCSS(htmlGuestbook, minifyConfig);
