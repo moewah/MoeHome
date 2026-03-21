@@ -1399,21 +1399,30 @@ body {
 }
 
 /* ========== 主页音频播放器 ========== */
-/* 终端风格 · 强调色 · 微妙呼吸动画（复用动态卡片风格）*/
+/* 终端风格 · 强调色边框 · 微妙呼吸动画 */
 .home-audio {
     position: relative;
     background: var(--bg-secondary);
-    border: 1px solid var(--border);
+    border: 1px solid var(--accent);
     border-radius: var(--radius-md);
     overflow: hidden;
-    transition: border-color var(--duration-snappy) ease;
     opacity: 0;
     transform: scaleX(0);
     transform-origin: center;
 }
 
-.home-audio:hover {
-    border-color: var(--accent);
+/* 播放状态 - 边框呼吸动画 */
+.home-audio.playing {
+    animation: audio-border-pulse 2s ease-in-out infinite;
+}
+
+@keyframes audio-border-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 oklch(from var(--accent) l c h / 0);
+    }
+    50% {
+        box-shadow: 0 0 0 3px oklch(from var(--accent) l c h / 0.15);
+    }
 }
 
 /* 展开动画 */
@@ -1711,6 +1720,10 @@ body {
     }
 
     .home-audio.playing .home-audio-waveform-bar {
+        animation: none;
+    }
+
+    .home-audio.playing {
         animation: none;
     }
 }
