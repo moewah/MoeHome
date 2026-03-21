@@ -25,6 +25,7 @@ const {
 
 // 引入共享主题数据
 const {
+    THEME_CONSTANTS,
     builtinSchemes,
     deriveConfig,
     hexToRgb,
@@ -32,7 +33,9 @@ const {
     getSchemeColors,
     isSchemeCompatible,
     getDefaultColors,
-    buildCSSVariablesArray
+    buildCSSVariablesArray,
+    buildStyleString,
+    getInlineScriptHelpers
 } = require('../src/theme-data.js');
 
 // 压缩配置
@@ -70,67 +73,123 @@ function renderPartials(content) {
 }
 
 /**
- * 生成导航链接 HTML
+ * 生成导航链接 HTML（桌面端）
  * @param {object} options - 配置选项
  * @param {string} options.activePage - 当前页面标识（用于高亮）
- * @param {boolean} options.isMobile - 是否为移动端
  * @param {object} options.config - 配置对象
  * @returns {string} 导航链接 HTML
  */
 function generateNavLinks(options) {
-    const { activePage, isMobile, config } = options;
+    const { activePage, config } = options;
     const links = [];
-    const linkClass = isMobile ? 'nav-sidebar-link' : 'nav-link';
+    const linkClass = 'nav-link';
 
     // 检查是否有独立页面（排除404，404永远不在菜单中显示）
     const hasMoments = config.moments && config.moments.enabled;
     const hasGuestbook = config.guestbook && config.guestbook.enabled;
     const hasStandalonePages = hasMoments || hasGuestbook;
 
-    // 首页
+    // 首页 - 固定图标
     const homeActive = activePage === 'home' ? ' active' : '';
-    links.push(`<a href="/" class="${linkClass}${homeActive}">首页</a>`);
+    const homeIcon = '<i class="fa-solid fa-home"></i>';
+    links.push(`<a href="/" class="${linkClass}${homeActive}">${homeIcon}<span>首页</span></a>`);
 
     if (hasStandalonePages) {
         // 有独立页面时：只显示首页和独立页面链接，不显示锚点链接
         // 动态页（Moments 启用时）
         if (hasMoments) {
             const momentsActive = activePage === 'moments' ? ' active' : '';
-            links.push(`<a href="/moments/" class="${linkClass}${momentsActive}">动态</a>`);
+            const momentsIcon = `<i class="${config.pages?.moments?.icon || 'fa-solid fa-bolt'}"></i>`;
+            links.push(`<a href="/moments/" class="${linkClass}${momentsActive}">${momentsIcon}<span>动态</span></a>`);
         }
         // 留言板（Guestbook 启用时）
         if (hasGuestbook) {
             const guestbookActive = activePage === 'guestbook' ? ' active' : '';
-            links.push(`<a href="/guestbook/" class="${linkClass}${guestbookActive}">留言</a>`);
+            const guestbookIcon = `<i class="${config.pages?.guestbook?.icon || 'fa-solid fa-comments'}"></i>`;
+            links.push(`<a href="/guestbook/" class="${linkClass}${guestbookActive}">${guestbookIcon}<span>留言</span></a>`);
         }
     } else {
         // 只有 index 主页时：显示锚点链接（文章、项目、链接）
+        // 图标从板块配置读取
         // 文章页（RSS 启用时）- 锚点链接
         if (config.rss && config.rss.enabled) {
             const postsActive = activePage === 'posts' ? ' active' : '';
-            links.push(`<a href="/#rss-section" class="${linkClass}${postsActive}">文章</a>`);
+            const postsIcon = `<i class="${config.rss?.titleIcon || 'fa-solid fa-newspaper'}"></i>`;
+            links.push(`<a href="/#rss-section" class="${linkClass}${postsActive}">${postsIcon}<span>文章</span></a>`);
         }
 
         // 项目页（Projects 启用时）- 锚点链接
         if (config.projects && config.projects.enabled) {
             const projectsActive = activePage === 'projects' ? ' active' : '';
-            links.push(`<a href="/#projects-section" class="${linkClass}${projectsActive}">项目</a>`);
+            const projectsIcon = `<i class="${config.projects?.titleIcon || 'fa-solid fa-folder-open'}"></i>`;
+            links.push(`<a href="/#projects-section" class="${linkClass}${projectsActive}">${projectsIcon}<span>项目</span></a>`);
         }
 
         // 链接导航（Links 启用时）- 锚点链接
         if (config.linksConfig && config.linksConfig.enabled) {
             const linksActive = activePage === 'links' ? ' active' : '';
-            links.push(`<a href="/#links-container" class="${linkClass}${linksActive}">链接</a>`);
+            const linksIcon = `<i class="${config.linksConfig?.titleIcon || 'fa-solid fa-link'}"></i>`;
+            links.push(`<a href="/#links-container" class="${linkClass}${linksActive}">${linksIcon}<span>链接</span></a>`);
         }
     }
 
     // 自定义菜单
     if (config.nav && config.nav.menus && config.nav.menus.length > 0) {
-        if (isMobile) {
-            links.push(generateCustomMenusMobileHTML(config.nav.menus));
-        } else {
-            links.push(generateCustomMenusHTML(config.nav.menus));
+        links.push(generateCustomMenusHTML(config.nav.menus));
+    }
+
+    return links.join('\n            ');
+}
+
+// 生成移动端导航下拉菜单链接（新样式）
+function generateNavLinksMobileDropdown(options) {
+    const { activePage, config } = options;
+    const links = [];
+
+    // 检查是否有独立页面
+    const hasMoments = config.moments && config.moments.enabled;
+    const hasGuestbook = config.guestbook && config.guestbook.enabled;
+    const hasStandalonePages = hasMoments || hasGuestbook;
+
+    // 首页 - 固定图标
+    const homeActive = activePage === 'home' ? ' is-active' : '';
+    links.push(`<a href="/" class="nav-mobile-link${homeActive}"><i class="fa-solid fa-home"></i><span>首页</span></a>`);
+
+    if (hasStandalonePages) {
+        // 动态页 - 从 pages 配置读取图标
+        if (hasMoments) {
+            const momentsActive = activePage === 'moments' ? ' is-active' : '';
+            const momentsIcon = config.pages?.moments?.icon || 'fa-solid fa-bolt';
+            links.push(`<a href="/moments/" class="nav-mobile-link${momentsActive}"><i class="${momentsIcon}"></i><span>动态</span></a>`);
         }
+        // 留言板 - 从 pages 配置读取图标
+        if (hasGuestbook) {
+            const guestbookActive = activePage === 'guestbook' ? ' is-active' : '';
+            const guestbookIcon = config.pages?.guestbook?.icon || 'fa-solid fa-comments';
+            links.push(`<a href="/guestbook/" class="nav-mobile-link${guestbookActive}"><i class="${guestbookIcon}"></i><span>留言</span></a>`);
+        }
+    } else {
+        // 锚点链接 - 从板块配置读取图标
+        if (config.rss && config.rss.enabled) {
+            const postsActive = activePage === 'posts' ? ' is-active' : '';
+            const postsIcon = config.rss?.titleIcon || 'fa-solid fa-newspaper';
+            links.push(`<a href="/#rss-section" class="nav-mobile-link${postsActive}"><i class="${postsIcon}"></i><span>文章</span></a>`);
+        }
+        if (config.projects && config.projects.enabled) {
+            const projectsActive = activePage === 'projects' ? ' is-active' : '';
+            const projectsIcon = config.projects?.titleIcon || 'fa-solid fa-folder-open';
+            links.push(`<a href="/#projects-section" class="nav-mobile-link${projectsActive}"><i class="${projectsIcon}"></i><span>项目</span></a>`);
+        }
+        if (config.linksConfig && config.linksConfig.enabled) {
+            const linksActive = activePage === 'links' ? ' is-active' : '';
+            const linksIcon = config.linksConfig?.titleIcon || 'fa-solid fa-link';
+            links.push(`<a href="/#links-container" class="nav-mobile-link${linksActive}"><i class="${linksIcon}"></i><span>链接</span></a>`);
+        }
+    }
+
+    // 自定义菜单（下拉样式）
+    if (config.nav && config.nav.menus && config.nav.menus.length > 0) {
+        links.push(generateCustomMenusMobileDropdownHTML(config.nav.menus));
     }
 
     return links.join('\n            ');
@@ -515,197 +574,118 @@ function getModeColors(theme, mode) {
 }
 
 /**
- * 生成主题初始化脚本（防闪烁）
+ * 生成默认主题 CSS 变量（写入 Critical CSS，确保首次渲染就有颜色）
+ * 使用 Light 模式的默认配色作为初始值
  */
-function generateThemeInitScript() {
-    // 将配色方案数据序列化为 JSON
-    var schemesJson = JSON.stringify(builtinSchemes);
-    var deriveConfigJson = JSON.stringify(deriveConfig);
-    var themeConfig = extractThemeConfig();
-    var defaultMode = themeConfig && themeConfig.default || 'auto';
-    var defaultSchemeJson = JSON.stringify(themeConfig && themeConfig.defaultScheme || { light: null, dark: null });
+function generateDefaultThemeCSS() {
+    // 获取 Light 模式的默认配色
+    const lightColors = getDefaultColors('light');
+    if (!lightColors) return '';
 
-    return '<script id="theme-init-script">\n' +
-'(function() {\n' +
-'    "use strict";\n' +
-'\n' +
-'    var SCHEMES = ' + schemesJson + ';\n' +
-'    var DERIVE_CONFIG = ' + deriveConfigJson + ';\n' +
-'    var DEFAULT_MODE = "' + defaultMode + '";\n' +
-'    var DEFAULT_SCHEME = ' + defaultSchemeJson + ';\n' +
-'    var STORAGE_KEY = "homepage_theme";\n' +
-'\n' +
-'    function hexToRgb(hex) {\n' +
-'        var result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex);\n' +
-'        if (result) {\n' +
-'            return parseInt(result[1], 16) + ", " + parseInt(result[2], 16) + ", " + parseInt(result[3], 16);\n' +
-'        }\n' +
-'        var shortResult = /^#?([a-f\\d])([a-f\\d])([a-f\\d])$/i.exec(hex);\n' +
-'        if (shortResult) {\n' +
-'            return parseInt(shortResult[1] + shortResult[1], 16) + ", " +\n' +
-'                   parseInt(shortResult[2] + shortResult[2], 16) + ", " +\n' +
-'                   parseInt(shortResult[3] + shortResult[3], 16);\n' +
-'        }\n' +
-'        return "0, 0, 0";\n' +
-'    }\n' +
-'\n' +
-'    function darkenColor(hex, amount) {\n' +
-'        var rgb = hexToRgb(hex).split(", ").map(Number);\n' +
-'        var darkened = rgb.map(function(c) { return Math.max(0, Math.round(c * (1 - amount))); });\n' +
-'        return "#" + darkened.map(function(c) { return c.toString(16).padStart(2, "0"); }).join("");\n' +
-'    }\n' +
-'\n' +
-'    function getSchemeColors(scheme, mode) {\n' +
-'        if (scheme.colors && typeof scheme.colors.light === "object") {\n' +
-'            return scheme.colors[mode] || scheme.colors.dark || scheme.colors;\n' +
-'        }\n' +
-'        return scheme.colors;\n' +
-'    }\n' +
-'\n' +
-'    function isSchemeCompatible(scheme, mode) {\n' +
-'        return !scheme.modes || scheme.modes.indexOf(mode) !== -1;\n' +
-'    }\n' +
-'\n' +
-'    function buildCSSVariables(colors, mode) {\n' +
-'        var derive = DERIVE_CONFIG[mode];\n' +
-'        var accentRgb = hexToRgb(colors.accent);\n' +
-'        var bgPrimaryRgb = hexToRgb(colors.bgPrimary);\n' +
-'        var isLight = mode === "light";\n' +
-'\n' +
-'        var vars = [\n' +
-'            "--bg-primary:" + colors.bgPrimary,\n' +
-'            "--bg-secondary:" + colors.bgSecondary,\n' +
-'            "--text-primary:" + colors.textPrimary,\n' +
-'            "--text-secondary:" + colors.textSecondary,\n' +
-'            "--accent:" + colors.accent,\n' +
-'            "--accent-deep:" + darkenColor(colors.accent, 0.2),\n' +
-'            "--border:" + colors.border,\n' +
-'            "--accent-dim:rgba(" + accentRgb + "," + derive.accentDim + ")",\n' +
-'            "--grid-color:rgba(" + accentRgb + "," + derive.gridColor + ")",\n' +
-'            "--notice-bg-warning:rgba(255,149,0," + derive.notice + ")",\n' +
-'            "--notice-bg-info:rgba(0,161,255," + derive.notice + ")",\n' +
-'            "--notice-bg-success:rgba(39,201,63," + derive.notice + ")",\n' +
-'            "--hover-bg:rgba(" + accentRgb + "," + derive.hover + ")",\n' +
-'            "--active-bg:rgba(" + accentRgb + "," + derive.active + ")",\n' +
-'            "--focus-ring:" + colors.accent,\n' +
-'            "--shadow-sm:rgba(0,0,0," + derive.shadowSm + ")",\n' +
-'            "--shadow-md:rgba(0,0,0," + derive.shadowMd + ")",\n' +
-'            "--glow:rgba(" + accentRgb + "," + derive.glow + ")",\n' +
-'            "--glow-subtle:rgba(" + accentRgb + ",0.08)",\n' +
-'            "--navbar-bg-scrolled:rgba(" + bgPrimaryRgb + "," + derive.navbarScrolled + ")",\n' +
-'            "--contribution-1:rgba(" + accentRgb + ",0.2)",\n' +
-'            "--contribution-2:rgba(" + accentRgb + ",0.4)",\n' +
-'            "--contribution-3:rgba(" + accentRgb + ",0.6)",\n' +
-'            "--contribution-4:" + colors.accent,\n' +
-'            "--divider-glow:rgba(" + accentRgb + ",0.4)",\n' +
-'            "--card-border-strong:rgba(" + accentRgb + "," + derive.cardBorderStrong + ")",\n' +
-'            "--card-border-muted:rgba(" + accentRgb + "," + derive.cardBorderMuted + ")",\n' +
-'            "--glass-border-top:" + (isLight ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)"),\n' +
-'            "--glass-border-bottom:" + (isLight ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.5)"),\n' +
-'            "--glass-border-side:" + (isLight ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.03)"),\n' +
-'            "--glass-outer-shadow:" + (isLight ? "rgba(0,0,0,0.1)" : "rgba(0,0,0,0.4)"),\n' +
-'            "--glass-hover-border:rgba(" + accentRgb + "," + (isLight ? "0.25" : "0.15") + ")",\n' +
-'            "--btn-glass-border-top:" + (isLight ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.08)"),\n' +
-'            "--btn-glass-border-bottom:" + (isLight ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.5)"),\n' +
-'            "--btn-glass-shadow:" + (isLight ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.4)"),\n' +
-'            "--btn-glass-inner-tint:" + (isLight ? "rgba(0,0,0,0.03)" : "rgba(" + accentRgb + ",0.03)"),\n' +
-'            "--btn-glass-hover-border:" + (isLight ? "rgba(0,0,0,0.2)" : "rgba(" + accentRgb + ",0.15)"),\n' +
-'            "--btn-glass-active-glow:" + (isLight ? "rgba(0,0,0,0.06)" : "rgba(" + accentRgb + ",0.05)"),\n' +
-'            "--terminal-bg:" + colors.bgSecondary,\n' +
-'            "--terminal-text:" + colors.textSecondary,\n' +
-'            "--terminal-prompt:" + colors.accent,\n' +
-'            "--terminal-cursor:" + colors.accent\n' +
-'        ];\n' +
-'\n' +
-'        return vars.join(";");\n' +
-'    }\n' +
-'\n' +
-'    function getEffectiveTheme(mode) {\n' +
-'        if (mode === "auto") {\n' +
-'            return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";\n' +
-'        }\n' +
-'        return mode;\n' +
-'    }\n' +
-'\n' +
-'    function getActiveScheme(mode, stored) {\n' +
-'        var schemeId = null;\n' +
-'\n' +
-'        if (stored && stored.schemes && stored.schemes[mode] !== undefined) {\n' +
-'            schemeId = stored.schemes[mode];\n' +
-'        } else if (DEFAULT_SCHEME[mode]) {\n' +
-'            schemeId = DEFAULT_SCHEME[mode];\n' +
-'        }\n' +
-'\n' +
-'        if (schemeId === null) return null;\n' +
-'        if (!schemeId) return null;\n' +
-'\n' +
-'        var scheme = SCHEMES[schemeId];\n' +
-'        if (scheme && isSchemeCompatible(scheme, mode)) {\n' +
-'            return scheme;\n' +
-'        }\n' +
-'        return null;\n' +
-'    }\n' +
-'\n' +
-'    function getDefaultColors(mode) {\n' +
-'        for (var id in SCHEMES) {\n' +
-'            if (SCHEMES[id].isDefault && SCHEMES[id].modes && SCHEMES[id].modes.indexOf(mode) !== -1) {\n' +
-'                return SCHEMES[id].colors;\n' +
-'            }\n' +
-'        }\n' +
-'        return null;\n' +
-'    }\n' +
-'\n' +
-'    var stored = null;\n' +
-'    try {\n' +
-'        var storedStr = localStorage.getItem(STORAGE_KEY);\n' +
-'        if (storedStr) {\n' +
-'            stored = JSON.parse(storedStr);\n' +
-'        }\n' +
-'    } catch (e) {}\n' +
-'\n' +
-'    var mode = (stored && stored.mode) || DEFAULT_MODE;\n' +
-'    var effectiveTheme = getEffectiveTheme(mode);\n' +
-'\n' +
-'    var scheme = getActiveScheme(effectiveTheme, stored);\n' +
-'    var colors;\n' +
-'\n' +
-'    if (scheme) {\n' +
-'        colors = getSchemeColors(scheme, effectiveTheme);\n' +
-'    } else {\n' +
-'        colors = getDefaultColors(effectiveTheme);\n' +
-'    }\n' +
-'\n' +
-'    if (colors) {\n' +
-'        var cssVars = buildCSSVariables(colors, effectiveTheme);\n' +
-'        var style = document.createElement("style");\n' +
-'        style.id = "theme-user-pref";\n' +
-'        style.textContent = ":root{" + cssVars + "}";\n' +
-'        document.head.appendChild(style);\n' +
-'        document.documentElement.setAttribute("data-theme", effectiveTheme);\n' +
-'    }\n' +
-'    // 将配色数据暴露为全局变量，供 ThemeManager 使用\n' +
-'    window.THEME_SCHEMES = SCHEMES;\n' +
-'    window.THEME_DERIVE_CONFIG = DERIVE_CONFIG;\n' +
-'    window.THEME_DEFAULT_MODE = DEFAULT_MODE;\n' +
-'    window.THEME_DEFAULT_SCHEME = DEFAULT_SCHEME;\n' +
-'})();\n' +
-'</script>';
+    const vars = buildCSSVariablesArray(lightColors, 'light');
+    return vars.join(';');
 }
 
 /**
- * 生成首屏主题 CSS
+ * 生成主题初始化脚本（防闪烁）
  *
- * 已废弃：theme-init-script 完全处理了主题初始化逻辑，包括：
- * - 读取 localStorage 用户偏好
- * - 无偏好时使用 DEFAULT_MODE 和 DEFAULT_SCHEME
- * - 动态创建 <style id="theme-user-pref"> 并应用 CSS 变量
- *
- * 保留函数签名以兼容模板，始终返回空字符串
+ * 核心设计：直接在 <html> 元素上设置 inline style
+ * - 在 HTML 解析最早时机执行
+ * - inline style 优先级最高，不会被后续 CSS 覆盖
+ * - 消除渲染和脚本执行之间的竞争条件
+ /**
+ * 生成主题初始化内联脚本
+ * 注：输出会被 processInlineJS 压缩，此处优先可读性
  */
-function generateInitialThemeCSS() {
-    // theme-init-script 已完整处理主题逻辑，此函数不再需要
-    return '';
+function generateThemeInitScript() {
+    const schemesJson = JSON.stringify(builtinSchemes);
+    const deriveConfigJson = JSON.stringify(deriveConfig);
+    const themeConfig = extractThemeConfig();
+    const defaultMode = themeConfig?.default || 'auto';
+    const defaultSchemeJson = JSON.stringify(themeConfig?.defaultScheme || { light: null, dark: null });
+    const helpers = getInlineScriptHelpers();
+
+    return `<script id="theme-init-script">
+(function() {
+    var SCHEMES = ${schemesJson};
+    var DERIVE_CONFIG = ${deriveConfigJson};
+    var DEFAULT_MODE = "${defaultMode}";
+    var DEFAULT_SCHEME = ${defaultSchemeJson};
+    var STORAGE_KEY = "${THEME_CONSTANTS.STORAGE_KEY}";
+    var THEME_ATTR = "${THEME_CONSTANTS.THEME_ATTRIBUTE}";
+
+    ${helpers.hexToRgb}
+
+    ${helpers.darkenColor}
+
+    function getEffectiveTheme(mode) {
+        if (mode === "auto") return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        return mode;
+    }
+
+    function getSchemeColors(scheme, mode) {
+        if (scheme.colors && typeof scheme.colors.light === "object") return scheme.colors[mode] || scheme.colors.dark || scheme.colors;
+        return scheme.colors;
+    }
+
+    function isSchemeCompatible(scheme, mode) {
+        return !scheme.modes || scheme.modes.indexOf(mode) !== -1;
+    }
+
+    function getActiveScheme(mode, stored) {
+        var schemeId = null;
+        if (stored && stored.schemes && stored.schemes[mode] !== undefined) schemeId = stored.schemes[mode];
+        else if (DEFAULT_SCHEME[mode]) schemeId = DEFAULT_SCHEME[mode];
+        if (schemeId === null || !schemeId) return null;
+        var scheme = SCHEMES[schemeId];
+        if (scheme && isSchemeCompatible(scheme, mode)) return scheme;
+        return null;
+    }
+
+    function getDefaultColors(mode) {
+        for (var id in SCHEMES) {
+            if (SCHEMES[id].isDefault && SCHEMES[id].modes && SCHEMES[id].modes.indexOf(mode) !== -1) return SCHEMES[id].colors;
+        }
+        return null;
+    }
+
+    ${helpers.buildStyleString}
+
+    var stored = null;
+    try { var s = localStorage.getItem(STORAGE_KEY); if (s) stored = JSON.parse(s); } catch (e) {}
+
+    var mode = (stored && stored.mode) || DEFAULT_MODE;
+    var theme = getEffectiveTheme(mode);
+
+    // 应用主题（带容错保护，失败时使用 CSS 默认值）
+    try {
+        document.documentElement.setAttribute(THEME_ATTR, theme);
+        if (theme === "dark" || (stored && stored.schemes && stored.schemes[theme])) {
+            var scheme = getActiveScheme(theme, stored);
+            var colors = scheme ? getSchemeColors(scheme, theme) : getDefaultColors(theme);
+            if (colors) {
+                document.documentElement.style.cssText = buildStyleString(colors, theme);
+            }
+        }
+    } catch (e) {}
+
+    window.THEME_SCHEMES = SCHEMES;
+    window.THEME_DERIVE_CONFIG = DERIVE_CONFIG;
+    window.THEME_DEFAULT_MODE = DEFAULT_MODE;
+    window.THEME_DEFAULT_SCHEME = DEFAULT_SCHEME;
+    window.THEME_CONSTANTS = { STORAGE_KEY: STORAGE_KEY, THEME_ATTR: THEME_ATTR };
+    window.THEME_HELPERS = {
+        hexToRgb: hexToRgb,
+        darkenColor: darkenColor,
+        buildStyleString: buildStyleString
+    };
+})();
+</script>`;
 }
+
+
+
+
 
 // 提取 analytics 子配置值
 function extractAnalyticsValue(key, subKey) {
@@ -1053,6 +1033,7 @@ function generateMusicToggleIconHTML(music) {
 }
 
 // 生成音乐播放器 HTML（可展开版，包含分割线切换）
+// 采用动态卡片音频播放器风格：终端风格 · 强调色 · 微妙呼吸动画
 function generateMusicPlayerHTML(music) {
     if (!music.enabled) {
         // 音乐播放器禁用时，显示原始分割线
@@ -1077,18 +1058,46 @@ function generateMusicPlayerHTML(music) {
                     <!-- 音乐播放器：默认隐藏，点击音符图标后展开 -->
                     <div class="music-player-wrapper" id="music-player-wrapper">
                         <div class="music-player-inner">
-                            <div class="music-player" id="music-player" data-config="${musicConfigJSON}">
-                                <button class="music-btn music-btn--prev" id="music-prev" title="上一曲" aria-label="上一曲">
-                                    <i class="fa-solid fa-backward-step"></i>
-                                </button>
-                                <button class="music-btn music-btn--play" id="music-play" title="播放" aria-label="播放">
-                                    <i class="fa-solid fa-play" id="music-play-icon"></i>
-                                </button>
-                                <button class="music-btn music-btn--next" id="music-next" title="下一曲" aria-label="下一曲">
-                                    <i class="fa-solid fa-forward-step"></i>
-                                </button>
-                                <div class="music-progress">
-                                    <div class="music-progress-fill" id="music-progress-fill"></div>
+                            <div class="home-audio" id="music-player" data-config="${musicConfigJSON}">
+                                <!-- 播放器主体 -->
+                                <div class="home-audio-player">
+                                    <!-- 上一曲按钮 -->
+                                    <button class="home-audio-btn home-audio-btn--prev" id="music-prev" title="上一曲" aria-label="上一曲">
+                                        <i class="fa-solid fa-backward-step"></i>
+                                    </button>
+                                    <!-- 播放按钮 -->
+                                    <button class="home-audio-btn home-audio-btn--play" id="music-play" title="播放" aria-label="播放">
+                                        <i class="fa-solid fa-play" id="music-play-icon"></i>
+                                    </button>
+                                    <!-- 下一曲按钮 -->
+                                    <button class="home-audio-btn home-audio-btn--next" id="music-next" title="下一曲" aria-label="下一曲">
+                                        <i class="fa-solid fa-forward-step"></i>
+                                    </button>
+                                    <!-- 波形可视化 + 进度条容器 -->
+                                    <div class="home-audio-visualizer">
+                                        <!-- 波形条装饰 -->
+                                        <div class="home-audio-waveform">
+                                            <div class="home-audio-waveform-bar"></div>
+                                            <div class="home-audio-waveform-bar"></div>
+                                            <div class="home-audio-waveform-bar"></div>
+                                            <div class="home-audio-waveform-bar"></div>
+                                            <div class="home-audio-waveform-bar"></div>
+                                            <div class="home-audio-waveform-bar"></div>
+                                            <div class="home-audio-waveform-bar"></div>
+                                            <div class="home-audio-waveform-bar"></div>
+                                        </div>
+                                        <!-- 进度条 -->
+                                        <div class="home-audio-progress" id="music-progress" role="slider" aria-label="播放进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+                                            <div class="home-audio-progress-fill" id="music-progress-fill"></div>
+                                        </div>
+                                    </div>
+                                    <!-- 时间显示 -->
+                                    <div class="home-audio-time" id="music-time">0:00 / 0:00</div>
+                                </div>
+                                <!-- 歌曲名称显示区域 -->
+                                <div class="home-audio-title" id="music-title">
+                                    <i class="fa-solid fa-music"></i>
+                                    <span>未在播放</span>
                                 </div>
                             </div>
                         </div>
@@ -1884,7 +1893,33 @@ function extractNavConfig() {
             }
         }
 
-        const menusContent = navContent.substring(startIndex, endIndex);
+        let menusContent = navContent.substring(startIndex, endIndex);
+
+        // 移除注释（但不影响字符串内的内容）
+        // 先移除多行注释 /* ... */
+        menusContent = menusContent.replace(/\/\*[\s\S]*?\*\//g, '');
+        // 再移除单行注释 // ...（只匹配行首空白后的 // 或独立一行的 //）
+        // 使用更精确的方式：不匹配字符串内的 //
+        menusContent = menusContent.split('\n').map(line => {
+            // 找到第一个不在字符串内的 //
+            let inString = false;
+            let stringChar = '';
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if ((char === '"' || char === "'" || char === '`') && (i === 0 || line[i-1] !== '\\')) {
+                    if (!inString) {
+                        inString = true;
+                        stringChar = char;
+                    } else if (char === stringChar) {
+                        inString = false;
+                    }
+                }
+                if (!inString && line.substring(i, i + 2) === '//') {
+                    return line.substring(0, i).trimEnd();
+                }
+            }
+            return line;
+        }).join('\n');
 
         // 使用更精确的方式解析每个菜单对象
         // 找到所有顶层菜单对象的开始位置
@@ -2001,23 +2036,6 @@ function generateNavLinksHTML(rssConfig, projectsConfig) {
     return html;
 }
 
-// 生成导航链接 HTML（移动端）
-function generateNavLinksMobileHTML(rssConfig, projectsConfig) {
-    let html = '';
-
-    // Posts 链接
-    if (rssConfig.enabled) {
-        html += '\n                <a href="#rss-section" class="nav-sidebar-link" data-section="rss-section">文章</a>';
-    }
-
-    // Projects 链接
-    if (projectsConfig.enabled) {
-        html += '\n                <a href="#projects-section" class="nav-sidebar-link" data-section="projects-section">项目</a>';
-    }
-
-    return html;
-}
-
 // 生成自定义菜单 HTML（桌面端）
 function generateCustomMenusHTML(menus) {
     if (!menus || menus.length === 0) return '';
@@ -2041,23 +2059,25 @@ function generateCustomMenusHTML(menus) {
     }).join('');
 }
 
-// 生成自定义菜单 HTML（移动端）
-function generateCustomMenusMobileHTML(menus) {
+// 生成自定义菜单 HTML（移动端下拉菜单样式）
+function generateCustomMenusMobileDropdownHTML(menus) {
     if (!menus || menus.length === 0) return '';
 
     return menus.map(menu => {
+        const menuIcon = menu.icon || 'fa-solid fa-folder';
         const itemsHTML = menu.items.map(item => {
             const externalAttrs = item.external ? 'target="_blank" rel="noopener noreferrer"' : '';
-            return `                <a href="${escapeHTML(item.url)}" ${externalAttrs}>${escapeHTML(item.name)}</a>`;
+            return `<a href="${escapeHTML(item.url)}" class="nav-mobile-link" ${externalAttrs}><span>${escapeHTML(item.name)}</span></a>`;
         }).join('\n                ');
 
         return `
-            <div class="nav-sidebar-dropdown">
-                <button class="nav-sidebar-dropdown-toggle">
-                    <span>${escapeHTML(menu.name)}</span>
+            <div class="nav-mobile-dropdown-group">
+                <button class="nav-mobile-dropdown-toggle">
+                    <i class="${escapeHTML(menuIcon)}"></i>
+                    <span class="toggle-text">${escapeHTML(menu.name)}</span>
                     <i class="fa-solid fa-chevron-down"></i>
                 </button>
-                <div class="nav-sidebar-dropdown-items">
+                <div class="nav-mobile-dropdown-items">
                     ${itemsHTML}
                 </div>
             </div>`;
@@ -2363,6 +2383,7 @@ function extractPagesConfig() {
         if (key) {
             pages[key] = {
                 title: extractStringValue(objectContent, 'title') || key,
+                icon: extractStringValue(objectContent, 'icon') || '',
                 tagline: extractStringValue(objectContent, 'tagline') || '',
                 description: extractStringValue(objectContent, 'description') || '',
                 keywords: extractArrayFromContent(objectContent, 'keywords'),
@@ -2770,8 +2791,9 @@ async function build() {
     let html = template
         // Theme Init Script (必须在所有 CSS 之前执行，防止闪烁)
         .replace(/{{THEME_INIT_SCRIPT}}/g, generateThemeInitScript())
-        // Theme Initial CSS (作为 fallback)
-        .replace(/{{THEME_INITIAL}}/g, generateInitialThemeCSS())
+
+        // 默认主题 CSS 变量（写入 Critical CSS）
+        .replace(/{{DEFAULT_THEME_VARS}}/g, generateDefaultThemeCSS())
 
         // SEO
         .replace(/{{TITLE}}/g, config.title)
@@ -2836,8 +2858,8 @@ async function build() {
 
 // Nav Links - 使用新的导航生成函数
         .replace(/{{NAV_HOME_URL}}/g, '/')
-        .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: 'home', isMobile: false, config }))
-        .replace(/{{NAV_LINKS_MOBILE}}/g, generateNavLinks({ activePage: 'home', isMobile: true, config }))
+        .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: 'home', config }))
+        .replace(/{{NAV_LINKS_MOBILE_DROPDOWN}}/g, generateNavLinksMobileDropdown({ activePage: 'home', config }))
 
         // Analytics
         .replace(/{{ANALYTICS}}/g, generateAnalyticsHTML(config));
@@ -2952,11 +2974,13 @@ async function build() {
         // 替换模板变量
         html404 = html404
             .replace(/{{THEME_INIT_SCRIPT}}/g, generateThemeInitScript())
-            .replace(/{{THEME_INITIAL}}/g, generateInitialThemeCSS())
+
+        // 默认主题 CSS 变量（写入 Critical CSS）
+        .replace(/{{DEFAULT_THEME_VARS}}/g, generateDefaultThemeCSS())
             .replace(/{{NAME}}/g, config.name)
             .replace(/{{NAV_HOME_URL}}/g, '/')
-            .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: '', isMobile: false, config }))
-            .replace(/{{NAV_LINKS_MOBILE}}/g, generateNavLinks({ activePage: '', isMobile: true, config }))
+            .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: '', config }))
+            .replace(/{{NAV_LINKS_MOBILE_DROPDOWN}}/g, generateNavLinksMobileDropdown({ activePage: '', config }))
             .replace(/{{FOOTER_CONTENT}}/g, generateFooterHTML(config))
             .replace(/{{FAVICON_LINKS}}/g, generateFaviconLinks(''))
             // SEO 替换
@@ -3005,11 +3029,13 @@ async function build() {
             // 替换模板变量
             htmlMoments = htmlMoments
                 .replace(/{{THEME_INIT_SCRIPT}}/g, generateThemeInitScript())
-                .replace(/{{THEME_INITIAL}}/g, generateInitialThemeCSS())
+
+        // 默认主题 CSS 变量（写入 Critical CSS）
+        .replace(/{{DEFAULT_THEME_VARS}}/g, generateDefaultThemeCSS())
                 .replace(/{{NAME}}/g, config.name)
                 .replace(/{{NAV_HOME_URL}}/g, '/')
-                .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: 'moments', isMobile: false, config }))
-                .replace(/{{NAV_LINKS_MOBILE}}/g, generateNavLinks({ activePage: 'moments', isMobile: true, config }))
+                .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: 'moments', config }))
+                .replace(/{{NAV_LINKS_MOBILE_DROPDOWN}}/g, generateNavLinksMobileDropdown({ activePage: 'moments', config }))
                 .replace(/{{FOOTER_CONTENT}}/g, generateFooterHTML(config))
                 .replace(/{{FAVICON_LINKS}}/g, generateFaviconLinks('../'))
                 // 页面内容变量
@@ -3069,11 +3095,13 @@ async function build() {
             // 替换模板变量
             htmlGuestbook = htmlGuestbook
                 .replace(/{{THEME_INIT_SCRIPT}}/g, generateThemeInitScript())
-                .replace(/{{THEME_INITIAL}}/g, generateInitialThemeCSS())
+
+        // 默认主题 CSS 变量（写入 Critical CSS）
+        .replace(/{{DEFAULT_THEME_VARS}}/g, generateDefaultThemeCSS())
                 .replace(/{{NAME}}/g, config.name)
                 .replace(/{{NAV_HOME_URL}}/g, '/')
-                .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: 'guestbook', isMobile: false, config }))
-                .replace(/{{NAV_LINKS_MOBILE}}/g, generateNavLinks({ activePage: 'guestbook', isMobile: true, config }))
+                .replace(/{{NAV_LINKS}}/g, generateNavLinks({ activePage: 'guestbook', config }))
+                .replace(/{{NAV_LINKS_MOBILE_DROPDOWN}}/g, generateNavLinksMobileDropdown({ activePage: 'guestbook', config }))
                 .replace(/{{FOOTER_CONTENT}}/g, generateFooterHTML(config))
                 .replace(/{{FAVICON_LINKS}}/g, generateFaviconLinks('../'))
                 // 页面内容变量
@@ -3171,6 +3199,7 @@ async function build() {
     }
 
     // 处理所有静态资源
+    await processFile('src/media-manager.js', 'media-manager.js');
     await processFile('src/app.js', 'app.js');
     await processFile('src/style.css', 'style.css');
     await processFile('src/config.js', 'config.js');

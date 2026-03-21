@@ -6,6 +6,14 @@
  */
 
 /**
+ * 主题相关常量（单一真实来源）
+ */
+const THEME_CONSTANTS = {
+  STORAGE_KEY: "homepage_theme",
+  THEME_ATTRIBUTE: "data-theme",
+};
+
+/**
  * 内置预设配色方案
  */
 const builtinSchemes = {
@@ -282,9 +290,91 @@ function buildCSSVariablesArray(colors, mode) {
   ];
 }
 
+/**
+ * 构建 CSS 变量字符串（用于内联 style）
+ * @param {object} colors - 颜色配置
+ * @param {string} mode - 'light' 或 'dark'
+ * @returns {string} - CSS 变量字符串
+ */
+function buildStyleString(colors, mode) {
+  return buildCSSVariablesArray(colors, mode).join(";");
+}
+
+/**
+ * 生成内联脚本所需的辅助函数代码
+ * 用于 build.js 的 generateThemeInitScript，确保函数逻辑只维护一处
+ * @returns {object} - 函数名到源码的映射
+ */
+function getInlineScriptHelpers() {
+  return {
+    hexToRgb: function hexToRgb(hex) {
+      var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      if (result) return parseInt(result[1], 16) + "," + parseInt(result[2], 16) + "," + parseInt(result[3], 16);
+      var shortResult = /^#?([a-f\d])([a-f\d])([a-f\d])$/i.exec(hex);
+      if (shortResult) return parseInt(shortResult[1] + shortResult[1], 16) + "," + parseInt(shortResult[2] + shortResult[2], 16) + "," + parseInt(shortResult[3] + shortResult[3], 16);
+      return "0,0,0";
+    }.toString(),
+
+    darkenColor: function darkenColor(hex, amount) {
+      var rgb = hexToRgb(hex).split(",").map(Number);
+      return "#" + rgb.map(function(c) { return Math.max(0, Math.round(c * (1 - amount))); }).map(function(c) { return c.toString(16).padStart(2, "0"); }).join("");
+    }.toString(),
+
+    buildStyleString: function buildStyleString(colors, mode) {
+      var d = DERIVE_CONFIG[mode];
+      var a = hexToRgb(colors.accent);
+      var b = hexToRgb(colors.bgPrimary);
+      var isL = mode === "light";
+      return "--bg-primary:" + colors.bgPrimary + ";" +
+             "--bg-secondary:" + colors.bgSecondary + ";" +
+             "--text-primary:" + colors.textPrimary + ";" +
+             "--text-secondary:" + colors.textSecondary + ";" +
+             "--accent:" + colors.accent + ";" +
+             "--accent-deep:" + darkenColor(colors.accent, 0.2) + ";" +
+             "--border:" + colors.border + ";" +
+             "--accent-dim:rgba(" + a + "," + d.accentDim + ");" +
+             "--grid-color:rgba(" + a + "," + d.gridColor + ");" +
+             "--notice-bg-warning:rgba(255,149,0," + d.notice + ");" +
+             "--notice-bg-info:rgba(0,161,255," + d.notice + ");" +
+             "--notice-bg-success:rgba(39,201,63," + d.notice + ");" +
+             "--hover-bg:rgba(" + a + "," + d.hover + ");" +
+             "--active-bg:rgba(" + a + "," + d.active + ");" +
+             "--focus-ring:" + colors.accent + ";" +
+             "--shadow-sm:rgba(0,0,0," + d.shadowSm + ");" +
+             "--shadow-md:rgba(0,0,0," + d.shadowMd + ");" +
+             "--glow:rgba(" + a + "," + d.glow + ");" +
+             "--glow-subtle:rgba(" + a + ",0.08);" +
+             "--navbar-bg-scrolled:rgba(" + b + "," + d.navbarScrolled + ");" +
+             "--contribution-1:rgba(" + a + ",0.2);" +
+             "--contribution-2:rgba(" + a + ",0.4);" +
+             "--contribution-3:rgba(" + a + ",0.6);" +
+             "--contribution-4:" + colors.accent + ";" +
+             "--divider-glow:rgba(" + a + ",0.4);" +
+             "--card-border-strong:rgba(" + a + "," + d.cardBorderStrong + ");" +
+             "--card-border-muted:rgba(" + a + "," + d.cardBorderMuted + ");" +
+             "--glass-border-top:" + (isL ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)") + ";" +
+             "--glass-border-bottom:" + (isL ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.5)") + ";" +
+             "--glass-border-side:rgba(255,255,255,0.03);" +
+             "--glass-outer-shadow:" + (isL ? "rgba(0,0,0,0.1)" : "rgba(0,0,0,0.4)") + ";" +
+             "--glass-hover-border:rgba(" + a + "," + (isL ? "0.25" : "0.15") + ");" +
+             "--btn-glass-border-top:" + (isL ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.08)") + ";" +
+             "--btn-glass-border-bottom:" + (isL ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.5)") + ";" +
+             "--btn-glass-shadow:" + (isL ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.4)") + ";" +
+             "--btn-glass-inner-tint:" + (isL ? "rgba(0,0,0,0.03)" : "rgba(" + a + ",0.03)") + ";" +
+             "--btn-glass-hover-border:" + (isL ? "rgba(0,0,0,0.2)" : "rgba(" + a + ",0.15)") + ";" +
+             "--btn-glass-active-glow:" + (isL ? "rgba(0,0,0,0.06)" : "rgba(" + a + ",0.05)") + ";" +
+             "--terminal-bg:" + colors.bgSecondary + ";" +
+             "--terminal-text:" + colors.textSecondary + ";" +
+             "--terminal-prompt:" + colors.accent + ";" +
+             "--terminal-cursor:" + colors.accent;
+    }.toString(),
+  };
+}
+
 // 导出（兼容 Node.js 和浏览器）
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
+    THEME_CONSTANTS,
     builtinSchemes,
     deriveConfig,
     hexToRgb,
@@ -293,5 +383,7 @@ if (typeof module !== "undefined" && module.exports) {
     isSchemeCompatible,
     getDefaultColors,
     buildCSSVariablesArray,
+    buildStyleString,
+    getInlineScriptHelpers,
   };
 }

@@ -1530,6 +1530,7 @@ class MomentsFeed {
   /**
    * 渲染音频附件
    * 自定义播放器：播放按钮 + 进度条 + 时间 + 波形装饰
+   * 集成 MediaManager 实现跨页面媒体互斥
    * @param {Object} att - 音频附件对象
    * @returns {HTMLElement}
    */
@@ -1540,6 +1541,9 @@ class MomentsFeed {
     const self = this;
     const audioContainer = document.createElement('div');
     audioContainer.className = 'moment-audio';
+
+    // 生成唯一 ID 用于 MediaManager 注册
+    const mediaId = 'moments-audio-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
     // 播放器主体
     const player = document.createElement('div');
@@ -1632,18 +1636,33 @@ class MomentsFeed {
       updateTimeDisplay();
     }
 
+    // 内部播放方法
+    function doPlay() {
+      audio.play().catch(function(err) {
+        if (err.name === 'NotAllowedError') {
+          doPause();
+        }
+      });
+    }
+
+    // 内部暂停方法
+    function doPause() {
+      audio.pause();
+    }
+
     // 切换播放状态
     function togglePlay() {
       if (audio.paused) {
-        // 暂停其他正在播放的音频
-        document.querySelectorAll('.moment-audio audio').forEach(function(a) {
-          if (a !== audio && !a.paused) {
-            a.pause();
-          }
-        });
-        audio.play();
+        // 通过 MediaManager 请求播放
+        if (window.MediaManager) {
+          window.MediaManager.play(mediaId);
+        }
+        doPlay();
       } else {
-        audio.pause();
+        doPause();
+        if (window.MediaManager) {
+          window.MediaManager.pause(mediaId);
+        }
       }
     }
 
@@ -1680,6 +1699,10 @@ class MomentsFeed {
       playBtn.setAttribute('aria-label', '播放音频');
       progressFill.style.width = '0%';
       audio.currentTime = 0;
+      // 通知 MediaManager
+      if (window.MediaManager) {
+        window.MediaManager.onEnded(mediaId);
+      }
     });
 
     audio.addEventListener('timeupdate', updateProgress);
@@ -1687,6 +1710,26 @@ class MomentsFeed {
     audio.addEventListener('loadedmetadata', function() {
       updateTimeDisplay();
     });
+
+    // 注册到 MediaManager
+    if (window.MediaManager) {
+      window.MediaManager.register(mediaId, {
+        type: 'audio',
+        play: doPlay,
+        pause: doPause,
+        stop: doPause,
+        getElement: function() { return audio; }
+      });
+
+      // 元素移除时注销
+      const observer = new MutationObserver(function(mutations) {
+        if (!document.body.contains(audioContainer)) {
+          window.MediaManager.unregister(mediaId);
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
 
     return audioContainer;
   }
@@ -1713,6 +1756,7 @@ class MomentsFeed {
    * 渲染视频附件
    * 自定义播放器：覆盖控件 + 霓虹进度条
    * iOS 特殊处理：使用原生视频全屏（webkitEnterFullscreen）
+   * 集成 MediaManager 实现跨页面媒体互斥
    * @param {Object} att - 视频附件对象
    * @returns {HTMLElement}
    */
@@ -1729,6 +1773,9 @@ class MomentsFeed {
     if (isMobile) {
       videoContainer.classList.add('is-mobile');
     }
+
+    // 生成唯一 ID 用于 MediaManager 注册
+    const mediaId = 'moments-video-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
     // 视频元素
     const video = document.createElement('video');
@@ -1827,9 +1874,16 @@ class MomentsFeed {
     // 切换播放状态
     function togglePlay() {
       if (video.paused) {
+        // 通过 MediaManager 请求播放
+        if (window.MediaManager) {
+          window.MediaManager.play(mediaId);
+        }
         video.play();
       } else {
         video.pause();
+        if (window.MediaManager) {
+          window.MediaManager.pause(mediaId);
+        }
       }
     }
 
@@ -2079,6 +2133,10 @@ class MomentsFeed {
       // 播放结束清除定时器并显示控件
       clearHideTimer();
       showControls();
+      // 通知 MediaManager
+      if (window.MediaManager) {
+        window.MediaManager.onEnded(mediaId);
+      }
     });
 
     video.addEventListener('timeupdate', updateProgress);
@@ -2138,6 +2196,33 @@ class MomentsFeed {
       video.addEventListener('webkitpresentationmodechanged', function() {
         handleFullscreenChange();
       });
+    }
+
+    // 注册到 MediaManager
+    if (window.MediaManager) {
+      window.MediaManager.register(mediaId, {
+        type: 'video',
+        play: function() {
+          video.play();
+        },
+        pause: function() {
+          video.pause();
+        },
+        stop: function() {
+          video.pause();
+          video.currentTime = 0;
+        },
+        getElement: function() { return video; }
+      });
+
+      // 元素移除时注销
+      const observer = new MutationObserver(function(mutations) {
+        if (!document.body.contains(videoContainer)) {
+          window.MediaManager.unregister(mediaId);
+          observer.disconnect();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
     }
 
     return videoContainer;

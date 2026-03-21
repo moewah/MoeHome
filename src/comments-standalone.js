@@ -1255,23 +1255,6 @@
         };
     };
 
-    /**
-     * 加载更多评论（已废弃）
-     * 现在采用限量一次性加载策略，不再支持无限滚动
-     */
-    Comments.prototype.loadMoreComments = async function() {
-        // 不再支持分页加载，按钮已隐藏
-        console.log('[Comments] 已禁用分页加载，当前采用限量一次性加载策略');
-    };
-
-    Comments.prototype.updateLoadMoreButton = function(loading) {
-        var btn = this.container.querySelector('#load-more-btn');
-        if (btn) {
-            btn.disabled = loading;
-            btn.textContent = loading ? '加载中...' : '加载更多';
-        }
-    };
-
     // ==================== 事件处理 ====================
     Comments.prototype.bindFormEvents = function() {
         var self = this;

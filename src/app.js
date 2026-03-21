@@ -39,9 +39,6 @@ function initPage() {
     // 初始化捐赠模态框
     initDonation();
 
-    // 初始化 RSS 翻转轮播
-    initRssFlipCarousel();
-
     // 初始化项目轮播
     initProjectsCarousel();
 
@@ -58,7 +55,7 @@ function initNavbar() {
     initNavbarBrandEffect();
     initNavbarActiveSection();
     initThemeDropdown();
-    initMobileSidebar();
+    initMobileNavDropdown();
     initCustomMenus();
 }
 
@@ -180,7 +177,7 @@ function initNavbarBrandEffect() {
 // 当前区域高亮（Intersection Observer + 滚动检测）
 // 注意：仅在锚点导航模式下启用滚动高亮，独立页面模式由点击/服务端控制高亮
 function initNavbarActiveSection() {
-    const navLinks = document.querySelectorAll('.nav-link, .nav-sidebar-link');
+    const navLinks = document.querySelectorAll('.nav-link, .nav-mobile-link');
     if (navLinks.length === 0) return;
 
     // 检测是否为锚点导航模式
@@ -299,22 +296,14 @@ function initNavbarActiveSection() {
 function initThemeDropdown() {
     const toggle = document.getElementById('nav-theme-toggle');
     const dropdown = document.getElementById('theme-dropdown');
-    const mobileThemeBtn = document.getElementById('nav-sidebar-theme');
 
     if (!dropdown) return;
 
-    // PC 端：点击按钮切换下拉菜单
+    // PC 端和移动端：点击按钮切换下拉菜单
     if (toggle) {
         toggle.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleThemeDropdown();
-        });
-    }
-
-    // 移动端：点击按钮循环切换模式
-    if (mobileThemeBtn) {
-        mobileThemeBtn.addEventListener('click', () => {
-            openMobileThemeSelector();
         });
     }
 
@@ -358,23 +347,13 @@ function initThemeDropdown() {
         });
     });
 
-    // 监听主题变化，更新下拉菜单和移动端图标
-    document.addEventListener('themechange', (e) => {
+    // 监听主题变化，更新下拉菜单
+    document.addEventListener('themechange', () => {
         updateThemeDropdown();
-        // 更新移动端图标
-        if (e.detail?.mode) {
-            updateMobileThemeIcon(e.detail.mode);
-        }
     });
 
     // 初始化下拉菜单内容
     updateThemeDropdown();
-
-    // 初始化移动端图标
-    if (typeof ThemeManager !== 'undefined') {
-        const savedTheme = ThemeManager.getSavedTheme();
-        updateMobileThemeIcon(savedTheme);
-    }
 }
 
 // 切换主题下拉菜单显示状态
@@ -395,6 +374,9 @@ function openThemeDropdown() {
     const dropdown = document.getElementById('theme-dropdown');
     const toggle = document.getElementById('nav-theme-toggle');
     if (!dropdown) return;
+
+    // 关闭其他下拉菜单（互斥逻辑）
+    closeMobileNavDropdown();
 
     // 动态定位：菜单右边缘与按钮右边缘对齐
     if (toggle) {
@@ -555,180 +537,108 @@ function selectThemeScheme(schemeId) {
     }
 }
 
-// 移动端：循环切换模式并更新图标
-function openMobileThemeSelector() {
-    if (typeof ThemeManager === 'undefined') return;
-    const newTheme = ThemeManager.toggle();
-    updateMobileThemeIcon(newTheme);
-}
-
-// 更新移动端主题按钮图标
-function updateMobileThemeIcon(theme) {
-    const mobileToggle = document.getElementById('nav-sidebar-theme');
-    if (!mobileToggle) return;
-
-    const iconMap = {
-        auto: 'fa-solid fa-desktop',
-        light: 'fa-solid fa-sun',
-        dark: 'fa-solid fa-moon'
-    };
-
-    const iconClass = iconMap[theme] || 'fa-solid fa-desktop';
-    const icon = mobileToggle.querySelector('i');
-    if (icon) {
-        icon.className = iconClass;
-    }
-}
-
-// 移动端侧边栏
-function initMobileSidebar() {
+// 移动端导航下拉菜单
+function initMobileNavDropdown() {
     const toggle = document.getElementById('navbar-toggle');
-    const sidebar = document.getElementById('nav-sidebar');
-    const overlay = document.getElementById('nav-overlay');
-    const closeBtn = document.getElementById('nav-sidebar-close');
+    const dropdown = document.getElementById('nav-mobile-dropdown');
 
-    if (!toggle || !sidebar || !overlay) return;
+    if (!toggle || !dropdown) return;
 
-    const open = () => {
-        sidebar.classList.add('open');
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    };
-
-    const close = () => {
-        sidebar.classList.remove('open');
-        sidebar.style.transform = '';
-        overlay.classList.remove('active');
-        document.body.style.overflow = '';
-        // 重置滑动状态
-        isSwiping = false;
-        swipeStartX = 0;
-        currentSwipeX = 0;
-    };
-
-    toggle.addEventListener('click', open);
-    if (closeBtn) closeBtn.addEventListener('click', close);
-    overlay.addEventListener('click', close);
-
-    // 点击链接后关闭
-    sidebar.querySelectorAll('.nav-sidebar-link').forEach(link => {
-        link.addEventListener('click', close);
+    // 点击按钮切换
+    toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMobileNavDropdown();
     });
 
-    // 移动端下拉菜单
-    sidebar.querySelectorAll('.nav-sidebar-dropdown-toggle').forEach(toggleBtn => {
+    // 点击外部关闭
+    document.addEventListener('click', (e) => {
+        if (dropdown.classList.contains('is-active') &&
+            !dropdown.contains(e.target) &&
+            e.target !== toggle) {
+            closeMobileNavDropdown();
+        }
+    });
+
+    // ESC 键关闭
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && dropdown.classList.contains('is-active')) {
+            closeMobileNavDropdown();
+            toggle.focus();
+        }
+    });
+
+    // 点击链接后关闭
+    dropdown.querySelectorAll('.nav-mobile-link').forEach(link => {
+        link.addEventListener('click', closeMobileNavDropdown);
+    });
+
+    // 子下拉菜单交互
+    dropdown.querySelectorAll('.nav-mobile-dropdown-toggle').forEach(toggleBtn => {
         toggleBtn.addEventListener('click', () => {
-            const dropdown = toggleBtn.closest('.nav-sidebar-dropdown');
-            if (dropdown) {
-                dropdown.classList.toggle('open');
+            const group = toggleBtn.closest('.nav-mobile-dropdown-group');
+            if (group) {
+                group.classList.toggle('is-open');
             }
         });
     });
+}
 
-    // ========== 滑动关闭手势 ==========
-    let isSwiping = false;
-    let swipeStartX = 0;
-    let currentSwipeX = 0;
-    const SWIPE_THRESHOLD = 80; // 触发关闭的最小滑动距离
-    const sidebarWidth = 280; // 侧边栏宽度
+// 切换移动端导航下拉菜单
+function toggleMobileNavDropdown() {
+    const dropdown = document.getElementById('nav-mobile-dropdown');
+    if (!dropdown) return;
 
-    // 触摸开始
-    sidebar.addEventListener('touchstart', (e) => {
-        if (!sidebar.classList.contains('open')) return;
-        isSwiping = true;
-        swipeStartX = e.touches[0].clientX;
-        sidebar.style.transition = 'none';
-    }, { passive: true });
+    const isActive = dropdown.classList.contains('is-active');
+    if (isActive) {
+        closeMobileNavDropdown();
+    } else {
+        openMobileNavDropdown();
+    }
+}
 
-    // 触摸移动
-    sidebar.addEventListener('touchmove', (e) => {
-        if (!isSwiping || !sidebar.classList.contains('open')) return;
+// 打开移动端导航下拉菜单
+function openMobileNavDropdown() {
+    const dropdown = document.getElementById('nav-mobile-dropdown');
+    const toggle = document.getElementById('navbar-toggle');
+    if (!dropdown) return;
 
-        currentSwipeX = e.touches[0].clientX;
-        const deltaX = currentSwipeX - swipeStartX;
+    // 关闭其他下拉菜单（互斥逻辑）
+    closeThemeDropdown();
 
-        // 只允许向右滑动（关闭方向）
-        if (deltaX > 0) {
-            const translateX = Math.min(deltaX, sidebarWidth);
-            sidebar.style.transform = `translateX(${translateX}px)`;
-        }
-    }, { passive: true });
+    dropdown.classList.add('is-active');
+    dropdown.setAttribute('aria-hidden', 'false');
+    if (toggle) {
+        toggle.setAttribute('aria-expanded', 'true');
+        const icon = toggle.querySelector('i');
+        if (icon) icon.className = 'fa-solid fa-xmark';
+    }
+}
 
-    // 触摸结束
-    sidebar.addEventListener('touchend', () => {
-        if (!isSwiping) return;
+// 关闭移动端导航下拉菜单
+function closeMobileNavDropdown() {
+    const dropdown = document.getElementById('nav-mobile-dropdown');
+    const toggle = document.getElementById('navbar-toggle');
+    if (!dropdown) return;
 
-        const deltaX = currentSwipeX - swipeStartX;
-        sidebar.style.transition = '';
-
-        // 滑动距离超过阈值则关闭，否则回弹
-        if (deltaX > SWIPE_THRESHOLD) {
-            close();
-        } else {
-            sidebar.style.transform = '';
-        }
-
-        isSwiping = false;
-    }, { passive: true });
-
-    // 边缘滑动打开侧边栏 - 从右侧边缘向左滑动
-    let edgeSwipeStartX = 0;
-    let isEdgeSwipe = false;
-
-    document.addEventListener('touchstart', (e) => {
-        // 从右边缘 20px 内开始滑动
-        const windowWidth = window.innerWidth;
-        if (e.touches[0].clientX > windowWidth - 20 && !sidebar.classList.contains('open')) {
-            isEdgeSwipe = true;
-            edgeSwipeStartX = e.touches[0].clientX;
-        }
-    }, { passive: true });
-
-    document.addEventListener('touchmove', (e) => {
-        if (!isEdgeSwipe) return;
-
-        const currentX = e.touches[0].clientX;
-        const deltaX = currentX - edgeSwipeStartX;
-
-        // 向左滑动打开（deltaX 为负值）
-        if (deltaX < 0 && Math.abs(deltaX) < sidebarWidth) {
-            e.preventDefault();
-            sidebar.style.transition = 'none';
-            sidebar.classList.add('open');
-            overlay.classList.add('active');
-            // 从右侧滑出：translateX(100%) -> translateX(0)
-            // 向左滑动时，deltaX 为负，所以用 100% + deltaX/siderWidth * 100%
-            const offset = sidebarWidth + deltaX; // deltaX 为负
-            sidebar.style.transform = `translateX(${offset}px)`;
-        }
-    }, { passive: false });
-
-    document.addEventListener('touchend', () => {
-        if (!isEdgeSwipe) return;
-
-        sidebar.style.transition = '';
-
-        const currentX = sidebar.style.transform;
-        const match = currentX.match(/translateX\(([-\d.]+)px\)/);
-
-        if (match) {
-            const translateX = parseFloat(match[1]);
-            // 滑动超过一半则完全打开，否则关闭
-            if (translateX < sidebarWidth / 2) {
-                sidebar.style.transform = '';
-            } else {
-                close();
-            }
-        }
-
-        isEdgeSwipe = false;
-    }, { passive: true });
+    dropdown.classList.remove('is-active');
+    dropdown.setAttribute('aria-hidden', 'true');
+    if (toggle) {
+        toggle.setAttribute('aria-expanded', 'false');
+        const icon = toggle.querySelector('i');
+        if (icon) icon.className = 'fa-solid fa-bars';
+    }
 }
 
 // 自定义菜单交互
 function initCustomMenus() {
-    // 桌面端 hover 展开已在 CSS 中处理
-    // 移动端点击展开在 initMobileSidebar 中处理
+    document.querySelectorAll('.nav-dropdown').forEach(d => {
+        const menu = d.querySelector('.nav-dropdown-menu');
+        const toggle = d.querySelector('.nav-dropdown-toggle');
+        if (!menu || !toggle) return;
+        d.addEventListener('mouseenter', () => {
+            menu.style.left = `${toggle.getBoundingClientRect().left}px`;
+        });
+    });
 }
 
 // ========== 捐赠模态框 ==========
@@ -2056,16 +1966,13 @@ function initProjectsCarousel() {
     }
 }
 
-// ========== RSS 卡片初始化（简化版）==========
-function initRssFlipCarousel() {
-    // RSS卡片已简化为静态布局，无需复杂的翻转逻辑
-    // 鼠标跟踪光晕效果已在initInteractions中处理
-}
-
 // ========== 音乐播放器模块 ==========
 /**
- * MusicPlayer - 简约音乐播放器组件
+ * MusicPlayer - 主页音频播放器组件
+ * 终端风格 · 强调色 · 微妙呼吸动画
  * 支持 Meting API (带备用API) 和本地音乐播放
+ * 包含进度条、时间显示、播放列表功能
+ * 集成 MediaManager 实现跨页面媒体互斥
  */
 class MusicPlayer {
     constructor(config) {
@@ -2076,6 +1983,7 @@ class MusicPlayer {
         this.isPlaying = false;
         this.isLoading = false;
         this.playMode = config.playMode || 'list'; // list, one, random
+        this.mediaId = 'homepage-music'; // MediaManager 注册 ID
 
         // DOM 元素
         this.elements = {};
@@ -2092,13 +2000,19 @@ class MusicPlayer {
             playIcon: document.getElementById('music-play-icon'),
             prevBtn: document.getElementById('music-prev'),
             nextBtn: document.getElementById('music-next'),
+            progress: document.getElementById('music-progress'),
             progressFill: document.getElementById('music-progress-fill'),
+            timeDisplay: document.getElementById('music-time'),
+            titleDisplay: document.getElementById('music-title'),
         };
 
         if (!this.elements.player) return;
 
         // 设置初始音量
         this.audio.volume = this.config.volume || 0.5;
+
+        // 注册到 MediaManager
+        this._registerToMediaManager();
 
         // 绑定事件
         this.bindEvents();
@@ -2111,6 +2025,41 @@ class MusicPlayer {
         }
     }
 
+    /**
+     * 注册到 MediaManager
+     */
+    _registerToMediaManager() {
+        if (!window.MediaManager) {
+            console.warn('[MusicPlayer] MediaManager 未加载');
+            return;
+        }
+
+        const self = this;
+        window.MediaManager.register(this.mediaId, {
+            type: 'music',
+            play: function() {
+                // 仅设置状态，实际播放由用户触发
+                // 如果已有播放列表，尝试继续播放
+                if (self.playlist.length > 0 && !self.isPlaying) {
+                    self._doPlay();
+                }
+            },
+            pause: function() {
+                if (self.isPlaying) {
+                    self._doPause();
+                }
+            },
+            stop: function() {
+                if (self.isPlaying) {
+                    self._doPause();
+                }
+            },
+            getElement: function() {
+                return self.audio;
+            }
+        });
+    }
+
     bindEvents() {
         // 播放/暂停
         this.elements.playBtn?.addEventListener('click', () => this.togglePlay());
@@ -2118,6 +2067,12 @@ class MusicPlayer {
         // 上一曲/下一曲
         this.elements.prevBtn?.addEventListener('click', () => this.prev());
         this.elements.nextBtn?.addEventListener('click', () => this.next());
+
+        // 进度条点击跳转
+        this.elements.progress?.addEventListener('click', (e) => this.seekTo(e));
+
+        // 进度条键盘支持
+        this.elements.progress?.addEventListener('keydown', (e) => this.handleProgressKeydown(e));
 
         // 音频事件
         this.audio.addEventListener('timeupdate', () => this.updateProgress());
@@ -2127,6 +2082,7 @@ class MusicPlayer {
         this.audio.addEventListener('waiting', () => this.setLoading(true));
         this.audio.addEventListener('canplay', () => this.setLoading(false));
         this.audio.addEventListener('error', (e) => this.onError(e));
+        this.audio.addEventListener('loadedmetadata', () => this.updateTimeDisplay());
     }
 
     // 加载 Meting 播放列表（支持备用 API）
@@ -2160,11 +2116,21 @@ class MusicPlayer {
                 const data = await response.json();
 
                 if (Array.isArray(data) && data.length > 0) {
-                    this.playlist = data.map(song => song.url).filter(Boolean);
+                    // 保存完整的歌曲信息：{ url, name }
+                    // API返回格式: { name/title, artist, url, ... }
+                    this.playlist = data.map(song => ({
+                        url: song.url,
+                        name: song.name || song.title || song.artist
+                            ? `${song.name || song.title || '未知歌曲'}${song.artist ? ' - ' + song.artist : ''}`
+                            : '未知歌曲'
+                    })).filter(item => item.url);
 
                     if (this.playlist.length > 0) {
                         this.currentIndex = 0;
                         console.log(`MoeWah Music: 成功加载 ${this.playlist.length} 首歌曲 (API ${i + 1})`);
+
+                        // 更新标题显示
+                        this.updateTitleDisplay();
 
                         if (this.config.autoplay) {
                             this.play();
@@ -2190,15 +2156,60 @@ class MusicPlayer {
             return;
         }
 
-        this.playlist = local.filter(url => typeof url === 'string' && url.trim());
+        // 保存歌曲信息：{ url, name }，从URL提取文件名
+        this.playlist = local
+            .filter(url => typeof url === 'string' && url.trim())
+            .map(url => ({
+                url: url,
+                name: this.extractFilenameFromUrl(url)
+            }));
+
         this.currentIndex = 0;
 
         if (this.playlist.length > 0) {
             console.log(`MoeWah Music: 成功加载 ${this.playlist.length} 首本地音乐`);
 
+            // 更新标题显示
+            this.updateTitleDisplay();
+
             if (this.config.autoplay) {
                 this.play();
             }
+        }
+    }
+
+    /**
+     * 从URL中提取文件名（去除扩展名，解码URL编码）
+     */
+    extractFilenameFromUrl(url) {
+        try {
+            const pathname = new URL(url, window.location.origin).pathname;
+            // 先解码 URL 编码字符（如 %20 -> 空格）
+            const decodedPath = decodeURIComponent(pathname);
+            const filename = decodedPath.split('/').pop() || '未知歌曲';
+            // 移除文件扩展名
+            const lastDot = filename.lastIndexOf('.');
+            return lastDot > 0 ? filename.substring(0, lastDot) : filename;
+        } catch (e) {
+            // URL解析失败时，尝试简单提取
+            const decodedUrl = decodeURIComponent(url);
+            const parts = decodedUrl.split('/');
+            const filename = parts[parts.length - 1] || '未知歌曲';
+            const lastDot = filename.lastIndexOf('.');
+            return lastDot > 0 ? filename.substring(0, lastDot) : filename;
+        }
+    }
+
+    /**
+     * 更新歌曲名称显示
+     */
+    updateTitleDisplay() {
+        if (!this.elements.titleDisplay) return;
+
+        const song = this.playlist[this.currentIndex];
+        const titleSpan = this.elements.titleDisplay.querySelector('span');
+        if (titleSpan && song) {
+            titleSpan.textContent = song.name || '未知歌曲';
         }
     }
 
@@ -2211,16 +2222,30 @@ class MusicPlayer {
         }
     }
 
+    /**
+     * 播放 - 通过 MediaManager 请求
+     */
     play() {
         if (this.playlist.length === 0) return;
 
-        const url = this.playlist[this.currentIndex];
-        if (!url) {
+        // 通过 MediaManager 请求播放（自动暂停其他媒体）
+        if (window.MediaManager) {
+            window.MediaManager.play(this.mediaId);
+        }
+        this._doPlay();
+    }
+
+    /**
+     * 内部播放方法
+     */
+    _doPlay() {
+        const song = this.playlist[this.currentIndex];
+        if (!song || !song.url) {
             this.next();
             return;
         }
 
-        this.audio.src = url;
+        this.audio.src = song.url;
         this.audio.play().catch(err => {
             if (err.name === 'NotAllowedError') {
                 this.onPause();
@@ -2228,7 +2253,21 @@ class MusicPlayer {
         });
     }
 
+    /**
+     * 暂停 - 通过 MediaManager
+     */
     pause() {
+        this._doPause();
+        // 通知 MediaManager
+        if (window.MediaManager) {
+            window.MediaManager.pause(this.mediaId);
+        }
+    }
+
+    /**
+     * 内部暂停方法
+     */
+    _doPause() {
         this.audio.pause();
     }
 
@@ -2240,6 +2279,9 @@ class MusicPlayer {
         } else {
             this.currentIndex = (this.currentIndex - 1 + this.playlist.length) % this.playlist.length;
         }
+
+        // 更新标题显示
+        this.updateTitleDisplay();
 
         if (this.isPlaying) {
             this.play();
@@ -2255,8 +2297,45 @@ class MusicPlayer {
             this.currentIndex = (this.currentIndex + 1) % this.playlist.length;
         }
 
+        // 更新标题显示
+        this.updateTitleDisplay();
+
         if (this.isPlaying) {
             this.play();
+        }
+    }
+
+    // 进度条跳转
+    seekTo(e) {
+        if (!this.audio.duration || !isFinite(this.audio.duration)) return;
+
+        const rect = this.elements.progress.getBoundingClientRect();
+        const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        this.audio.currentTime = percent * this.audio.duration;
+    }
+
+    // 进度条键盘支持
+    handleProgressKeydown(e) {
+        if (!this.audio.duration || !isFinite(this.audio.duration)) return;
+
+        const step = 5; // 5秒
+        switch (e.key) {
+            case 'ArrowLeft':
+                e.preventDefault();
+                this.audio.currentTime = Math.max(0, this.audio.currentTime - step);
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                this.audio.currentTime = Math.min(this.audio.duration, this.audio.currentTime + step);
+                break;
+            case 'Home':
+                e.preventDefault();
+                this.audio.currentTime = 0;
+                break;
+            case 'End':
+                e.preventDefault();
+                this.audio.currentTime = this.audio.duration;
+                break;
         }
     }
 
@@ -2265,11 +2344,28 @@ class MusicPlayer {
             const progress = (this.audio.currentTime / this.audio.duration) * 100;
             this.elements.progressFill.style.width = `${progress}%`;
         }
+        this.updateTimeDisplay();
+    }
+
+    updateTimeDisplay() {
+        if (!this.elements.timeDisplay) return;
+
+        const current = this.formatTime(this.audio.currentTime);
+        const duration = this.formatTime(this.audio.duration);
+        this.elements.timeDisplay.textContent = `${current} / ${duration}`;
+    }
+
+    formatTime(seconds) {
+        if (isNaN(seconds) || !isFinite(seconds)) return '0:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 
     onPlay() {
         this.isPlaying = true;
         this.elements.playBtn?.classList.add('playing');
+        this.elements.player?.classList.add('playing');
         if (this.elements.playIcon) {
             this.elements.playIcon.className = 'fa-solid fa-pause';
         }
@@ -2280,6 +2376,7 @@ class MusicPlayer {
     onPause() {
         this.isPlaying = false;
         this.elements.playBtn?.classList.remove('playing');
+        this.elements.player?.classList.remove('playing');
         if (this.elements.playIcon) {
             this.elements.playIcon.className = 'fa-solid fa-play';
         }
@@ -2288,6 +2385,11 @@ class MusicPlayer {
     }
 
     onEnded() {
+        // 通知 MediaManager 媒体结束
+        if (window.MediaManager) {
+            window.MediaManager.onEnded(this.mediaId);
+        }
+
         if (this.playMode === 'one') {
             this.play();
         } else {
@@ -2297,11 +2399,28 @@ class MusicPlayer {
 
     onError() {
         this.setLoading(false);
+        // 通知 MediaManager
+        if (window.MediaManager) {
+            window.MediaManager.onEnded(this.mediaId);
+        }
         setTimeout(() => this.next(), 1000);
     }
 
     setLoading(loading) {
         this.isLoading = loading;
+    }
+
+    /**
+     * 销毁播放器
+     */
+    destroy() {
+        this.audio.pause();
+        this.audio.src = '';
+
+        // 从 MediaManager 注销
+        if (window.MediaManager) {
+            window.MediaManager.unregister(this.mediaId);
+        }
     }
 }
 

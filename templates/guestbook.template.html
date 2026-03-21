@@ -35,42 +35,201 @@
 
         <!-- Critical CSS: 留言板页面特定样式 -->
         <style>
-            /* ========== 防止 FOUC 的通用隐藏样式 ========== */
-            .theme-dropdown {
-                position: fixed;
-                top: calc(var(--navbar-height) + 8px);
-                z-index: 100;
-                opacity: 0;
-                visibility: hidden;
-                pointer-events: none;
-            }
-            .theme-dropdown.is-active {
-                opacity: 1;
-                visibility: visible;
-                pointer-events: auto;
+            /* ========== 默认主题变量由 build.js 注入 ========== */
+            :root {
+                --navbar-height: 56px;
+                --navbar-bg: transparent;
+                --z-dropdown: 600;
+                --radius-md: 12px;
+                {{DEFAULT_THEME_VARS}}
             }
 
-            .nav-sidebar {
+            /* ========== Reset & Base ========== */
+            *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+            html { scroll-behavior: smooth; height: 100%; -webkit-text-size-adjust: 100%; }
+            body {
+                font-family: "Avenir Next", "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+                background: var(--bg-primary);
+                color: var(--text-primary);
+                overflow-x: hidden;
+                overflow-y: auto;
+                min-height: 100%;
+                position: relative;
+            }
+
+            /* ========== Navigation Bar ========== */
+            .navbar {
                 position: fixed;
                 top: 0;
+                left: 0;
                 right: 0;
-                height: 100vh;
-                transform: translateX(100%);
-                z-index: 1002;
+                height: var(--navbar-height);
+                background: var(--navbar-bg);
+                z-index: 1000;
+                transition: background 0.3s ease;
             }
-            .nav-sidebar.open {
-                transform: translateX(0);
+            .navbar.scrolled {
+                background: var(--navbar-bg-scrolled);
+                border-bottom: none;
+                box-shadow: inset 0 -1px 0 0 var(--border);
             }
-            .nav-overlay {
+            .navbar-inner {
+                max-width: 720px;
+                margin: 0 auto;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 24px;
+                gap: 24px;
+            }
+            .navbar-brand {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                text-decoration: none;
+                color: var(--text-primary);
+                font-size: 16px;
+                font-weight: 500;
+            }
+            .navbar-brand .prompt, .navbar-brand .brand-name { color: var(--accent); }
+            .navbar-menu { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; }
+            .nav-link {
+                position: relative;
+                padding: 8px 16px;
+                color: var(--text-secondary);
+                text-decoration: none;
+                font-size: 14px;
+                font-weight: 500;
+                transition: color 0.2s ease;
+                white-space: nowrap;
+            }
+            .nav-link.active, .nav-link:hover { color: var(--accent); }
+            .navbar-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+            .nav-theme-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                background: none;
+                border: none;
+                border-radius: 8px;
+                color: var(--text-secondary);
+                cursor: pointer;
+            }
+            .nav-theme-toggle:hover { color: var(--accent); }
+            .navbar-toggle { display: none; width: 36px; height: 36px; background: none; border: none; border-radius: 8px; color: var(--text-secondary); cursor: pointer; }
+
+            /* ========== Theme & Mobile Dropdowns (强制隐藏，防止闪烁) ========== */
+            .theme-dropdown,
+            .nav-mobile-dropdown {
                 position: fixed;
-                inset: 0;
-                opacity: 0;
-                visibility: hidden;
-                z-index: 1001;
+                top: calc(var(--navbar-height) + 8px);
+                z-index: var(--z-dropdown);
+                min-width: 180px;
+                max-width: 280px;
+                background: var(--bg-primary);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-md);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+                opacity: 0 !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+                transform: translateY(-8px);
+                transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
             }
-            .nav-overlay.active {
-                opacity: 1;
-                visibility: visible;
+            .theme-dropdown { right: 24px; }
+            .nav-mobile-dropdown { right: 16px; }
+            .theme-dropdown.is-active,
+            .nav-mobile-dropdown.is-active {
+                opacity: 1 !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+                transform: translateY(0);
+            }
+
+            /* Theme dropdown inner styles */
+            .theme-section { padding: 4px 0; }
+            .theme-section-label {
+                padding: 6px 12px 2px;
+                font-size: 10px;
+                font-weight: 600;
+                color: var(--text-secondary);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .theme-mode-list { display: flex; flex-direction: column; }
+            .theme-mode-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px 12px;
+                background: none;
+                border: none;
+                color: var(--text-primary);
+                cursor: pointer;
+                font-size: 12px;
+                text-align: left;
+                width: 100%;
+                transition: background 0.15s ease;
+            }
+            .theme-mode-item:hover { background: var(--hover-bg); }
+            .theme-mode-item.is-active { color: var(--accent); background: var(--active-bg); }
+            .theme-mode-item i {
+                width: 20px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 4px;
+                background: var(--bg-secondary);
+                font-size: 12px;
+            }
+            .theme-divider { height: 1px; background: var(--border); margin: 2px 0; }
+            .theme-scheme-list { padding: 0; max-height: 200px; overflow-y: auto; }
+            .theme-scheme-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px 12px;
+                cursor: pointer;
+                transition: background 0.15s ease;
+                font-size: 12px;
+            }
+            .theme-scheme-item:hover { background: var(--hover-bg); }
+            .theme-scheme-item.is-active { background: var(--active-bg); }
+            .theme-scheme-item-icon {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                background: var(--scheme-bg-primary, var(--bg-secondary));
+                border: 1px solid var(--scheme-border, var(--border));
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+            .theme-scheme-item-icon::after {
+                content: '';
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: var(--scheme-accent, var(--accent));
+            }
+
+            /* ========== Responsive - Mobile ========== */
+            @media (max-width: 768px) {
+                .navbar-menu { display: none; }
+                .nav-theme-toggle { display: flex; }
+                .navbar-toggle { display: flex; }
+                .navbar-inner { padding: 0 16px; gap: 8px; }
+                .navbar-brand { font-size: 14px; }
+            }
+            @media (min-width: 769px) {
+                .navbar-menu { display: flex; }
+                .nav-theme-toggle { display: flex; }
+                .navbar-toggle { display: none; }
             }
 
             /* ========== 留言板容器 ========== */
@@ -866,6 +1025,8 @@
         <noscript><link rel="stylesheet" href="../style.css"></noscript>
 
         <!-- JS Files -->
+        <!-- MediaManager 必须在其他脚本之前加载 -->
+        <script src="../media-manager.js" defer></script>
         <script src="../config.js" defer></script>
         <script src="../theme-utils.js" defer></script>
     </head>

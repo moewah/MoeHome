@@ -18,9 +18,13 @@
   if (typeof window === 'undefined') return;
 
 const ThemeManager = {
-  // ========== 常量定义 ==========
-  THEME_ATTRIBUTE: "data-theme",
-  STORAGE_KEY: "homepage_theme",
+  // ========== 常量定义（从内联脚本注入的 THEME_CONSTANTS 获取）==========
+  get THEME_ATTRIBUTE() {
+    return window.THEME_CONSTANTS?.THEME_ATTR || "data-theme";
+  },
+  get STORAGE_KEY() {
+    return window.THEME_CONSTANTS?.STORAGE_KEY || "homepage_theme";
+  },
 
   /**
    * 内置预设配色方案（从内联脚本注入的全局变量获取）
@@ -155,14 +159,13 @@ const ThemeManager = {
 
   /**
    * 从 config 加载主题配置
+   * 存储**原始颜色对象**，而非 CSS 变量对象
    */
   loadConfig() {
     const config = window.HOMEPAGE_CONFIG?.theme;
     if (!config) {
-      const lightColors = this.getDefaultColors("light");
-      const darkColors = this.getDefaultColors("dark");
-      this.themes.light.colors = this.buildColors("light", lightColors);
-      this.themes.dark.colors = this.buildColors("dark", darkColors);
+      this.themes.light.colors = this.getDefaultColors("light");
+      this.themes.dark.colors = this.getDefaultColors("dark");
       return;
     }
 
@@ -184,12 +187,12 @@ const ThemeManager = {
     const darkColors = this.getDefaultColors("dark");
 
     if (config.light && !config.defaults) {
-      this.themes.light.colors = this.buildColors("light", { ...lightColors, ...config.light });
-      this.themes.dark.colors = this.buildColors("dark", { ...darkColors, ...config.dark });
+      this.themes.light.colors = { ...lightColors, ...config.light };
+      this.themes.dark.colors = { ...darkColors, ...config.dark };
       console.info("[Theme] 检测到旧版配置格式，已自动迁移");
     } else {
-      this.themes.light.colors = this.buildColors("light", lightColors);
-      this.themes.dark.colors = this.buildColors("dark", darkColors);
+      this.themes.light.colors = lightColors;
+      this.themes.dark.colors = darkColors;
     }
   },
 
@@ -346,6 +349,7 @@ const ThemeManager = {
 
   /**
    * 应用主题到 DOM
+   * 使用内联脚本注入的全局函数，避免重复定义计算逻辑
    */
   applyTheme(themeName) {
     const scheme = this.getActiveScheme(themeName);
@@ -359,77 +363,11 @@ const ThemeManager = {
 
     document.documentElement.setAttribute(this.THEME_ATTRIBUTE, themeName);
 
-    const cssVars = this.buildCSSVariablesArray(colors, themeName);
-    cssVars.forEach(([property, value]) => {
-      document.documentElement.style.setProperty(property, value);
-    });
-  },
-
-  /**
-   * 构建 CSS 变量数组
-   */
-  buildCSSVariablesArray(colors, mode) {
-    const derive = this.deriveConfig[mode] || {};
-    const accentRgb = this.hexToRgb(colors.accent);
-    const bgPrimaryRgb = this.hexToRgb(colors.bgPrimary);
-    const isLight = mode === "light";
-
-    return [
-      ["--bg-primary", colors.bgPrimary],
-      ["--bg-secondary", colors.bgSecondary],
-      ["--text-primary", colors.textPrimary],
-      ["--text-secondary", colors.textSecondary],
-      ["--accent", colors.accent],
-      ["--accent-rgb", accentRgb],
-      ["--accent-deep", this.darkenColor(colors.accent, 0.2)],
-      ["--border", colors.border],
-      ["--accent-dim", `rgba(${accentRgb},${derive.accentDim || 0.1})`],
-      ["--grid-color", `rgba(${accentRgb},${derive.gridColor || 0.05})`],
-      ["--notice-bg-warning", `rgba(255,149,0,${derive.notice || 0.08})`],
-      ["--notice-bg-info", `rgba(0,161,255,${derive.notice || 0.08})`],
-      ["--notice-bg-success", `rgba(39,201,63,${derive.notice || 0.08})`],
-      ["--hover-bg", `rgba(${accentRgb},${derive.hover || 0.08})`],
-      ["--active-bg", `rgba(${accentRgb},${derive.active || 0.15})`],
-      ["--focus-ring", colors.accent],
-      ["--shadow-sm", `rgba(0,0,0,${derive.shadowSm || 0.05})`],
-      ["--shadow-md", `rgba(0,0,0,${derive.shadowMd || 0.1})`],
-      ["--glow", `rgba(${accentRgb},${derive.glow || 0.2})`],
-      ["--glow-subtle", `rgba(${accentRgb},0.08)`],
-      ["--navbar-bg-scrolled", `rgba(${bgPrimaryRgb},${derive.navbarScrolled || 1})`],
-      ["--contribution-1", `rgba(${accentRgb},0.2)`],
-      ["--contribution-2", `rgba(${accentRgb},0.4)`],
-      ["--contribution-3", `rgba(${accentRgb},0.6)`],
-      ["--contribution-4", colors.accent],
-      ["--divider-glow", `rgba(${accentRgb},0.4)`],
-      ["--card-border-strong", `rgba(${accentRgb},${derive.cardBorderStrong || 0.5})`],
-      ["--card-border-muted", `rgba(${accentRgb},${derive.cardBorderMuted || 0.25})`],
-      ["--glass-border-top", isLight ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.08)"],
-      ["--glass-border-bottom", isLight ? "rgba(0,0,0,0.08)" : "rgba(0,0,0,0.5)"],
-      ["--glass-border-side", isLight ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.03)"],
-      ["--glass-outer-shadow", isLight ? "rgba(0,0,0,0.1)" : "rgba(0,0,0,0.4)"],
-      ["--glass-hover-border", `rgba(${accentRgb},${isLight ? "0.25" : "0.15"})`],
-      ["--btn-glass-border-top", isLight ? "rgba(0,0,0,0.15)" : "rgba(255,255,255,0.08)"],
-      ["--btn-glass-border-bottom", isLight ? "rgba(0,0,0,0.2)" : "rgba(0,0,0,0.5)"],
-      ["--btn-glass-shadow", isLight ? "rgba(0,0,0,0.15)" : "rgba(0,0,0,0.4)"],
-      ["--btn-glass-inner-tint", isLight ? "rgba(0,0,0,0.03)" : `rgba(${accentRgb},0.03)`],
-      ["--btn-glass-hover-border", isLight ? "rgba(0,0,0,0.2)" : `rgba(${accentRgb},0.15)`],
-      ["--btn-glass-active-glow", isLight ? "rgba(0,0,0,0.06)" : `rgba(${accentRgb},0.05)`],
-      ["--terminal-bg", colors.bgSecondary],
-      ["--terminal-text", colors.textSecondary],
-      ["--terminal-prompt", colors.accent],
-      ["--terminal-cursor", colors.accent],
-    ];
-  },
-
-  /**
-   * 构建完整颜色对象（用于初始化 themes）
-   */
-  buildColors(mode, colors) {
-    const result = {};
-    this.buildCSSVariablesArray(colors, mode).forEach(([key, value]) => {
-      result[key] = value;
-    });
-    return result;
+    // 使用注入的全局函数构建 CSS 变量字符串
+    const helpers = window.THEME_HELPERS;
+    if (helpers && helpers.buildStyleString) {
+      document.documentElement.style.cssText = helpers.buildStyleString(colors, themeName);
+    }
   },
 
   /**
@@ -451,35 +389,6 @@ const ThemeManager = {
     } else if (mediaQuery.addListener) {
       mediaQuery.addListener(handleChange);
     }
-  },
-
-  // ========== 工具函数 ==========
-
-  /**
-   * Hex 转 RGB 字符串
-   */
-  hexToRgb(hex) {
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    if (result) {
-      return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
-    }
-    const shortResult = /^#?([a-f\d])([a-f\d])([a-f\d])$/i.exec(hex);
-    if (shortResult) {
-      return `${parseInt(shortResult[1] + shortResult[1], 16)}, ${parseInt(shortResult[2] + shortResult[2], 16)}, ${parseInt(shortResult[3] + shortResult[3], 16)}`;
-    }
-    console.warn("[Theme] 无效的颜色格式:", hex);
-    return "0, 0, 0";
-  },
-
-  /**
-   * 将 hex 颜色加深指定比例
-   */
-  darkenColor(hex, amount) {
-    const rgb = this.hexToRgb(hex).split(", ").map(Number);
-    const darkened = rgb.map((channel) =>
-      Math.max(0, Math.round(channel * (1 - amount))),
-    );
-    return `#${darkened.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
   },
 
   // ========== 事件系统 ==========

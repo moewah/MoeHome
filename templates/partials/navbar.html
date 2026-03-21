@@ -19,7 +19,7 @@
                 <i class="fa-solid fa-palette"></i>
             </button>
             <!-- Mobile Menu Toggle -->
-            <button class="navbar-toggle" id="navbar-toggle" aria-label="菜单">
+            <button class="navbar-toggle" id="navbar-toggle" aria-label="菜单" aria-expanded="false">
                 <i class="fa-solid fa-bars"></i>
             </button>
         </div>
@@ -59,24 +59,9 @@
     </div>
 </div>
 
-<!-- Mobile Sidebar Overlay -->
-<div class="nav-overlay" id="nav-overlay"></div>
-
-<!-- Mobile Sidebar -->
-<aside class="nav-sidebar" id="nav-sidebar">
-    <div class="nav-sidebar-header">
-        <span class="nav-sidebar-title">菜单</span>
-        <button class="nav-sidebar-close" id="nav-sidebar-close" aria-label="关闭菜单">
-            <i class="fa-solid fa-xmark"></i>
-        </button>
+<!-- Mobile Nav Dropdown Menu - 移动端导航下拉菜单 -->
+<div class="nav-mobile-dropdown" id="nav-mobile-dropdown" aria-hidden="true">
+    <div class="nav-mobile-dropdown-inner">
+        {{NAV_LINKS_MOBILE_DROPDOWN}}
     </div>
-    <nav class="nav-sidebar-body">
-        {{NAV_LINKS_MOBILE}}
-    </nav>
-    <div class="nav-sidebar-footer">
-        <button class="nav-sidebar-theme" id="nav-sidebar-theme" aria-label="主题模式">
-            <i class="fa-solid fa-desktop"></i>
-            <span>主题模式</span>
-        </button>
-    </div>
-</aside>
+</div>

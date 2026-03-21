@@ -50,6 +50,7 @@ window.HOMEPAGE_CONFIG = {
     // 动态页面
     moments: {
       title: "动态",
+      icon: "fa-solid fa-bolt", // 菜单图标
       tagline: "我的碎片化分享，这里记录分享实用经验、生活点滴、瞬间感悟。",
       description: "个人动态，记录生活点滴与瞬间感悟",
       keywords: ["动态", "瞬间", "生活记录"],
@@ -57,6 +58,7 @@ window.HOMEPAGE_CONFIG = {
     // 留言板页面
     guestbook: {
       title: "留言",
+      icon: "fa-solid fa-comments", // 菜单图标
       tagline: "欢迎在这里留下你的足迹，分享你的想法和建议。",
       description: "留言板，欢迎留下你的信号",
       keywords: ["留言板", "评论", "交流"],
@@ -93,7 +95,25 @@ window.HOMEPAGE_CONFIG = {
     },
 
     // 自定义二级菜单
-    menus: [], // 默认空
+    menus: [
+      // 示例配置 - 可删除或修改
+      // {
+      //   name: "Resources",           // 菜单名称
+      //   icon: "fa-solid fa-bookmark", // 可选，自定义图标（Font Awesome 类名）
+      //   items: [
+      //     {
+      //       name: "工具推荐",
+      //       url: "https://example.com/tools",
+      //       external: true,           // 是否新标签打开
+      //     },
+      //     {
+      //       name: "友情链接",
+      //       url: "https://example.com/links",
+      //       external: true,
+      //     },
+      //   ],
+      // },
+    ], // 默认空数组 = 不显示自定义菜单
   },
 
   // ========== 个人信息 ==========
@@ -187,6 +207,7 @@ window.HOMEPAGE_CONFIG = {
       apis: [
         "https://api.i-meto.com/meting/api?server=:server&type=:type&id=:id&r=:r",
         "https://api.injahow.cn/meting/?server=:server&type=:type&id=:id",
+        "https://api.moeyao.cn/meting/?server=:server&type=:type&id=:id",
       ],
     },
 
