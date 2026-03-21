@@ -2065,8 +2065,8 @@ class MusicPlayer {
         this.elements.playBtn?.addEventListener('click', () => this.togglePlay());
 
         // 上一曲/下一曲
-        this.elements.prevBtn?.addEventListener('click', () => this.prev());
-        this.elements.nextBtn?.addEventListener('click', () => this.next());
+        this.elements.prevBtn?.addEventListener('click', () => this.prev(true));
+        this.elements.nextBtn?.addEventListener('click', () => this.next(true));
 
         // 进度条点击跳转
         this.elements.progress?.addEventListener('click', (e) => this.seekTo(e));
@@ -2271,7 +2271,7 @@ class MusicPlayer {
         this.audio.pause();
     }
 
-    prev() {
+    prev(forcePlay = false) {
         if (this.playlist.length === 0) return;
 
         if (this.playMode === 'random') {
@@ -2283,12 +2283,12 @@ class MusicPlayer {
         // 更新标题显示
         this.updateTitleDisplay();
 
-        if (this.isPlaying) {
+        if (forcePlay || this.isPlaying) {
             this.play();
         }
     }
 
-    next() {
+    next(forcePlay = false) {
         if (this.playlist.length === 0) return;
 
         if (this.playMode === 'random') {
@@ -2300,7 +2300,7 @@ class MusicPlayer {
         // 更新标题显示
         this.updateTitleDisplay();
 
-        if (this.isPlaying) {
+        if (forcePlay || this.isPlaying) {
             this.play();
         }
     }
@@ -2393,7 +2393,7 @@ class MusicPlayer {
         if (this.playMode === 'one') {
             this.play();
         } else {
-            this.next();
+            this.next(true);
         }
     }
 
