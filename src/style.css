@@ -1130,7 +1130,7 @@ body {
 .name {
     font-family: "JetBrains Mono", monospace;
     font-size: clamp(2rem, 6vw, 3.5rem);
-    font-weight: 700;
+    font-weight: 600;
     margin-bottom: var(--space-3);
     letter-spacing: -0.02em;
     color: var(--text-primary);
@@ -6670,24 +6670,26 @@ a:focus-visible,
 .guestbook-page-header h1,
 .moments-page-header h1 {
     font-family: var(--font-mono);
-    font-size: clamp(2rem, 6vw, 3.5rem);
-    font-weight: 700;
+    font-size: clamp(1.75rem, 5vw, 2.75rem);
+    font-weight: 600;
     margin: 0;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.04em; /* 东方优雅：适度呼吸感 */
     background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
+/* 标语：限定宽度 + 紧凑字间距 + 居中 */
 .guestbook-page-header p,
 .moments-page-header p {
     color: var(--text-secondary);
-    margin-top: var(--space-2);
+    margin: var(--space-2) auto 0; /* 居中 */
     font-size: 1rem;
     font-weight: 300;
     line-height: 1.6;
     letter-spacing: 0.02em;
+    max-width: 340px; /* 限定宽度，东方优雅的阅读宽度 */
 }
 
 /* ========== 响应式适配 ========== */
@@ -6700,6 +6702,7 @@ a:focus-visible,
     .guestbook-page-header p,
     .moments-page-header p {
         font-size: 0.875rem;
+        max-width: 280px; /* 移动端适当收窄 */
     }
 }
 

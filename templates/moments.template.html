@@ -274,30 +274,34 @@
                 max-width: 600px;
             }
 
+            /* 页面头部：东方优雅排版 */
             .moments-page-header {
                 text-align: center;
                 padding: var(--space-10) 0 var(--space-6);
             }
 
+            /* 标题：统一字号 + 字重600 + 东方留白字间距 */
             .moments-page-header h1 {
                 font-family: "JetBrains Mono", monospace;
-                font-size: clamp(2rem, 6vw, 3.5rem);
-                font-weight: 700;
+                font-size: clamp(1.75rem, 5vw, 2.75rem);
+                font-weight: 600;
                 margin: 0;
-                letter-spacing: -0.02em;
+                letter-spacing: 0.04em; /* 东方优雅：适度呼吸感 */
                 background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
                 background-clip: text;
             }
 
+            /* 标语：限定宽度 + 紧凑字间距 + 居中 */
             .moments-page-header p {
                 color: var(--text-secondary);
-                margin-top: var(--space-2);
+                margin: var(--space-2) auto 0;
                 font-size: 1rem;
                 font-weight: 300;
                 line-height: 1.6;
                 letter-spacing: 0.02em;
+                max-width: 340px;
             }
 
             /* ========== 分割线 ========== */
@@ -424,6 +428,7 @@
             @media (max-width: 768px) {
                 .moments-page-header p {
                     font-size: 0.875rem;
+                    max-width: 280px;
                 }
 
                 .moments-section {
