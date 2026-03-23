@@ -443,8 +443,21 @@ body {
     background: var(--hover-bg);
 }
 
-/* Theme Dropdown Menu - 统一的主题设置下拉菜单 */
+/* ========================================
+   Theme Dropdown Menu - Design Token System
+   ======================================== */
+
+/* 统一的 Dropdown Item 基础变量 */
 .theme-dropdown {
+    --dropdown-item-padding: 10px 14px;
+    --dropdown-item-margin: 2px 8px;
+    --dropdown-item-radius: 6px;
+    --dropdown-item-font-size: 13px;
+    --dropdown-icon-size: 20px;
+    --dropdown-icon-radius: 50%;
+    --dropdown-icon-inner-size: 10px;
+    --dropdown-gap: 8px;
+
     position: fixed;
     top: calc(var(--navbar-height) + 8px);
     left: auto;
@@ -468,86 +481,138 @@ body {
     transform: translateY(0);
 }
 
+/* ========== Section 通用样式 ========== */
 .theme-section {
     padding: 4px 0;
 }
 
 .theme-section-label {
-    padding: 6px 14px 2px;
-    font-size: 10px;
+    padding: 8px 14px 4px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.theme-mode-list {
-    display: flex;
-    flex-direction: column;
-}
-
-.theme-mode-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    background: none;
-    border: none;
-    color: var(--text-primary);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    text-align: left;
-    width: calc(100% - 16px);
-    margin: 2px 8px;
-    border-radius: 6px;
-    box-sizing: border-box;
-    font-family: inherit;
-    transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
-}
-
-.theme-mode-item:hover {
-    background: var(--hover-bg);
-}
-
-.theme-mode-item.is-active {
-    color: var(--accent);
-    background: var(--active-bg);
-}
-
-.theme-mode-item i {
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    background: var(--bg-secondary);
-    font-size: 12px;
-    flex-shrink: 0;
-}
-
-.theme-mode-item span {
-    flex: 1;
-    color: var(--text-primary);
-}
-
-.theme-mode-item.is-active span {
-    color: var(--accent);
-}
-
-.theme-mode-item:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
-    background: var(--hover-bg);
+    letter-spacing: 0.6px;
 }
 
 .theme-divider {
     height: 1px;
     background: var(--border);
-    margin: 2px 0;
+    margin: 4px 0;
 }
 
+/* ========== 共享的 Dropdown Item 样式 ========== */
+.theme-mode-item,
+.theme-scheme-item {
+    display: flex;
+    align-items: center;
+    gap: var(--dropdown-gap);
+    padding: var(--dropdown-item-padding);
+    margin: var(--dropdown-item-margin);
+    border-radius: var(--dropdown-item-radius);
+    font-size: var(--dropdown-item-font-size);
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+
+.theme-mode-item {
+    background: none;
+    border: none;
+    text-align: left;
+    width: calc(100% - 16px);
+    font-family: inherit;
+}
+
+.theme-scheme-item {
+    position: relative;
+    width: calc(100% - 16px);
+}
+
+/* ========== 悬停状态（统一） ========== */
+.theme-mode-item:hover,
+.theme-scheme-item:hover {
+    background: var(--hover-bg);
+}
+
+/* ========== 选中状态（统一，无光晕） ========== */
+.theme-mode-item.is-active,
+.theme-scheme-item.is-active {
+    color: var(--accent);
+    background: var(--active-bg);
+}
+
+.theme-mode-item span,
+.theme-scheme-item-name {
+    flex: 1;
+}
+
+.theme-mode-item.is-active span,
+.theme-scheme-item.is-active .theme-scheme-item-name {
+    color: var(--accent);
+}
+
+/* ========== 图标基础样式（统一圆形） ========== */
+.theme-mode-item i,
+.theme-scheme-item-icon {
+    width: var(--dropdown-icon-size);
+    height: var(--dropdown-icon-size);
+    border-radius: var(--dropdown-icon-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    transition: transform var(--duration-fast) ease, border-color var(--duration-fast) ease;
+}
+
+/* 主题模式图标 */
+.theme-mode-item i {
+    background: var(--bg-secondary);
+    font-size: 10px;
+}
+
+/* 配色方案图标（双色圆点） */
+.theme-scheme-item-icon {
+    background: var(--scheme-bg-primary, var(--bg-secondary));
+    border: 1px solid var(--scheme-border, var(--border));
+}
+
+.theme-scheme-item-icon::after {
+    content: '';
+    width: var(--dropdown-icon-inner-size);
+    height: var(--dropdown-icon-inner-size);
+    border-radius: 50%;
+    background: var(--scheme-accent, var(--accent));
+}
+
+/* ========== 悬停微交互（统一） ========== */
+.theme-mode-item:hover i,
+.theme-scheme-item:hover .theme-scheme-item-icon {
+    transform: scale(1.1);
+}
+
+/* ========== 选中状态图标（统一，无光晕） ========== */
+.theme-mode-item.is-active i {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+.theme-scheme-item.is-active .theme-scheme-item-icon {
+    border-color: var(--scheme-accent, var(--accent));
+}
+
+/* ========== 焦点状态（统一） ========== */
+.theme-mode-item:focus-visible,
+.theme-scheme-item:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    background: var(--hover-bg);
+}
+
+/* ========== 配色方案专属样式 ========== */
 .theme-scheme-list {
     padding: 0;
     max-height: 200px;
@@ -563,86 +628,11 @@ body {
     border-radius: 2px;
 }
 
-.theme-scheme-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    cursor: pointer;
-    transition: background var(--duration-fast) ease, color var(--duration-fast) ease;
-    position: relative;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-primary);
-    width: calc(100% - 16px);
-    margin: 2px 8px;
-    border-radius: 6px;
-    box-sizing: border-box;
-}
-
-.theme-scheme-item:hover {
-    background: var(--hover-bg);
-}
-
-.theme-scheme-item.is-active {
-    background: var(--active-bg);
-}
-
-/* 默认配色标记（仅视觉提示，不阻止交互） */
 .theme-scheme-item.is-default {
     position: relative;
 }
 
-.theme-scheme-item-icon {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--scheme-bg-primary, var(--bg-secondary));
-    border: 1px solid var(--scheme-border, var(--border));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    box-sizing: border-box;
-    transition: border-color var(--duration-fast) ease,
-                box-shadow var(--duration-fast) ease,
-                transform var(--duration-fast) ease;
-}
-
-.theme-scheme-item-icon::after {
-    content: '';
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: var(--scheme-accent, var(--accent));
-}
-
-/* 悬浮微交互 */
-.theme-scheme-item:hover .theme-scheme-item-icon {
-    transform: scale(1.1);
-}
-
-.theme-scheme-item.is-active .theme-scheme-item-icon {
-    border-color: var(--scheme-accent, var(--accent));
-    box-shadow: 0 0 10px var(--scheme-accent, var(--accent));
-}
-
-.theme-scheme-item-name {
-    flex: 1;
-    font-size: 12px;
-    color: var(--text-primary);
-}
-
-.theme-scheme-item.is-active .theme-scheme-item-name {
-    color: var(--accent);
-}
-
-.theme-scheme-item:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
-    background: var(--hover-bg);
-}
-
+/* 选中标记 */
 .theme-scheme-item-check {
     width: 14px;
     height: 14px;
@@ -654,6 +644,7 @@ body {
     display: block;
 }
 
+/* 默认配色标记 */
 .theme-scheme-item-default {
     width: 12px;
     height: 12px;
@@ -663,6 +654,12 @@ body {
 
 .theme-scheme-item.is-default .theme-scheme-item-default {
     display: block;
+}
+
+/* ========== 主题模式列表 ========== */
+.theme-mode-list {
+    display: flex;
+    flex-direction: column;
 }
 
 /* Mobile Toggle */
