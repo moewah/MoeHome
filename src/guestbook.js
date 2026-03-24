@@ -924,18 +924,18 @@
     }
 
     function bindMobileScrollEvents(scroller) {
-        // 触摸时暂停滚动
+        // 触摸时暂停滚动 - 使用 passive 提高滚动性能
         scroller.addEventListener('touchstart', function() {
             if (scroller._scrollAnimation) {
                 scroller._scrollAnimation.pause();
             }
-        });
+        }, { passive: true });
 
         scroller.addEventListener('touchend', function() {
             if (scroller._scrollAnimation && !state.barrage.prefersReducedMotion) {
                 scroller._scrollAnimation.play();
             }
-        });
+        }, { passive: true });
 
         // 鼠标悬停也暂停（方便桌面调试）
         scroller.addEventListener('mouseenter', function() {
@@ -1185,14 +1185,25 @@
     }
 
     function handleResize() {
-        if (isMobile()) {
-            if (!state.barrage.container.classList.contains('signal-stream-mobile')) {
+        var isMobileView = isMobile();
+        var wasMobile = state.barrage.container.classList.contains('signal-stream-mobile');
+
+        if (isMobileView) {
+            // 切换到移动端模式
+            if (!wasMobile) {
+                // PC → 移动端：停止PC动画，启动移动端动画
                 stopBarrageAnimation();
                 state.barrage.container.classList.add('signal-stream-mobile');
                 renderMobileBarrages(state.barrage.data);
+            } else {
+                // 移动端调整窗口大小：重新计算动画参数
+                updateMobileAnimationParams();
             }
         } else {
-            if (state.barrage.container.classList.contains('signal-stream-mobile')) {
+            // 切换到PC端模式
+            if (wasMobile) {
+                // 移动端 → PC：清除移动端动画，启动PC动画
+                clearCanvas();
                 state.barrage.container.classList.remove('signal-stream-mobile');
                 initBarrageTracks();
                 renderBarrages(state.barrage.data);
@@ -1200,15 +1211,127 @@
                     startBarrageAnimation();
                 }
             } else {
-                initBarrageTracks();
-                state.barrage.signals.forEach(function(signal) {
-                    var track = state.barrage.tracks[signal.trackIndex];
-                    if (track) {
-                        signal.element.style.top = track.y + 'px';
-                    }
-                });
+                // PC端调整窗口大小：保持动画状态，只重新计算轨道位置
+                updatePCBarragePositions();
             }
         }
+    }
+
+    /**
+     * PC端调整窗口大小时：保持动画状态，更新轨道和弹幕位置
+     *
+     * 核心原则：
+     * 1. 不重置 startTime（保持播放进度）
+     * 2. 不重置动画状态（保持 isRunning）
+     * 3. 只更新 Y 轨道位置（适应新的容器高度）
+     */
+    function updatePCBarragePositions() {
+        var canvas = state.barrage.canvas;
+        if (!canvas || state.barrage.signals.length === 0) return;
+
+        // 重新计算轨道位置
+        var cfg = DEFAULTS.barrage;
+        var canvasHeight = canvas.offsetHeight;
+        var availableHeight = canvasHeight - (cfg.trackGap * 2);
+        var trackHeight = availableHeight / cfg.tracks;
+
+        // 更新每条轨道的 Y 位置
+        for (var i = 0; i < state.barrage.tracks.length; i++) {
+            var y = cfg.trackGap + (trackHeight * i) + (trackHeight - cfg.signalHeight) / 2;
+            state.barrage.tracks[i].y = y;
+        }
+
+        // 更新每条弹幕的 Y 位置
+        state.barrage.signals.forEach(function(signal) {
+            var track = state.barrage.tracks[signal.trackIndex];
+            if (track) {
+                signal.element.style.top = track.y + 'px';
+            }
+        });
+
+        console.log('[Barrage] PC端窗口调整，轨道位置已更新');
+    }
+
+    /**
+     * 移动端调整窗口大小时：重新计算动画参数并保持进度
+     *
+     * 核心原则：
+     * 1. 计算当前动画进度比例
+     * 2. 基于新容器尺寸重新计算动画参数
+     * 3. 从相同进度比例继续播放
+     */
+    function updateMobileAnimationParams() {
+        var scroller = document.getElementById('mobile-signals-scroller');
+        if (!scroller || !scroller._scrollAnimation) return;
+
+        var canvas = state.barrage.canvas;
+        if (!canvas) return;
+
+        var animation = scroller._scrollAnimation;
+        var oldParams = scroller._animationParams;
+
+        // 计算当前进度比例 (0-1)
+        var currentProgress = animation.currentTime / animation.effect.getTiming().duration;
+
+        // 重新计算动画参数
+        var containerHeight = canvas.offsetHeight;
+        var contentHeight = scroller.offsetHeight;
+
+        // 动画参数重新计算
+        var startOffset = containerHeight;
+        var endOffset = -contentHeight;
+        var scrollDistance = containerHeight + contentHeight;
+
+        // 保持原有速度感（不重新计算 duration，按比例调整）
+        var durationRatio = scrollDistance / (oldParams.startOffset - oldParams.endOffset);
+        var newDuration = oldParams.duration * durationRatio;
+
+        // 确保最小持续时间
+        newDuration = Math.max(15, newDuration);
+
+        // 更新参数
+        scroller._animationParams = {
+            startOffset: startOffset,
+            endOffset: endOffset,
+            duration: newDuration
+        };
+
+        // 取消旧动画
+        animation.cancel();
+
+        // 创建新动画
+        var newAnimation = scroller.animate([
+            { transform: 'translateY(' + startOffset + 'px)' },
+            { transform: 'translateY(' + endOffset + 'px)' }
+        ], {
+            duration: newDuration * 1000,
+            iterations: 1,
+            easing: 'linear'
+        });
+
+        // 从相同进度继续播放
+        newAnimation.currentTime = currentProgress * newDuration * 1000;
+
+        // 存储动画引用
+        scroller._scrollAnimation = newAnimation;
+
+        // 保持动画状态
+        if (state.barrage.prefersReducedMotion) {
+            newAnimation.pause();
+            return;
+        }
+
+        // 重新绑定结束事件
+        newAnimation.onfinish = function() {
+            scroller.style.opacity = '0';
+            showCycleLoading(function() {
+                if (!state.barrage.prefersReducedMotion) {
+                    runMobileAnimationCycle(scroller, canvas);
+                }
+            });
+        };
+
+        console.log('[Barrage] 移动端窗口调整，动画参数已更新，进度保持:', (currentProgress * 100).toFixed(1) + '%');
     }
 
     // ==================== 公开 API ====================
