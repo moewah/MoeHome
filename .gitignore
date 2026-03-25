@@ -19,3 +19,6 @@ docs/
 .idea/
 *.swp
 *.swo
+
+# Claude Code
+CLAUDE.md
