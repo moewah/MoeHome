@@ -6655,7 +6655,10 @@ a:focus-visible,
     text-align: center;
 }
 
+/* ========== 内页页面头部（动态页/留言板） ========== */
+/* 东方优雅排版：适度字间距 + 呼吸感留白 */
 .guestbook-page-header {
+    text-align: center;
     padding: var(--space-10) 0 var(--space-6);
 }
 
@@ -6664,6 +6667,7 @@ a:focus-visible,
     padding: var(--space-10) 0 var(--space-6);
 }
 
+/* 标题：统一字号 + 字重600 + 东方留白字间距 */
 .guestbook-page-header h1,
 .moments-page-header h1 {
     font-family: var(--font-mono);
