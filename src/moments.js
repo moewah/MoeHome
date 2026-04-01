@@ -2820,8 +2820,9 @@ class MomentsFeed {
   }
 
   renderInlineContent(container, text) {
-    // 过滤 #标签
-    text = text.replace(/\s*#[\u4e00-\u9fa5\w\-]+\s*/g, ' ').trim();
+    // 过滤 #标签，但排除 URL 中的 #fragment（# 前面不能是 / 或 :）
+    // 例如：保留 chrome://flags/#vertical-tabs 中的 #vertical-tabs
+    text = text.replace(/(?<![\/:])\s*#[\u4e00-\u9fa5\w\-]+\s*/g, ' ').trim();
 
     if (!text) return;
 
@@ -3024,6 +3025,7 @@ class MomentsFeed {
       ts: 'javascript',
 
       // Python - 双引号字符串 + 单引号字符串 + 三引号字符串 + 注释
+      // 注意：使用 (?<!\/) 排除 URL 中的 fragment（如 chrome://flags/#vertical-tabs）
       python: [
         // 单行字符串
         { type: 'string', pattern: /&quot;(?:[^\n&]|&[^;\n]+;)*&quot;/g },
@@ -3031,15 +3033,18 @@ class MomentsFeed {
         // 三引号字符串（多行）
         { type: 'string', pattern: /&quot;&quot;&quot;[\s\S]*?&quot;&quot;&quot;/g },
         { type: 'string', pattern: /&#039;&#039;&#039;[\s\S]*?&#039;&#039;&#039;/g },
-        { type: 'comment', pattern: /#[^\n]*$/gm }
+        // 注释：# 开头，但排除 URL 中的 #fragment（# 前面不能是 /）
+        { type: 'comment', pattern: /(?<!\/)#[^\n]*$/gm }
       ],
       py: 'python',
 
       // Shell/Bash/Zsh - 双引号字符串 + 单引号字符串 + 注释
+      // 注意：使用 (?<!\/) 排除 URL 中的 fragment（如 chrome://flags/#vertical-tabs）
       shell: [
         { type: 'string', pattern: /&quot;(?:[^\n&]|&[^;\n]+;)*&quot;/g },
         { type: 'string', pattern: /&#039;(?:[^\n&]|&[^;\n]+;)*&#039;/g },
-        { type: 'comment', pattern: /#[^\n]*$/gm }
+        // 注释：# 开头，但排除 URL 中的 #fragment（# 前面不能是 /）
+        { type: 'comment', pattern: /(?<!\/)#[^\n]*$/gm }
       ],
       bash: 'shell',
       sh: 'shell',

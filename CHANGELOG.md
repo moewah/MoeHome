@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v2.2.0] - 2026-04-02
+
+### 新功能
+
+- **Moments 代码高亮增强**
+  - JavaScript 模板字符串（反引号）语法支持
+  - Python 三引号多行字符串支持
+  - 重构语法高亮系统，采用"提取-处理-还原"策略保护字符串/注释内容
+
+### 修复
+
+- **Moments 代码块** - 修复多注释高亮失效问题
+- **Moments 行内代码** - 修复 URL 中 `#fragment` 被错误截断的问题
+  - 例如 `chrome://flags/#vertical-tabs` 现在能正确完整显示
+- **留言板** - 恢复终端回复交互功能
+- **留言板** - 优化弹幕项目可读性
+
+### 重构
+
+- **贡献图模块** - 重构支持 GitHub Events API，新增 `useRealData` 配置项
+
+### 文档
+
+- 新增项目介绍文章《MoeHome 开源个人主页：纯静态、配置驱动、零运行时依赖》
+
 ## [v2.1.0] - 2026-03-21
 
 ### 重构
