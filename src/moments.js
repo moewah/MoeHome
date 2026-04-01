@@ -2910,8 +2910,21 @@ class MomentsFeed {
   /**
    * 代码语法高亮（轻量级实现，无外部依赖）
    * 安全：先转义所有 HTML 实体，再应用语法标记
+   * 采用"提取-处理-还原"策略保护字符串和注释内容不被其他规则错误匹配
+   *
+   * 核心设计原则：
+   * 1. 先提取所有需要保护的元素（字符串、注释），用占位符替换
+   * 2. 对剩余内容应用其他高亮规则（关键字、函数、数字等）
+   * 3. 最后还原所有占位符
+   *
+   * 这样确保：
+   * - 多个注释都能正确高亮（不会只处理第一个）
+   * - 字符串内的关键字/注释符号不会被错误高亮
+   * - 注释内的其他内容不会被错误高亮
    */
   highlightCode(code, lang) {
+    var self = this;
+
     // 首先转义所有 HTML 实体，防止 XSS
     var escaped = code
       .replace(/&/g, '&amp;')
@@ -2920,222 +2933,312 @@ class MomentsFeed {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
 
-    // 根据语言选择高亮规则
-    var rules = this.getHighlightRules(lang);
+    // 第一步：收集所有需要保护的元素位置，然后一次性替换
+    var placeholders = [];
+    var protectedCode = escaped;
 
-    // 应用语法高亮
-    var highlighted = escaped;
+    // 获取该语言的提取规则（字符串和注释）
+    var extractionRules = this.getExtractionRules(lang);
 
-    // 按顺序应用规则，避免嵌套问题
-    rules.forEach(function(rule) {
-      highlighted = highlighted.replace(rule.pattern, rule.replacement);
+    // 收集所有匹配位置（使用原始代码匹配，避免占位符干扰）
+    var allMatches = [];
+    extractionRules.forEach(function(rule) {
+      var regex = new RegExp(rule.pattern.source, rule.pattern.flags || 'g');
+      var match;
+      // 每次重置正则
+      regex.lastIndex = 0;
+      while ((match = regex.exec(escaped)) !== null) {
+        allMatches.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          text: match[0],
+          type: rule.type
+        });
+      }
     });
+
+    // 按起始位置排序，去除重叠的匹配（保留更长的或更早的）
+    allMatches.sort(function(a, b) { return a.start - b.start; });
+
+    // 去除重叠匹配
+    var nonOverlappingMatches = [];
+    var lastEnd = -1;
+    allMatches.forEach(function(m) {
+      if (m.start >= lastEnd) {
+        nonOverlappingMatches.push(m);
+        lastEnd = m.end;
+      }
+    });
+
+    // 从后往前替换（避免索引偏移）
+    nonOverlappingMatches.sort(function(a, b) { return b.start - a.start; });
+    nonOverlappingMatches.forEach(function(m) {
+      var index = placeholders.length;
+      var marker = '___PH_' + index + '_' + m.type + '___';
+      placeholders.push({
+        marker: marker,
+        content: '<span class="token ' + m.type + '">' + m.text + '</span>',
+        original: m.text
+      });
+      protectedCode = protectedCode.substring(0, m.start) + marker + protectedCode.substring(m.end);
+    });
+
+    // 第二步：对剩余内容应用其他高亮规则（关键字、函数、数字等）
+    var otherRules = this.getOtherHighlightRules(lang);
+    var highlighted = protectedCode;
+
+    otherRules.forEach(function(rule) {
+      highlighted = highlighted.replace(new RegExp(rule.pattern.source, 'g'), rule.replacement);
+    });
+
+    // 第三步：还原所有占位符（字符串和注释）
+    // 按索引倒序还原，避免占位符名称冲突
+    for (var i = placeholders.length - 1; i >= 0; i--) {
+      highlighted = highlighted.replace(placeholders[i].marker, placeholders[i].content);
+    }
 
     return highlighted;
   }
 
   /**
-   * 安全地应用语法高亮到 DOM 元素
-   * 使用 DOM API 而非 innerHTML
+   * 获取语言的元素提取规则（字符串和注释）
+   * 这些元素需要优先提取并保护，避免被其他规则错误匹配
+   * @param {string} lang - 语言名称
+   * @returns {Array} - 提取规则数组
    */
-  applySyntaxHighlighting(container, code, lang) {
-    var highlighted = this.highlightCode(code, lang);
-    // 使用 template 元素安全解析 HTML
-    var template = document.createElement('template');
-    template.innerHTML = highlighted;
-    var fragment = template.content.cloneNode(true);
-    container.appendChild(fragment);
+  getExtractionRules(lang) {
+    // 语言特定的提取规则
+    var extractionRulesByLang = {
+      // JavaScript/TypeScript - 双引号字符串 + 单引号字符串 + 模板字符串 + 单行注释 + 多行注释
+      javascript: [
+        // 字符串：不允许跨行（单行字符串）
+        { type: 'string', pattern: /&quot;(?:[^\n&]|&[^;\n]+;)*&quot;/g },
+        { type: 'string', pattern: /&#039;(?:[^\n&]|&[^;\n]+;)*&#039;/g },
+        // 模板字符串：反引号，转义后是 ` (不转义为 HTML 实体)
+        { type: 'string', pattern: /`(?:[^`\\]|\\.)*`/g },
+        { type: 'comment', pattern: /\/\/[^\n]*$/gm },
+        { type: 'comment', pattern: /\/\*[\s\S]*?\*\//g }
+      ],
+      js: 'javascript',
+      typescript: 'javascript',
+      ts: 'javascript',
+
+      // Python - 双引号字符串 + 单引号字符串 + 三引号字符串 + 注释
+      python: [
+        // 单行字符串
+        { type: 'string', pattern: /&quot;(?:[^\n&]|&[^;\n]+;)*&quot;/g },
+        { type: 'string', pattern: /&#039;(?:[^\n&]|&[^;\n]+;)*&#039;/g },
+        // 三引号字符串（多行）
+        { type: 'string', pattern: /&quot;&quot;&quot;[\s\S]*?&quot;&quot;&quot;/g },
+        { type: 'string', pattern: /&#039;&#039;&#039;[\s\S]*?&#039;&#039;&#039;/g },
+        { type: 'comment', pattern: /#[^\n]*$/gm }
+      ],
+      py: 'python',
+
+      // Shell/Bash/Zsh - 双引号字符串 + 单引号字符串 + 注释
+      shell: [
+        { type: 'string', pattern: /&quot;(?:[^\n&]|&[^;\n]+;)*&quot;/g },
+        { type: 'string', pattern: /&#039;(?:[^\n&]|&[^;\n]+;)*&#039;/g },
+        { type: 'comment', pattern: /#[^\n]*$/gm }
+      ],
+      bash: 'shell',
+      sh: 'shell',
+      zsh: 'shell',
+
+      // CSS - 字符串 + 注释
+      css: [
+        { type: 'string', pattern: /&quot;(?:[^\n&]|&[^;\n]+;)*&quot;/g },
+        { type: 'string', pattern: /&#039;(?:[^\n&]|&[^;\n]+;)*&#039;/g },
+        { type: 'comment', pattern: /\/\*[\s\S]*?\*\//g }
+      ],
+
+      // HTML - 注释
+      html: [
+        { type: 'comment', pattern: /&lt;!--[\s\S]*?--&gt;/g }
+      ],
+
+      // JSON - 字符串（JSON 只支持双引号）
+      json: [
+        { type: 'string', pattern: /&quot;(?:[^\n&]|&[^;\n]+;)*&quot;/g }
+      ],
+
+      // SQL - 字符串 + 单行注释
+      sql: [
+        { type: 'string', pattern: /&#039;(?:[^\n&]|&[^;\n]+;)*&#039;/g },
+        { type: 'comment', pattern: /--[^\n]*$/gm }
+      ],
+
+      // Java - 字符串 + 单行注释 + 多行注释
+      java: [
+        { type: 'string', pattern: /&quot;(?:[^\n&]|&[^;\n]+;)*&quot;/g },
+        { type: 'comment', pattern: /\/\/[^\n]*$/gm },
+        { type: 'comment', pattern: /\/\*[\s\S]*?\*\//g }
+      ],
+
+      // Go - 字符串 + 注释
+      go: [
+        { type: 'string', pattern: /&quot;(?:[^\n&]|&[^;\n]+;)*&quot;/g },
+        { type: 'comment', pattern: /\/\/[^\n]*$/gm }
+      ],
+      golang: 'go',
+
+      // 默认：不提取任何元素（未知语言原样显示，不做高亮处理）
+      default: []
+    };
+
+    // 获取语言特定规则
+    var normalizedLang = lang.toLowerCase();
+    var rules = extractionRulesByLang[normalizedLang];
+
+    if (typeof rules === 'string') {
+      rules = extractionRulesByLang[rules];
+    }
+
+    if (!rules) {
+      rules = extractionRulesByLang.default;
+    }
+
+    return rules;
   }
 
   /**
-   * 获取语言的语法高亮规则
+   * 获取其他高亮规则（关键字、函数、数字等）
+   * 这些规则在字符串和注释被保护后应用，不会影响已保护的内容
+   * @param {string} lang - 语言名称
+   * @returns {Array} - 高亮规则数组
    */
-  getHighlightRules(lang) {
-    var self = this;
+  getOtherHighlightRules(lang) {
+    // 通用规则：数字、函数调用
     var commonRules = [
-      // 字符串（双引号）
-      {
-        pattern: /(&quot;[^&]*?&quot;)/g,
-        replacement: '<span class="token string">$1</span>'
-      },
-      // 字符串（单引号）
-      {
-        pattern: /(&#039;[^&]*?&#039;)/g,
-        replacement: '<span class="token string">$1</span>'
-      },
-      // 注释（单行）
-      {
-        pattern: /(\/\/[^\n]*)/g,
-        replacement: '<span class="token comment">$1</span>'
-      },
-      // 注释（# 开头，如 Python、Shell）
-      {
-        pattern: /(#[^\n]*)/g,
-        replacement: '<span class="token comment">$1</span>'
-      },
-      // 数字
+      // 数字（整数和小数）
       {
         pattern: /\b(\d+\.?\d*)\b/g,
         replacement: '<span class="token number">$1</span>'
       },
-      // 关键字
-      {
-        pattern: /\b(const|let|var|function|return|if|else|for|while|class|import|export|from|default|async|await|try|catch|throw|new|this|typeof|instanceof|in|of|true|false|null|undefined|void|delete)\b/g,
-        replacement: '<span class="token keyword">$1</span>'
-      },
-      // 函数调用
+      // 函数调用：标识符后紧跟括号
       {
         pattern: /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*(?=\()/g,
         replacement: '<span class="token function">$1</span>'
       }
     ];
 
-    var languageSpecificRules = {
-      // JavaScript/TypeScript
+    // 语言特定的关键字规则
+    var keywordRulesByLang = {
       javascript: [
         {
-          pattern: /(\/\/[^\n]*)/g,
-          replacement: '<span class="token comment">$1</span>'
-        },
-        {
-          pattern: /(\/\*[\s\S]*?\*\/)/g,
-          replacement: '<span class="token comment">$1</span>'
+          pattern: /\b(const|let|var|function|return|if|else|for|while|class|import|export|from|default|async|await|try|catch|throw|new|this|typeof|instanceof|in|of|true|false|null|undefined|void|delete)\b/g,
+          replacement: '<span class="token keyword">$1</span>'
         }
       ],
-      js: 'javascript',
-      typescript: 'javascript',
-      ts: 'javascript',
-      // Python
       python: [
-        {
-          pattern: /(#[^\n]*)/g,
-          replacement: '<span class="token comment">$1</span>'
-        },
         {
           pattern: /\b(def|class|if|elif|else|for|while|return|import|from|as|try|except|finally|with|lambda|yield|pass|break|continue|and|or|not|in|is|True|False|None|self)\b/g,
           replacement: '<span class="token keyword">$1</span>'
         },
+        // 装饰器
         {
           pattern: /@([a-zA-Z_][a-zA-Z0-9_]*)/g,
           replacement: '<span class="token decorator">@$1</span>'
         }
       ],
-      py: 'python',
-      // Shell/Bash
       shell: [
         {
-          pattern: /(#[^\n]*)/g,
-          replacement: '<span class="token comment">$1</span>'
-        },
-        {
-          pattern: /\b(if|then|else|fi|for|do|done|while|case|esac|function|echo|cd|ls|grep|cat|mkdir|rm|cp|mv|chmod|sudo|apt|yum|brew|pip|npm|npx|node|python|git)\b/g,
+          pattern: /\b(if|then|else|fi|for|do|done|while|case|esac|function|echo|cd|ls|grep|cat|mkdir|rm|cp|mv|chmod|sudo|apt|yum|brew|pip|npm|npx|node|python|git|curl|wget|nohup|source)\b/g,
           replacement: '<span class="token keyword">$1</span>'
         },
+        // 变量
         {
           pattern: /(\$\{[^}]+\}|\$[a-zA-Z_][a-zA-Z0-9_]*)/g,
           replacement: '<span class="token variable">$1</span>'
         }
       ],
-      bash: 'shell',
-      sh: 'shell',
-      zsh: 'shell',
-      // CSS
       css: [
-        {
-          pattern: /(\/\*[\s\S]*?\*\/)/g,
-          replacement: '<span class="token comment">$1</span>'
-        },
+        // 选择器
         {
           pattern: /([.#][a-zA-Z_-][a-zA-Z0-9_-]*)/g,
           replacement: '<span class="token selector">$1</span>'
         },
+        // 属性名
         {
           pattern: /\b([a-z-]+)(?=\s*:)/g,
           replacement: '<span class="token property">$1</span>'
         }
       ],
-      // HTML
       html: [
-        {
-          pattern: /(&lt;!--[\s\S]*?--&gt;)/g,
-          replacement: '<span class="token comment">$1</span>'
-        },
+        // 标签开始
         {
           pattern: /(&lt;\/?[a-zA-Z][a-zA-Z0-9]*)/g,
           replacement: '<span class="token tag">$1</span>'
         },
+        // 标签结束
         {
           pattern: /(&gt;)/g,
           replacement: '<span class="token tag">$1</span>'
         },
+        // 属性名
         {
-          pattern: /([a-zA-Z-]+)(?==)/g,
-          replacement: '<span class="token attr-name">$1</span>'
+          pattern: /\s([a-zA-Z-]+)(?==)/g,
+          replacement: ' <span class="token attr-name">$1</span>'
         }
       ],
-      // JSON
       json: [
+        // 属性名（字符串后跟冒号）
         {
-          pattern: /(&quot;[^&]*?&quot;)(?=\s*:)/g,
+          pattern: /(___PROTECTED_string_\d+___)(?=\s*:)/g,
           replacement: '<span class="token property">$1</span>'
         }
       ],
-      // SQL
       sql: [
-        {
-          pattern: /(--[^\n]*)/g,
-          replacement: '<span class="token comment">$1</span>'
-        },
         {
           pattern: /\b(SELECT|FROM|WHERE|JOIN|ON|LEFT|RIGHT|INNER|OUTER|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|ALTER|DROP|INDEX|PRIMARY|KEY|FOREIGN|REFERENCES|NOT|NULL|DEFAULT|AUTO_INCREMENT|AND|OR|IN|LIKE|BETWEEN|IS|ORDER|BY|ASC|DESC|LIMIT|OFFSET|GROUP|HAVING|UNION|DISTINCT|COUNT|SUM|AVG|MAX|MIN|CASE|WHEN|THEN|ELSE|END)\b/gi,
           replacement: '<span class="token keyword">$1</span>'
         }
       ],
-      // Java
       java: [
-        {
-          pattern: /(\/\/[^\n]*)/g,
-          replacement: '<span class="token comment">$1</span>'
-        },
-        {
-          pattern: /(\/\*[\s\S]*?\*\/)/g,
-          replacement: '<span class="token comment">$1</span>'
-        },
         {
           pattern: /\b(public|private|protected|static|final|abstract|class|interface|extends|implements|new|return|if|else|for|while|do|switch|case|break|continue|try|catch|finally|throw|throws|import|package|void|int|long|short|byte|float|double|boolean|char|true|false|null|this|super)\b/g,
           replacement: '<span class="token keyword">$1</span>'
         }
       ],
-      // Go
       go: [
-        {
-          pattern: /(\/\/[^\n]*)/g,
-          replacement: '<span class="token comment">$1</span>'
-        },
         {
           pattern: /\b(package|import|func|return|if|else|for|range|switch|case|default|break|continue|go|defer|chan|select|struct|interface|type|var|const|map|slice|make|new|len|cap|append|copy|delete|panic|recover|error|string|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|complex64|complex128|bool|rune|byte|true|false|nil)\b/g,
           replacement: '<span class="token keyword">$1</span>'
         }
       ],
-      golang: 'go'
+      default: []
     };
 
     // 获取语言特定规则
-    var langRules = languageSpecificRules[lang.toLowerCase()];
+    var normalizedLang = lang.toLowerCase();
+    var keywordRules = keywordRulesByLang[normalizedLang];
 
-    if (typeof langRules === 'string') {
-      // 别名引用
-      langRules = languageSpecificRules[langRules];
+    if (typeof keywordRules === 'string') {
+      keywordRules = keywordRulesByLang[keywordRules];
     }
 
-    if (!langRules) {
-      langRules = [];
+    if (!keywordRules) {
+      keywordRules = keywordRulesByLang.default;
     }
 
-    // 合并通用规则和语言特定规则
-    return commonRules.concat(langRules);
+    // 语言特定关键字规则 + 通用规则
+    return keywordRules.concat(commonRules);
   }
 
+  /**
+   * 安全地应用语法高亮到 DOM 元素
+   * 使用 template 元素解析高亮后的 HTML（输入已先转义，生成的 span 标签是安全的）
+   */
+  applySyntaxHighlighting(container, code, lang) {
+    var highlighted = this.highlightCode(code, lang);
+    // 使用 template 元素解析 HTML，highlightCode 已对用户输入进行转义
+    var template = document.createElement('template');
+    template.innerHTML = highlighted;
+    var fragment = template.content.cloneNode(true);
+    container.appendChild(fragment);
+  }
+
+  
   /**
    * 格式化日期时间
    */
